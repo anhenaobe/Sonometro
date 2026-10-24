@@ -1,0 +1,20 @@
+id,funcion,cantidad,fabricante,MPN,encapsulado,disponibilidad,costo_verificado,moneda,estado,notas,fuente
+MIC1,Micrófono IEPE externo de referencia,1,ROGA Instruments,RG-50,Externo BNC,OPEN,,,PROVISIONAL,Verificar unidad y certificado antes de conexión; no implica compra,https://www.roga-instruments.com/downloads/PDF/RG-50-EN.pdf
+DEV1,Placa MCU prototipo,1,STMicroelectronics,NUCLEO-F446RE,Placa Nucleo-64,OPEN,,,PROVISIONAL,Incluye MCU y ST-LINK; no sumar MCU1 al mismo prototipo,https://www.st.com/en/evaluation-tools/nucleo-f446re.html
+MCU1,MCU alternativa para PCB propia,1,STMicroelectronics,STM32F446RET6,LQFP-64,OPEN,,,PROVISIONAL,Alternativa a DEV1; decidir placa final y verificar sufijo antes de compra,https://www.st.com/resource/en/datasheet/stm32f446re.pdf
+U1,Fuente de corriente IEPE,1,Analog Devices,LT3092EST#PBF,SOT-223,OPEN,,,PROVISIONAL,Ensayar con cargas antes del micrófono,https://www.analog.com/media/en/technical-documentation/data-sheets/lt3092.pdf
+U2,ADC de audio externo,1,Texas Instruments,PCM1808PW,TSSOP-14,OPEN,,,PROVISIONAL,Estéreo; un canal acústico; definir tratamiento entrada no usada,https://www.ti.com/lit/ds/symlink/pcm1808.pdf
+PS1,Alimentación IEPE de banco,1,OPEN,OPEN,Instrumento externo,OPEN,,,OPEN,Ajustable; 24 V candidato; verificar compliance y ruido,
+PS2,Alimentación analógica 5 V,1,OPEN,OPEN,OPEN,OPEN,,,OPEN,Evaluar fuente disponible o regulador y desacoplo,
+PS3,Alimentación digital 3.3 V,1,OPEN,OPEN,OPEN,OPEN,,,OPEN,Verificar presupuesto de corriente de Nucleo antes de añadir regulador,
+RSET,Resistencia programación corriente,1,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Calcular valor tolerancia potencia y TCR con LT3092,
+ROUT,Resistencia programación seleccionable,1,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Una instalada por ajuste; ensayar tres valores para 2.4/2.8/4 mA,
+C_AC,Condensador acoplamiento AC,1,OPEN,OPEN,OPEN,OPEN,,,OPEN,Definir C tensión nominal fuga polaridad y transitorios,
+R_RETURN,Retorno de entrada tras acoplamiento,1,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Definir resistencia efectiva y frecuencia de corte,
+PROT1,Protección de entrada,OPEN,OPEN,OPEN,Convencional SMD preferido,OPEN,,,OPEN,Topología y cantidad pendientes; verificar fuga ruido y transitorios,
+AFE1,Acondicionamiento ganancia y filtro,OPEN,OPEN,OPEN,SOIC o TSSOP preferido,OPEN,,,OPEN,Seleccionar por banda ruido excursión y alimentación; pasivos pendientes,
+CLK1,Reloj de audio si hace falta externo,OPEN,OPEN,OPEN,Convencional preferido,OPEN,,,OPEN,Decidir tras validar relojes STM32 y PCM1808,
+CDEC,Desacoplo y referencia ADC,OPEN,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Cantidad valores y tensiones según esquema final y datasheet,
+J1,Entrada IEPE,1,OPEN,OPEN,BNC hembra panel o PCB,OPEN,,,OPEN,Verificar cable y retorno de masa compatible con sensor,
+J2,Conexión USB de aplicación,1,OPEN,OPEN,Conector o adaptador OPEN,OPEN,,,OPEN,Definir VBUS ESD y conexión al USB del MCU; ST-LINK no lo sustituye,
+LOAD1,Cargas de prueba fuente IEPE,OPEN,OPEN,OPEN,Resistencias de banco,OPEN,,,OPEN,Dimensionar por tensión potencia y corriente; no son BOM final,
