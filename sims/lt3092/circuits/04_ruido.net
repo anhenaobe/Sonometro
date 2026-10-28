@@ -1,0 +1,13 @@
+* 04 - Ruido de la fuente sobre el nodo IEPE; Rmic sin ruido para aislar al LT3092
+* CSET en paralelo con RSET limita el ancho de banda del ruido (como en CN0540).
+V1 vin 0 {VIN}
+XU1 MP_01 set out MP_02 vin LT3092
+Rset set iepe {RSET}
+Cset set iepe {CSET}
+Rout out iepe {ROUT}
+Rmic iepe mic 50 noiseless
+Vmic mic 0 {VBIAS}
+.param VIN=24 RSET=20k ROUT=49.9 VBIAS=12.5 CSET=1f
+.noise V(iepe) V1 dec 50 10 100k
+.lib LT3092.sub
+.end

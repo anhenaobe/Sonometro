@@ -1,0 +1,11 @@
+* 02 - Senal en el tiempo: tono de 1 kHz al pico maximo (130 dB SPL) sobre el bias
+V1 vin 0 {VIN}
+XU1 MP_01 set out MP_02 vin LT3092
+Rset set iepe {RSET}
+Rout out iepe {ROUT}
+Rmic iepe mic 50
+Vmic mic 0 SINE({VBIAS} {VPK} 1k)
+.param VIN=24 RSET=20k ROUT=49.9 VBIAS=12.5 VPK=3.24
+.tran 0 6m 1m 1u
+.lib LT3092.sub
+.end

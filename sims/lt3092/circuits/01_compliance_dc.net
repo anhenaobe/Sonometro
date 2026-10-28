@@ -1,0 +1,12 @@
+* 01 - Compliance: barrido DC de la alimentacion con el sensor en su tension maxima
+* Sensor IEPE modelado como fuente de tension VSENS con 50 ohm de salida (RG-50).
+V1 vin 0 {VIN}
+XU1 MP_01 set out MP_02 vin LT3092
+Rset set iepe {RSET}
+Rout out iepe {ROUT}
+Rmic iepe mic {RMIC}
+Vmic mic 0 {VSENS}
+.param VIN=24 RSET=20k ROUT=49.9 RMIC=50 VSENS=15.74
+.dc V1 10 30 0.02
+.lib LT3092.sub
+.end

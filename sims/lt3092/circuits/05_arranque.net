@@ -1,0 +1,16 @@
+* 05 - Arranque: rampa de alimentacion y acoplamiento AC hacia el ADC (sin proteccion)
+* El diodo hace que el sensor solo conduzca cuando la fuente puede polarizarlo.
+V1 vin 0 PWL(0 0 1m {VIN})
+XU1 MP_01 set out MP_02 vin LT3092
+Rset set iepe {RSET}
+Rout out iepe {ROUT}
+Rmic iepe x 50
+Dmic x mic DSENS
+Vmic mic 0 SINE({VBIAS-0.6} {VPK} 1k)
+Cac iepe acout {CAC}
+Rret acout 0 {RRET}
+.model DSENS D(Is=1e-14 N=1)
+.param VIN=24 RSET=20k ROUT=49.9 VBIAS=12.5 VPK=0 CAC=1u RRET=100k
+.tran 0 800m 0 50u
+.lib LT3092.sub
+.end
