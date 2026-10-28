@@ -1,0 +1,21 @@
+* LT3092 REAL DE ADI - RSET grande y CSET (red provisional de compensacion)
+* CSET introduce polo adicional: estabilidad NO garantizada. Comparar con archivo 02.
+.param VSUP=24
+V1 VCC 0 {VSUP}
+XU1 VCC SET REG LT3092
+RSET SET IEPE 120k
+ROUT REG IEPE 430
+CSET SET IEPE 100n
+* Red RC EN SERIE desde IN hasta nodo IEPE, opcional para compensar:
+RCOMP VCC COMP 1k
+CCOMP COMP IEPE 10n
+RMIC IEPE MIC 50
+VMIC MIC 0 SINE(12.5 0.05 1k)
+CCABLE IEPE 0 1n
+.tran 0 100m 70m 1u
+.meas TRAN IAVG AVG I(RMIC) FROM=80m TO=100m
+.meas TRAN IMAX MAX I(RMIC) FROM=80m TO=100m
+.meas TRAN IMIN MIN I(RMIC) FROM=80m TO=100m
+.meas TRAN VMAX MAX V(IEPE) FROM=80m TO=100m
+.meas TRAN VMIN MIN V(IEPE) FROM=80m TO=100m
+.end

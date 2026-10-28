@@ -1,0 +1,27 @@
+* OPA192 (TI) + BSS84 (Diodes) - compliance DC en carga resistiva
+* REFERENCIA IDEAL en este banco. Se requiere implementar una real.
+.include OPA192.lib
+.include BSS84.spice.txt
+.param VSUP=24
+.param RL=4.46k
+VCC VCC 0 {VSUP}
+VREF25 VCC VZ 2.5
+RBLEED VZ 0 22k
+RTOP VCC REF 1k
+RBOTTOM REF VZ 7.93k
+RSENSE VCC SRC 100
+XQ1 IEPE GATE SRC BSS84
+RGS SRC GATE 100k
+DGS GATE SRC DZ12
+.model DZ12 D(BV=12 IBV=1m RS=3)
+XU1 REF SRC VCC 0 DRIVE OPA192
+RGATE DRIVE GATE 1k
+CGATE GATE SRC 100p
+RLOAD IEPE 0 {RL}
+.step param RL list 1k 2.2k 4.46k 6.8k 8.2k 9k
+.op
+.meas OP I_IEPE PARAM I(RLOAD)
+.meas OP V_IEPE PARAM V(IEPE)
+.meas OP VSENSE PARAM V(VCC,SRC)
+.meas OP VGS PARAM V(GATE,SRC)
+.end

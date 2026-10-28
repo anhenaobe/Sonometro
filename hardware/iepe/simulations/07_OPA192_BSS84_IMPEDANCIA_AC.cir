@@ -1,0 +1,24 @@
+* OPA192 TI + BSS84 Diodes - impedancia AC de salida
+* Referencia flotante IDEAL. Otros modelos fabricantes.
+.include OPA192.lib
+.include BSS84.spice.txt
+VCC VCC 0 24
+VREF25 VCC VZ 2.5
+RBLEED VZ 0 22k
+RTOP VCC REF 1k
+RBOTTOM REF VZ 7.93k
+RSENSE VCC SRC 100
+XQ1 IEPE GATE SRC BSS84
+RGS SRC GATE 100k
+DGS GATE SRC DZ12
+.model DZ12 D(BV=12 IBV=1m RS=3)
+XU1 REF SRC VCC 0 DRIVE OPA192
+RGATE DRIVE GATE 1k
+CGATE GATE SRC 100p
+VTEST IEPE 0 DC 12.5 AC 1
+.ac dec 50 10 1Meg
+.meas AC Y1K FIND mag(I(VTEST)) AT=1k
+.meas AC Y20K FIND mag(I(VTEST)) AT=20k
+.meas AC Z1K PARAM 1/Y1K
+.meas AC Z20K PARAM 1/Y20K
+.end

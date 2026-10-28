@@ -1,0 +1,18 @@
+* LT3092 REAL DE ADI - regular 2.8 mA, carga resistiva
+* Requiere modelo LT3092 del LTspice instalado (o generado como ASC con preparar_ASC.ps1)
+* Conexion de terminales: consultar modelo/simbolo LT3092 nativo
+* XU1 IN SET OUT LT3092 corresponde a pines nominales IN-SET-OUT de la ficha
+.param VSUP=24
+.param RL=4.46k
+V1 VCC 0 {VSUP}
+XU1 VCC SET REG LT3092
+RSET SET IEPE 20k
+ROUT REG IEPE 71.5
+RLOAD IEPE 0 {RL}
+.step param RL list 1k 2.2k 4.46k 6.8k 8.2k 9k
+.op
+.meas OP I_IEPE PARAM I(RLOAD)
+.meas OP V_IEPE PARAM V(IEPE)
+.meas OP VREF PARAM V(SET,IEPE)
+.meas OP VDROP PARAM V(VCC,REG)
+.end

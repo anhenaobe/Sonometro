@@ -1,0 +1,14 @@
+* LT3092 (modelo nativo ADI) - impedancia AC de salida con VTEST
+* I(VTEST) permite calcular Zout=1/abs(I(VTEST)) para VTEST AC 1V
+.param VSUP=24
+V1 VCC 0 {VSUP}
+XU1 VCC SET REG LT3092
+RSET SET IEPE 20k
+ROUT REG IEPE 71.5
+VTEST IEPE 0 DC 12.5 AC 1
+.ac dec 50 10 1Meg
+.meas AC Y1K FIND mag(I(VTEST)) AT=1k
+.meas AC Y20K FIND mag(I(VTEST)) AT=20k
+.meas AC Z1K PARAM 1/Y1K
+.meas AC Z20K PARAM 1/Y20K
+.end
