@@ -1,0 +1,11 @@
+* 03 - Rizado de la alimentacion: transferencia de V1 al nodo IEPE (AC 1 V)
+V1 vin 0 {VIN} AC 1
+XU1 MP_01 set out MP_02 vin LT3092
+Rset set iepe {RSET}
+Rout out iepe {ROUT}
+Rmic iepe mic 50
+Vmic mic 0 {VBIAS}
+.param VIN=24 RSET=20k ROUT=49.9 VBIAS=12.5
+.ac dec 50 10 100k
+.lib LT3092.sub
+.end

@@ -1,0 +1,114 @@
+{
+  "parametros": {
+    "RSET_ohm": 20000.0,
+    "ROUT_ohm": {
+      "2,4 mA": 84.5,
+      "2,8 mA": 71.5,
+      "4,0 mA": 49.9
+    },
+    "VIN_V": 24.0,
+    "V_bias_V": 12.5,
+    "V_pico_130dB_V": 3.516,
+    "piso_ruido_microfono_uV": 40.77
+  },
+  "01_compliance": {
+    "2,4 mA / bias 12,5 V": {
+      "corriente_mA": 2.3773,
+      "vin_min_V": 14.04,
+      "caida_IN_a_nodo_sensor_V": 1.42,
+      "caida_IN_a_OUT_del_integrado_V": 1.22
+    },
+    "2,4 mA / pico 16.02 V": {
+      "corriente_mA": 2.3772,
+      "vin_min_V": 17.54,
+      "caida_IN_a_nodo_sensor_V": 1.41,
+      "caida_IN_a_OUT_del_integrado_V": 1.21
+    },
+    "2,8 mA / bias 12,5 V": {
+      "corriente_mA": 2.8077,
+      "vin_min_V": 14.06,
+      "caida_IN_a_nodo_sensor_V": 1.42,
+      "caida_IN_a_OUT_del_integrado_V": 1.22
+    },
+    "2,8 mA / pico 16.02 V": {
+      "corriente_mA": 2.8076,
+      "vin_min_V": 17.58,
+      "caida_IN_a_nodo_sensor_V": 1.42,
+      "caida_IN_a_OUT_del_integrado_V": 1.22
+    },
+    "4,0 mA / bias 12,5 V": {
+      "corriente_mA": 4.0188,
+      "vin_min_V": 14.12,
+      "caida_IN_a_nodo_sensor_V": 1.42,
+      "caida_IN_a_OUT_del_integrado_V": 1.22
+    },
+    "4,0 mA / pico 16.02 V": {
+      "corriente_mA": 4.0186,
+      "vin_min_V": 17.64,
+      "caida_IN_a_nodo_sensor_V": 1.42,
+      "caida_IN_a_OUT_del_integrado_V": 1.22
+    },
+    "circuito_abierto_V_iepe_a_24V": 24.0
+  },
+  "02_senal": {
+    "2,4 mA, VIN = 24 V": {
+      "corriente_media_mA": 2.3771,
+      "variacion_pico_pico_pct": 0.076,
+      "corriente_minima_mA": 2.3762
+    },
+    "2,8 mA, VIN = 24 V": {
+      "corriente_media_mA": 2.8075,
+      "variacion_pico_pico_pct": 0.076,
+      "corriente_minima_mA": 2.8065
+    },
+    "4,0 mA, VIN = 24 V": {
+      "corriente_media_mA": 4.0185,
+      "variacion_pico_pico_pct": 0.076,
+      "corriente_minima_mA": 4.0169
+    },
+    "2,8 mA, VIN = 17 V": {
+      "corriente_media_mA": 2.4341,
+      "variacion_pico_pico_pct": 115.718,
+      "corriente_minima_mA": 0.1811
+    }
+  },
+  "03_rizado": {
+    "2,4 mA": {
+      "atenuacion_120Hz_dB": -113.5,
+      "rizado_en_senal_uV": 0.106,
+      "impedancia_salida_1kHz_Mohm": 3.91
+    },
+    "2,8 mA": {
+      "atenuacion_120Hz_dB": -112.0,
+      "rizado_en_senal_uV": 0.126,
+      "impedancia_salida_1kHz_Mohm": 3.31
+    },
+    "4,0 mA": {
+      "atenuacion_120Hz_dB": -108.9,
+      "rizado_en_senal_uV": 0.18,
+      "impedancia_salida_1kHz_Mohm": 2.31
+    }
+  },
+  "04_ruido": {
+    "sin CSET": {
+      "ruido_20Hz_20kHz_uV": 3.993,
+      "fraccion_del_piso_del_microfono_pct": 9.8
+    },
+    "10 nF": {
+      "ruido_20Hz_20kHz_uV": 1.041,
+      "fraccion_del_piso_del_microfono_pct": 2.55
+    },
+    "100 nF": {
+      "ruido_20Hz_20kHz_uV": 0.464,
+      "fraccion_del_piso_del_microfono_pct": 1.14
+    },
+    "1 µF": {
+      "ruido_20Hz_20kHz_uV": 0.368,
+      "fraccion_del_piso_del_microfono_pct": 0.9
+    }
+  },
+  "05_arranque": {
+    "pico_hacia_ADC_V": 12.69,
+    "tiempo_hasta_menos_de_0.1V_ms": 485.1
+  }
+}
