@@ -1,6 +1,8 @@
 # Decisiones y riesgos
 
-Fecha de revisión documental: 2026-10-24. **No hay mediciones, simulaciones, compras ni compatibilidad de la cadena demostradas en este repositorio.**
+Revisión inicial: 2026-10-24; actualización 2026-11-04. Hay simulaciones previas LT3092 y un incremento [AFE](analog-front-end.md)/[firmware](../firmware/README.md). Las pruebas físicas, compras y compatibilidad de la cadena completa siguen **OPEN**.
+
+Decisión de plataforma de prototipo 2026-11-04: **NUCLEO-L432KC** solicitada por el equipo. Se conserva STM32F446RE como propuesta anterior; selección definitiva de MCU/PCB **OPEN**. L432: ADC interno 12 bits + TIM6/DMA y VCP por USART2, adquisición nominal 48 kSPS en ráfagas, sin prometer transporte continuo. STM32CubeL4 1.18.1 y GCC ARM 12.3.1 disponibles; compilación y pruebas de software no equivalen a adquisición física. Pinout SAI/USB y límites en [firmware](../firmware/README.md).
 
 ## Confirmado y provisional
 
@@ -11,7 +13,7 @@ Fecha de revisión documental: 2026-10-24. **No hay mediciones, simulaciones, co
 | RG-50 externo | PROVISIONAL: referencia. Datos aportados de la unidad: 55,6 mV/Pa; bias 12,5 V; corriente indicada 2,8 mA. No son un certificado | Electrónica IEPE obtiene identificación, ficha aplicable y certificado |
 | Límites de catálogo RG-50 | CONFIRMED documentalmente en [ROGA](https://www.roga-instruments.com/downloads/PDF/RG-50-EN.pdf): corriente 2–20 mA, alimentación 18–30 V, bias aproximado 12,5 V y sensibilidad nominal aproximada 50 mV/Pa | OPEN: contrastar con la unidad concreta; 2,4/2,8/4 mA dentro del intervalo de catálogo no demuestra funcionamiento con nuestro cable y circuito |
 | Fuente LT3092 | PROVISIONAL. [Datasheet Rev. D](https://www.analog.com/media/en/technical-documentation/data-sheets/lt3092.pdf): fuente ajustable; candidato LT3092EST#PBF en SOT-223, evitando DFN | Electrónica IEPE dimensiona resistencias, margen de tensión, ruido y disipación; ensaya 2,4/2,8/4 mA con cargas. [Simulación LTspice 2026-10-27](simulacion-lt3092.md): RSET 20 kΩ, ROUT 71,5 Ω (2,8 mA), CSET 100 nF, VIN 24 V; pendiente de T1 |
-| MCU / placa | PROVISIONAL: [NUCLEO-F446RE](https://www.st.com/en/evaluation-tools/nucleo-f446re.html), con STM32F446RE; [datasheet STM32](https://www.st.com/resource/en/datasheet/stm32f446re.pdf): ADC de 12 bits, DMA, I2S/SAI y USB FS | Adquisición digital define pines, relojes y periféricos sin conflictos |
+| MCU / placa | Propuesta anterior PROVISIONAL: [NUCLEO-F446RE](https://www.st.com/en/evaluation-tools/nucleo-f446re.html). Prototipo actual CONFIRMED como decisión: NUCLEO-L432KC; no implica inventario ni pruebas físicas | MCU final de PCB OPEN; ver pinout e implementación L432 en firmware |
 | ADC PCM1808PW | PROVISIONAL. [TI SLES177B, Rev. B](https://www.ti.com/lit/ds/symlink/pcm1808.pdf): estéreo, 24 bits, 8–96 kSPS, entrada single-ended nominal 3 Vpp, alimentación analógica 5 V/digital 3,3 V, TSSOP-14; I2S o justificado a izquierda | Adquisición digital valida formato estéreo y tratamiento del canal no usado según TI; IEPE adapta amplitud, bias y filtro |
 | ADC interno | PROVISIONAL: ruta de respaldo para adquisición/USB, con offset y límites de entrada correctos | No usar su resolución nominal como prueba de rango dinámico acústico |
 | Fabricación | CONFIRMED: preferir SMD convencional (SOT-223, TSSOP, SOIC, LQFP y pasivos accesibles); evitar QFN/BGA/via-in-pad cuando haya alternativa | Integración verifica MPN, footprint y reglas del fabricante antes de liberar |

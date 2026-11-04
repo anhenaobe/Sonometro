@@ -1,5 +1,32 @@
 # Pruebas de banco
 
+## Incremento AFE / L432 del 2026-11-04
+
+Las pruebas T1–T6 siguientes se conservan como plan previo; su procesamiento/calibración futuro no implica que estén implementados. El incremento actual **no resta offset, no filtra y no calcula SPL**. Capturas físicas OPEN.
+
+Validación reproducible desde raíz:
+
+```powershell
+python firmware/build.py --cube C:/Users/justa/.platformio/packages/framework-stm32cubel4 --gcc-bin C:/Users/justa/.platformio/packages/toolchain-gccarmnoneeabi/bin
+python -m unittest discover -s tests -p "test_*.py" -v
+python hardware/afe/calculate.py
+python hardware/afe/fetch_model.py
+python hardware/afe/run_suite.py --dll "C:/Program Files/KiCad/10.0/bin/ngspice.dll"
+```
+
+Se ejecutó compilación con GCC ARM12.3.1/HAL CubeL4 1.18.1 y ocho pruebas sintéticas de protocolo/RMS/FFT: aprobadas, sin equivaler a hardware. Build final: FLASH14464B y RAM23168B de SRAM1 (incluye reserva4KiB stack); ELF SHA256 `dfd26c5c56bcff811ae2e4dcc32aa4a1c268ea0ca8e8ed11830e1dbcb6878b2c`. SPICE AC/transitorio/esquinas ejecutados con modelo oficial TI en ngspice46; análisis de ruido incompatible **OPEN**, no aprobado como predicción. Ver resultados y límites en [AFE](../docs/analog-front-end.md). No se programó placa; enumeración solo encontró puertos serie Bluetooth.
+
+Prueba física siguiente, **sin micrófono ni IEPE**:
+
+1. Programar ELF mediante ST-LINK/SWD; identificar VCP. Medir VDDA y anotar revisión de placa/puentes SB2/SB3. Revisar cableado de [firmware](../firmware/README.md).
+2. Con ADC desconectado, ajustar generador a **1kHz,1Vpp,offset1,65V**; verificar con osciloscopio1,15–2,15V. Conectar señal a A0/PA0 CN4-12 y masa común. No usar salida centrada2,5V del AFE PCM.
+3. Ejecutar `python software/capture.py --port COMx --rate 48000 --output software/captures/banco001 --plot`. Exigir8192 muestras,16 bloques de512, CRC/índices/secuencia coherentes, adc_errors=0 y dropped_samples=0; flags GAP/VREF_ASSUMED esperados. La pausa entre ráfagas es intencional.
+4. Comparar fs nominal con referencia temporal real; para meta±0,1% medir reloj/temporización externamente, sin asumir precisión HSI. FFT debe ubicar1k dentro de un bin≈5,859Hz más incertidumbre del generador/reloj. Verificar seno sin clipping y escala con VDDA medida; RMS esperado **incluyendo DC** ≈sqrt(1,65²+0,5²/2)=1,68745V. No interpretar ese RMS como presión acústica.
+5. Repetir con1kSPS para comprobar espera8,192s (usar tono100Hz compatible), y realizar al menos20 capturas48k con nuevos prefijos; no concatenar pausas. Desconectar VCP durante transferencia: herramienta debe terminar con error y conservar `.iep` parcial/JSON, nunca presentar captura completa. Simular PC lento durante transferencia afecta transporte, no debe sobrescribir adquisición ya detenida.
+6. AFE separado: medir Vb y centro antes de conectar ADC; caracterizar Rs/DC del bloque previo. Con emulador protegido y carga ADC equivalente, barrer49,73µVp/1,5726mVp/78,817mVp/1,5726Vp/3,5165Vp a1k. A debe tener ganancia cargada calculada±1% y mantener margen del ADC; C alto solo hasta su límite declarado. Medir ruido20–20k y distorsión. Arranque/desconexión se ensayan con carga ficticia y osciloscopio, sin ADC, hasta demostrar protección en estados encendido/apagado.
+
+PCM1808: antes de activar código, comprobar SCKI12,288MHz, BCK3,072MHz, LRCK48k, niveles3,3V y pinout con analizador. Revisar frame64/slots32, I²S24 y signo/LR con señal conocida. Módulo preparado no incluye todavía callbacks/transporte completos: adquisición PCM sigue OPEN.
+
 Estado inicial **OPEN** en todas las pruebas: no ejecutadas. Las cifras de aceptación siguientes son metas **PROVISIONAL**, no especificaciones demostradas ni certificación. Acordar banda/rango y tolerancias con Integración antes de ensayar; cualquier cambio debe quedar fechado.
 
 ## Registro común

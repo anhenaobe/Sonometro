@@ -11,7 +11,9 @@ Micrófono IEPE externo → corriente constante → protección y acoplamiento A
 → acondicionamiento analógico → ADC de audio → STM32 → USB → Python/PC
 ```
 
-**PROVISIONAL:** LT3092, NUCLEO-F446RE y PCM1808 (24 bits, hasta 96 kSPS; se utilizaría un canal de su interfaz estéreo). Alternativa inicial: ADC interno STM32 de 12 bits para desarrollar adquisición, DMA y transferencia sin esperar el ADC externo. Ninguna ruta está implementada o probada todavía.
+**PROVISIONAL:** LT3092 y PCM1808. Desde 2026-11-04 la plataforma de prototipo es **NUCLEO-L432KC**, por decisión del equipo; NUCLEO-F446RE queda como propuesta anterior y la MCU final de PCB sigue OPEN. Hay [firmware STM32Cube HAL](firmware/README.md) compilable para ADC interno de 12 bits + temporizador + DMA y capturas por bloques vía ST-LINK VCP, y [herramienta Python](software/README.md). La adquisición física sigue OPEN; SAI/PCM1808 queda preparado, sin validación física.
+
+La [propuesta analógica](docs/analog-front-end.md) compara tres arquitecturas y entrega cálculos/netlists/simulaciones reproducibles. El contrato de protección, polarización y carga del acoplamiento previo sigue pendiente de cierre entre equipos.
 
 Referencia de sensor: ROGA RG-50. Los datos aportados de la unidad son 55,6 mV/Pa, bias de 12,5 V y corriente indicada de 2,8 mA; su aplicabilidad debe verificarse antes de conectarla. La prueba de 2,4/2,8/4 mA empieza con cargas de prueba, sin micrófono.
 
