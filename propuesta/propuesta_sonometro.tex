@@ -1,0 +1,620 @@
+% Propuesta: acondicionamiento de señal para micrófonos IEPE (sonómetro de un canal)
+% Compilar con:  tectonic propuesta_sonometro.tex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,}, group-separator={.}, per-mode=symbol}
+\usepackage{booktabs,tabularx,array,multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,babel}
+\usepackage[american,siunitx]{circuitikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small, frame=single, columns=fullflexible, keepspaces=true, showstringspaces=false}
+\usepackage{tcolorbox}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\nota}[1]{\textcolor{red!60!black}{\textbf{[#1]}}}
+
+\title{\textbf{Propuesta de acondicionamiento de señal\\para dos micrófonos IEPE}\\[4pt]
+\large Sonómetro de un canal con selección de micrófono}
+\author{Grupo: \nota{nombres} \\ Curso: \nota{nombre del curso} --- Prof.\ \nota{nombre}}
+\date{4 de noviembre de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{tcolorbox}[title=Resumen de la propuesta]
+Se propone alimentar los dos micrófonos disponibles (preamplificador \textbf{SVANTEK SV~12} y micrófono \textbf{ROGA RG-50}) con
+\textbf{fuentes de corriente constante} independientes construidas con componentes de paso (TL431 + transistor PNP),
+desde una fuente de \SI{24}{\volt}. Ambos micrófonos son de tipo \textbf{IEPE}: la información acústica viaja como una
+\textbf{tensión alterna montada sobre una tensión continua de polarización} ($\approx$\SIrange{8}{14}{\volt}) en el mismo
+cable coaxial que lleva la corriente de alimentación. La señal se extrae con un \textbf{condensador de acople}, se lleva a un
+nivel centrado en \SI{1.65}{\volt}, se amplifica ($G=11$), se filtra y se observa en (1) el \textbf{osciloscopio} del
+laboratorio y (2) el \textbf{ADC de un microcontrolador} que envía la forma de onda a un PC. Un conmutador permite
+elegir el micrófono. El montaje se hace sin PCB, con componentes conseguibles en Manizales (Electrónicos Caldas) y,
+para lo que falte, en Medellín (Didácticas Electrónicas). Costo estimado de componentes: \textbf{$\approx$ \$40.000--\$50.000~COP}
+(sin contar fuente de laboratorio ni osciloscopio).
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Contexto, objetivo y restricciones}
+
+\textbf{Objetivo.} Diseñar y montar la etapa de entrada de un sonómetro de un canal que permita:
+\begin{enumerate}
+  \item alimentar correctamente dos micrófonos de medición distintos y \textbf{seleccionar} cuál se usa;
+  \item \textbf{extraer} la señal acústica del cable de alimentación;
+  \item \textbf{visualizar} la forma de onda en el osciloscopio y en un microcontrolador.
+\end{enumerate}
+El cálculo de nivel de presión sonora (dB SPL, ponderación A, $L_{eq}$) queda como extensión opcional (sección~\ref{sec:extension}).
+
+\textbf{Restricciones.}
+\begin{itemize}
+  \item Fecha de entrega: \textbf{25 de noviembre de 2026} ($\approx$ 3 semanas).
+  \item No se puede fabricar PCB. Montaje en protoboard y/o sobre placa de cobre virgen (técnica ``Manhattan'').
+  \item Componentes comprados localmente (Manizales); preferencia por encapsulados de paso (DIP, TO-92).
+  \item Instrumentación disponible: osciloscopio de laboratorio, fuente de laboratorio, microcontrolador.
+\end{itemize}
+
+%=====================================================================
+\section{Los transductores}
+
+\subsection{Identificación}
+
+\textbf{SVANTEK SV 12 (n.º de serie 18210, recuperado).} En la nomenclatura de Svantek, ``SV~xx'' designa accesorios
+y ``SVAN~9xx'' los equipos. El SV~12 / SV~12L es el \textbf{preamplificador IEPE de media pulgada} que usan los sonómetros
+SVAN~94x, SVAN~958/958A y SVAN~977~\cite{svan977w,svan958a,sv977d}. Es decir, \emph{no es un micrófono completo}: la cápsula
+(prepolarizada, p.\,ej.\ MK~255 o ACO~7052E) se enrosca encima. El número 18210 es el serial del preamplificador.
+Se identifica por un conector \textbf{TNC} macho con rosca en la base. Si el conector fuera LEMO de 7 pines se trataría
+de un SV~17 o SV~18, que \emph{no} son IEPE~\cite{sv971a}. \nota{Verificar: tipo de conector y si tiene cápsula montada.}
+
+\textbf{ROGA Instruments RG-50.} Micrófono de $1/4''$ de tipo electret prepolarizado con electrónica IEPE integrada,
+clase~1, salida por conector \textbf{BNC} hembra~\cite{rg50}. ROGA fabrica modelos casi idénticos (MI17, MI19); la
+diferencia está en el grabado del cuerpo~\cite{roga14}.
+
+\subsection{Especificaciones relevantes}
+
+\begin{table}[H]
+\centering
+\caption{Especificaciones de alimentación y salida (fuentes: manuales Svantek y hoja de datos ROGA).}
+\label{tab:mics}
+\begin{tabularx}{\textwidth}{lYY}
+\toprule
+Parámetro & SVANTEK SV 12 / SV 12L & ROGA RG-50 \\
+\midrule
+Tipo & Preamplificador IEPE $1/2''$ para cápsulas prepolarizadas & Micrófono electret $1/4''$ con IEPE integrado \\
+Corriente de alimentación & \SI{1.5}{\milli\ampere} (SVAN~977) y \SI{2.5}{\milli\ampere} (SVAN~958A); máx.\ no publicado & \SIrange{2}{20}{\milli\ampere} (versiones antiguas: \SIrange{2}{6}{\milli\ampere}) \\
+Tensión de alimentación & hasta \SI{28}{\volt}--\SI{30}{\volt} & \SIrange{18}{30}{\volt} \\
+Tensión DC de polarización & \textbf{No publicada} (se medirá) & \SI{12.5}{\volt} \\
+Sensibilidad & La de la cápsula (\SIrange{20}{50}{\milli\volt\per\pascal}) $-$\SI{0.7}{\decibel} & \SI{50}{\milli\volt\per\pascal} nominal \\
+Respuesta en frecuencia & Depende de la cápsula & \SI{5}{\hertz}--\SI{30}{\kilo\hertz} \\
+Nivel máximo & $\geq$\SI{10.8}{\volt} pico a la salida & \SI{130}{\decibel} pico ($\approx$\SI{3.2}{\volt} pico) \\
+Conector & TNC (centro: señal + alimentación; malla: tierra) & BNC hembra \\
+Polarización 200 V / phantom 48 V & \textbf{No} (nunca aplicar) & \textbf{No} (nunca aplicar) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Conclusión para el diseño:} una corriente de \SI{2.5}{\milli\ampere} está dentro de lo documentado por ambos
+fabricantes. Aun así, como el grupo planteó usar corrientes distintas, la propuesta incluye una fuente de
+\SI{2.5}{\milli\ampere} para el SV~12 y otra de \SI{4}{\milli\ampere} (valor típico de la industria) para el RG-50.
+
+%=====================================================================
+\section{¿Cómo viaja la señal en un micrófono IEPE?}
+\label{sec:iepe}
+
+IEPE (\emph{Integrated Electronics Piezo-Electric}; también llamado ICP, CCLD o DeltaTron) es un esquema de \textbf{dos hilos}:
+un solo cable coaxial lleva la alimentación \emph{y} la señal~\cite{pcbguide,hbk}.
+
+\begin{enumerate}
+  \item El acondicionador entrega una \textbf{corriente constante} $I_0$ (típicamente \SIrange{2}{20}{\milli\ampere}) desde
+        una fuente de \SIrange{18}{30}{\volt}.
+  \item La electrónica interna del micrófono fija en el conector una \textbf{tensión DC de polarización} $V_B$ (\SIrange{8}{14}{\volt}).
+  \item La presión acústica $p(t)$ produce una variación de tensión que se \textbf{suma} a $V_B$:
+\end{enumerate}
+\begin{equation}
+  v_{\text{nodo}}(t) = V_B + S\cdot p(t),
+  \label{eq:iepe}
+\end{equation}
+donde $S$ es la sensibilidad en \si{\milli\volt\per\pascal}. \textbf{La información viaja como tensión, no como corriente}:
+la corriente es constante y solo sirve para alimentar. Para recuperar la señal basta eliminar la componente DC con un
+condensador (acople AC). La figura~\ref{fig:senal} lo ilustra.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[name=a1, width=7.2cm, height=4.6cm, xlabel={$t$ [ms]}, ylabel={$v_{\text{nodo}}$ [V]},
+  ymin=0, ymax=16, domain=0:3, samples=300, title={En el conector BNC}, grid=major]
+  \addplot[blue, thick] {12.5 + 1.0*sin(deg(2*pi*x))};
+  \addplot[red, dashed] {12.5};
+  \node[anchor=south west, font=\small] at (axis cs:0.05,13.6) {$V_B$};
+\end{axis}
+\begin{axis}[at={(a1.east)}, anchor=west, xshift=1.6cm, width=7.2cm, height=4.6cm, xlabel={$t$ [ms]},
+  ylabel={$v$ [V]}, ymin=-2, ymax=2, domain=0:3, samples=300, title={Después del condensador}, grid=major]
+  \addplot[blue, thick] {1.0*sin(deg(2*pi*x))};
+\end{axis}
+\end{tikzpicture}
+\caption{Señal IEPE (tono de \SI{1}{\kilo\hertz}, amplitud exagerada): DC de polarización + señal acústica, y la misma señal tras el acople AC.}
+\label{fig:senal}
+\end{figure}
+
+\textbf{Órdenes de magnitud} con $S=\SI{50}{\milli\volt\per\pascal}$ (RG-50):
+\begin{itemize}
+  \item Voz a \SI{1}{\metre} ($\approx$\SI{60}{\decibel} SPL, \SI{0.02}{\pascal}): $\approx$\SI{1}{\milli\volt} rms.
+  \item Parlante de celular cerca ($\approx$\SIrange{80}{90}{\decibel}): $\approx$\SIrange{5}{16}{\milli\volt} rms.
+  \item Calibrador acústico \SI{94}{\decibel} (\SI{1}{\pascal}): \SI{50}{\milli\volt} rms.
+\end{itemize}
+
+\textbf{Longitud de cable.} PCB Piezotronics da la frecuencia máxima que la corriente puede excitar en la capacidad del cable~\cite{pcbcable}:
+\begin{equation}
+  f_{\max} = \frac{10^9}{2\pi\, C\, \dfrac{V_p}{I_c - 1}}\quad [\si{\hertz}],\qquad C\ [\si{\pico\farad}],\ V_p\ [\si{\volt}],\ I_c\ [\si{\milli\ampere}].
+\end{equation}
+Con \SI{10}{\metre} de RG-58 ($\approx$\SI{1000}{\pico\farad}), $V_p=\SI{3.2}{\volt}$ e $I_c=\SI{2.5}{\milli\ampere}$:
+$f_{\max}\approx\SI{75}{\kilo\hertz}$, muy por encima de \SI{20}{\kilo\hertz}. Con cables de banco ($\leq$\SI{2}{\metre}) no hay
+ninguna limitación. \textbf{La corriente no necesita ser grande ni precisa}; TI lo resume así: ``la exactitud de la
+fuente de corriente no es crítica, pero sí el rango de compliancia, el ruido y la regulación''~\cite{tida010249}.
+
+%=====================================================================
+\section{Arquitectura propuesta}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  blk/.style={draw, rounded corners, thick, align=center, minimum height=1.05cm, minimum width=2.2cm, font=\small},
+  >={Stealth}]
+  \node[blk, fill=gray!10] (ps) at (0,0) {Fuente\\\SI{24}{\volt}};
+  \node[blk, fill=blue!8] (ia) at (2.9,1.1) {Fuente I\\\SI{2.5}{\milli\ampere}};
+  \node[blk, fill=blue!8] (ib) at (2.9,-1.1) {Fuente I\\\SI{3.9}{\milli\ampere}};
+  \node[blk, fill=green!8] (ma) at (5.8,1.1) {SV 12\\(TNC$\to$BNC)};
+  \node[blk, fill=green!8] (mb) at (5.8,-1.1) {RG-50\\(BNC)};
+  \node[blk, fill=orange!10] (sel) at (8.7,0) {Acople AC\\+ selector};
+  \node[blk, fill=orange!10] (amp) at (11.6,0) {Ganancia\\$G=11$\\+ $V_{MID}$};
+  \node[blk, fill=orange!10] (aa) at (11.6,-2.9) {Filtro\\antialias};
+  \node[blk, fill=purple!8] (adc) at (8.7,-2.9) {ADC\\(Pico / ESP32)};
+  \node[blk, fill=purple!8] (pc) at (5.8,-2.9) {PC\\(Python)};
+  \node[blk, fill=red!8] (osc) at (11.6,2.6) {Osciloscopio};
+  \draw[->] (ps) -- (ia); \draw[->] (ps) -- (ib);
+  \draw[->] (ia) -- (ma); \draw[->] (ib) -- (mb);
+  \draw[->] (ma) -- (sel); \draw[->] (mb) -- (sel);
+  \draw[->] (sel) -- (amp); \draw[->] (amp) -- (aa); \draw[->] (aa) -- (adc); \draw[->] (adc) -- (pc);
+  \draw[->, dashed] (ma.north) |- (osc.west) node[pos=0.75, above, font=\scriptsize]{BNC directo, acople AC};
+  \draw[->, dashed] (amp) -- (osc);
+\end{tikzpicture}
+\caption{Diagrama de bloques. Las líneas punteadas son los puntos de observación con el osciloscopio.}
+\label{fig:bloques}
+\end{figure}
+
+El desarrollo se plantea en dos hitos que se pueden demostrar por separado:
+\begin{description}
+  \item[Hito 1 (mínimo viable):] fuente de corriente + micrófono + osciloscopio con acople AC. Basta para ``ver la forma de
+        onda'' y no requiere amplificador.
+  \item[Hito 2:] etapa de acople, ganancia y filtro hacia el ADC del microcontrolador, y gráfica en el PC.
+\end{description}
+
+%=====================================================================
+\section{Fuente de corriente constante}
+
+\subsection{Opciones evaluadas}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación de fuentes de corriente para IEPE (\SIrange{2}{20}{\milli\ampere}, compliancia \SIrange{18}{30}{\volt}).}
+\label{tab:fuentes}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}YY>{\raggedright\arraybackslash}p{2.6cm}}
+\toprule
+Opción & Ventajas & Desventajas & Disponibilidad \\
+\midrule
+\textbf{TL431 + PNP} (elegida) & Pocos componentes de paso, caída $\approx$\SI{2}{\volt}, corriente fija por una sola resistencia; funciona igual a \SI{2.5}{} y \SI{4}{\milli\ampere} & Exactitud $\pm$\SIrange{3}{5}{\percent} (suficiente para IEPE) & TL431 en stock local; PNP 2N3906/BC557 comunes \\
+LM334 & El clásico; $I=\SI{67.7}{\milli\volt}/R$, caída $\approx$\SI{1}{\volt}~\cite{lm334} & Deriva $+$\SI{0.34}{\percent\per\celsius}; máx.\ \SI{10}{\milli\ampere} & \textbf{No disponible localmente} (pedido especial 10--16 días) \\
+LM317 como fuente & Muy común; $I=\SI{1.25}{\volt}/R$; usado por Endevco~\cite{endevco} & Requiere corriente mínima de carga \SIrange{3.5}{10}{\milli\ampere}~\cite{lm317}: \textbf{no sirve para \SI{2.5}{\milli\ampere}} & En stock local \\
+JFET + resistencia & Muy simple & $I_{DSS}$ varía 3--5$\times$ entre unidades: hay que ajustar cada una & J111/J112 en stock \\
+Diodo regulador (CRD, E-352) & Lo que usa PCB en sus acondicionadores~\cite{pcbguide} & Valor fijo; difícil de conseguir & No disponible \\
+LT3092 (ADI) & Referencia de ADI en CN0540/CN0582~\cite{cn0540,cn0582} & Solo SMD & No disponible \\
+Op-amp + transistor & Máxima exactitud (TI TIDA-010249)~\cite{tida010249,slyt768} & Más complejo; requiere op-amp \emph{rail-to-rail} & Parcial \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Circuito elegido: referencia TL431 + transistor PNP}
+
+El TL431 conectado como referencia (pin REF unido al cátodo) mantiene \SI{2.495}{\volt} entre $V_{CC}$ y la base del PNP.
+El emisor queda una caída $V_{EB}\approx\SI{0.65}{\volt}$ por encima de la base, de modo que sobre $R_E$ hay una tensión
+constante y, por tanto, una corriente constante que sale por el colector hacia el micrófono (figura~\ref{fig:fuente}).
+Es la misma idea de ``referencia + transistor'' que analiza TI en~\cite{slyt768}.
+
+\begin{figure}[tbp]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  \coordinate (top) at (0,7);
+  \draw (-0.5,7) node[left]{$V_{CC}=\SI{24}{\volt}$} -- (7.5,7);
+  % TL431 (cátodo arriba)
+  \draw (2,4) to[zD, l={TL431 (REF unido a K)}, *-*] (2,7);
+  \draw (2,4) to[R, l_={$R_Z=\SI{10}{\kilo\ohm}$}] (2,1) node[ground]{};
+  % PNP
+  \node[pnp, anchor=B] (Q) at (4.2,4) {};
+  \node[right=0.05cm of Q.text, font=\small] {2N3906 / BC557};
+  \draw (2,4) -- (Q.B);
+  \draw (Q.E |- top) to[R, l={$R_E$}, *-] (Q.E);
+  \draw (Q.C) -- ++(0,-1.0) coordinate (N);
+  \draw (N) to[short, *-o, i>^={$I_0$}] ++(3,0) node[right, align=left]{Nodo IEPE\\(centro BNC)};
+  \draw (N) -- ++(0,-0.4) node[below, font=\small]{\textit{a $C_1$ (fig.~\ref{fig:acople})}};
+  % desacople
+  \draw (7.2,7) to[C, l={\SI{100}{\nano\farad}}, *-] (7.2,5.2) node[ground]{};
+\end{circuitikz}
+\caption{Fuente de corriente de un canal. Se construyen dos: $R_E=\SI{750}{\ohm}$ (\SI{2.5}{\milli\ampere}, SV 12) y
+$R_E=\SI{470}{\ohm}$ (\SI{3.9}{\milli\ampere}, RG-50). La malla del BNC va a tierra.}
+\label{fig:fuente}
+\end{figure}
+
+\textbf{Cálculos.}
+\begin{align}
+  I_0 &\approx \frac{V_{REF}-V_{EB}}{R_E} = \frac{\SI{2.495}{\volt}-\SI{0.65}{\volt}}{R_E} = \frac{\SI{1.845}{\volt}}{R_E} \\
+  R_E(\SI{2.5}{\milli\ampere}) &= \SI{738}{\ohm}\ \Rightarrow\ \SI{750}{\ohm}\ (I_0=\SI{2.46}{\milli\ampere}) \\
+  R_E(\SI{4}{\milli\ampere}) &= \SI{461}{\ohm}\ \Rightarrow\ \SI{470}{\ohm}\ (I_0=\SI{3.93}{\milli\ampere}) \\
+  I_Z &= \frac{V_{CC}-V_{REF}}{R_Z} = \frac{\SI{21.5}{\volt}}{\SI{10}{\kilo\ohm}} = \SI{2.15}{\milli\ampere}\ \ (\geq \SI{1}{\milli\ampere}\text{ requerido por el TL431~\cite{tl431}})
+\end{align}
+
+\textbf{Compliancia y margen de señal.} La tensión máxima que puede alcanzar el nodo es
+\begin{equation}
+  V_{\text{nodo,máx}} \approx V_{CC} - (V_{REF}-V_{EB}) - V_{CE,sat} \approx 24 - 1{,}85 - 0{,}3 \approx \SI{21.9}{\volt}.
+\end{equation}
+Con $V_B=\SI{12.5}{\volt}$ (RG-50) quedan $\approx$\SI{9}{\volt} de excursión positiva, frente a \SI{3.2}{\volt} pico que
+entrega el micrófono a \SI{130}{\decibel}. La disipación del PNP es $(V_E-V_B)\,I_0\approx 9{,}6\times 4\approx\SI{40}{\milli\watt}$,
+muy por debajo de los \SI{625}{\milli\watt} del encapsulado TO-92.
+
+\textbf{Observaciones.}
+\begin{itemize}
+  \item La exactitud ($\pm$\SIrange{3}{5}{\percent}, dominada por $V_{EB}$) es suficiente: los fabricantes de IEPE aceptan
+        \SIrange{2}{20}{\milli\ampere}. Se mide la corriente real y, si hace falta, se ajusta $R_E$.
+  \item No se coloca condensador directamente sobre el TL431 (ciertos valores lo vuelven inestable~\cite{tl431}).
+  \item Si el micrófono se desconecta, el nodo sube a $\approx$\SI{22}{\volt} (circuito abierto) y la corriente cae a cero:
+        la fuente \emph{falla de forma segura}. Nunca se conecta una tensión al micrófono sin limitación de corriente~\cite{pcbguide}.
+  \item Alternativa si se consigue un LM334: $R=\SI{68}{\milli\volt}/I_0$ ($\SI{27}{\ohm}\to\SI{2.5}{\milli\ampere}$; $\SI{18}{\ohm}\to\SI{3.8}{\milli\ampere}$).
+\end{itemize}
+
+%=====================================================================
+\section{Selección entre los dos micrófonos}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Dos formas de seleccionar el micrófono.}
+\begin{tabularx}{\textwidth}{lYY}
+\toprule
+ & \textbf{A. Dos fuentes, selector después del acople (recomendada)} & B. Una fuente con conmutador DPDT \\
+\midrule
+Funcionamiento & Cada micrófono tiene su fuente, su $C_1$ y su $R_B$, ambos siempre alimentados. Un interruptor SPDT elige qué señal (ya sin DC) entra al amplificador. & Un polo conmuta $R_E$ (\SI{750}{\ohm} / \SI{470}{\ohm}); el otro conmuta la salida de la fuente al BNC A o al BNC B. \\
+Transitorio al conmutar & Ninguno: los condensadores ya están cargados & Salto de $\approx$\SI{12}{\volt} en $C_1$ y arranque del micrófono; hay que esperar unos segundos \\
+Componentes extra & 1 TL431, 1 PNP, 3 resistencias, 1 condensador ($\approx$\$3.000 COP) & Conmutador DPDT \\
+Consumo & $\approx$\SI{6.4}{\milli\ampere} + \SI{4.3}{\milli\ampere} ($R_Z$) & $\approx$\SI{4}{\milli\ampere} + \SI{2.2}{\milli\ampere} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \node[draw, rounded corners, thick, align=center, minimum width=2.4cm, minimum height=1cm] (FA) at (0,2) {Fuente A\\\SI{2.5}{\milli\ampere}};
+  \node[draw, rounded corners, thick, align=center, minimum width=2.4cm, minimum height=1cm] (FB) at (0,-1) {Fuente B\\\SI{3.9}{\milli\ampere}};
+  \draw (FA.east) -- (2,2) coordinate (NA);
+  \draw (FB.east) -- (2,-1) coordinate (NB);
+  \draw (NA) to[short, *-o] (2,3) node[above]{SV 12};
+  \draw (NB) to[short, *-o] (2,0) node[above]{RG-50};
+  \draw (NA) to[C, l={$C_{1A}$}] (4.5,2) coordinate (XA);
+  \draw (NB) to[C, l={$C_{1B}$}] (4.5,-1) coordinate (XB);
+  \draw (XA) to[R, l={$R_{BA}$}, *-] (4.5,0.4) node[below, font=\small]{$V_{MID}$};
+  \draw (XB) to[R, l={$R_{BB}$}, *-] (4.5,-2.6) node[below, font=\small]{$V_{MID}$};
+  \node[spdt, xscale=-1, anchor=in] (S) at (8,0.5) {};
+  \draw (XA) -- (6.2,2) |- (S.out 1);
+  \draw (XB) -- (6.2,-1) |- (S.out 2);
+  \draw (S.in) -- ++(0.6,0) node[right, align=left]{a $R_S$ y\\amplificador};
+\end{circuitikz}
+\caption{Opción A: dos canales siempre alimentados y selector después del acople.}
+\label{fig:selector}
+\end{figure}
+
+%=====================================================================
+\section{Extracción y acondicionamiento de la señal}
+
+\begin{figure}[H]
+\centering
+\begin{circuitikz}[scale=0.92, transform shape]
+  % acople
+  \draw (0,3) node[left]{Nodo IEPE} to[short, o-] (0.4,3) to[C, l={$C_1$}] (2.6,3) coordinate (A);
+  \draw (A) to[R, l_={$R_B$}, *-] (2.6,1.1) node[below]{$V_{MID}$};
+  \draw (A) to[R, l={$R_S$}] (5,3) coordinate (P);
+  % protección
+  \draw (P) to[D, *-] (5,4.6) node[above]{$+\SI{3.3}{\volt}$};
+  \draw (5,1.4) node[ground]{} to[D] (P);
+  % op-amp
+  \node[op amp, noinv input up, anchor=+] (U) at (6.2,3) {};
+  \draw (P) -- (U.+);
+  \draw (U.-) -- ++(-0.4,0) -- ++(0,-2.1) coordinate (M);
+  \draw (M) to[R, l_={$R_G$}] ++(-2,0) node[left]{$V_{MID}$};
+  \draw (M) to[R, l={$R_F$}, *-] (M -| U.out) coordinate (Fo);
+  \draw (Fo) -- (U.out);
+  \draw (M) -- ++(0,-1.2) coordinate (M2) to[C, l_={$C_F$}] (M2 -| Fo) -- (Fo);
+  % salida
+  \draw (U.out) to[short, *-] ++(0.6,0) coordinate (O) to[R, l={$R_O$}] ++(2.2,0) coordinate (ADC) to[short, -o] ++(0.9,0) node[right]{ADC};
+  \draw (ADC) to[C, l={$C_O$}, *-] ++(0,-1.8) node[ground]{};
+  \draw (O) to[short, -o] ++(0,1.2) node[above]{Osciloscopio};
+\end{circuitikz}
+\caption{Acople AC, protección, ganancia no inversora y filtro antialias. Op-amp: MCP6002 alimentado a \SI{3.3}{\volt} (o LM358 a \SI{5}{\volt}).}
+\label{fig:acople}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Valores propuestos para la figura~\ref{fig:acople}.}
+\begin{tabularx}{\textwidth}{llY}
+\toprule
+Componente & Valor & Función \\
+\midrule
+$C_1$ & \SI{1}{\micro\farad} poliéster, $\geq$\SI{63}{\volt} & Bloquea la DC ($V_B$). Debe soportar $\approx$\SI{22}{\volt} en circuito abierto \\
+$R_B$ & \SI{100}{\kilo\ohm} & Referencia la señal a $V_{MID}=\SI{1.65}{\volt}$ (en vez de tierra) \\
+$R_S$ + 2$\times$1N4148 & \SI{4.7}{\kilo\ohm} & Limita la corriente cuando se conecta un micrófono en caliente (salto de $\pm$\SI{12}{\volt}) \\
+$R_F$, $R_G$ & \SI{10}{\kilo\ohm}, \SI{1}{\kilo\ohm} & Ganancia $G=11$ \\
+$C_F$ & \SI{470}{\pico\farad} & Polo en \SI{34}{\kilo\hertz} \\
+$R_O$, $C_O$ & \SI{1}{\kilo\ohm}, \SI{4.7}{\nano\farad} & Antialias de 1.\textsuperscript{er} orden (\SI{34}{\kilo\hertz}) y protección del pin ADC \\
+$V_{MID}$ & \SI{10}{\kilo\ohm}/\SI{10}{\kilo\ohm} + \SI{10}{\micro\farad} + seguidor & Tensión de media escala con baja impedancia (segunda mitad del op-amp) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Cálculos.}
+\begin{align}
+  f_{c,\text{acople}} &= \frac{1}{2\pi R_B C_1} = \frac{1}{2\pi(\SI{100}{\kilo\ohm})(\SI{1}{\micro\farad})} = \SI{1.6}{\hertz}
+  \qquad (\text{pérdida a } \SI{20}{\hertz}: \SI{0.03}{\decibel}) \\
+  \tau &= R_B C_1 = \SI{0.1}{\second}\ \Rightarrow\ \text{estable tras } 5\tau \approx \SI{0.5}{\second} \\
+  G &= 1 + \frac{R_F}{R_G} = 11, \qquad f_{p} = \frac{1}{2\pi R_F C_F} \approx \SI{34}{\kilo\hertz} \\
+  v_{\text{ADC}}(t) &= V_{MID} + G\cdot S\cdot p(t)
+\end{align}
+Con el ADC de \SIrange{0}{3.3}{\volt} y $\pm$\SI{1.5}{\volt} útiles alrededor de \SI{1.65}{\volt}, la entrada máxima es
+\SI{136}{\milli\volt} pico. Con \SI{50}{\milli\volt\per\pascal} el sistema satura hacia $\approx$\SI{100}{\decibel} SPL, y un
+calibrador de \SI{94}{\decibel} produce \SI{0.78}{\volt} pico en el ADC. Para sonidos débiles se puede subir a $G=101$
+($R_F=\SI{100}{\kilo\ohm}$).
+
+\textbf{Elección del op-amp.} El TL072 y el NE5532 (en stock local) necesitan alimentación partida o mayor a
+\SI{10}{\volt}; sirven para una salida al osciloscopio pero no para entregar \SIrange{0}{3.3}{\volt} al ADC. Se propone el
+\textbf{MCP6002} (\emph{rail-to-rail}, \SI{1}{\mega\hertz}, DIP-8), alimentado desde los \SI{3.3}{\volt} del microcontrolador.
+Alternativa local: \textbf{LM358} alimentado a \SI{5}{\volt}, cuya entrada y salida cubren \SIrange{0}{3.5}{\volt}.
+Los diodos y $R_O$ impiden que el pin del ADC reciba más de \SI{3.3}{\volt}.
+
+\textbf{Detección de fallas (opcional).} La tensión DC del nodo indica el estado del micrófono~\cite{hbk,tida010249}:
+$<\SI{2}{\volt}$ = cortocircuito; \SIrange{7}{14}{\volt} = normal; $\approx$\SI{22}{\volt} = circuito abierto o micrófono dañado.
+Basta un multímetro, o un divisor \SI{1}{\mega\ohm}/\SI{120}{\kilo\ohm} hacia otro canal del ADC.
+
+%=====================================================================
+\section{Visualización}
+
+\subsection{Osciloscopio (Hito 1)}
+Se conecta una T BNC en el nodo IEPE (o se mide en la salida del amplificador):
+\begin{itemize}
+  \item Acople \textbf{AC} (elimina los $\approx$\SI{12}{\volt} de DC), \SIrange{5}{20}{\milli\volt}/div en el nodo.
+  \item Base de tiempo \SI{200}{\micro\second}/div para un tono de \SI{1}{\kilo\hertz}.
+  \item Límite de ancho de banda (\SI{20}{\mega\hertz}) activado, disparo con rechazo de HF, promediado si hay ruido.
+  \item Función \textbf{FFT} del osciloscopio para mostrar el pico de \SI{1}{\kilo\hertz} y el zumbido de \SI{60}{\hertz}.
+\end{itemize}
+
+\subsection{Microcontrolador (Hito 2)}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Microcontroladores considerados.}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{2.8cm}Y>{\raggedright\arraybackslash}p{2.7cm}}
+\toprule
+Placa & ADC & Comentario & Disponibilidad \\
+\midrule
+\textbf{Raspberry Pi Pico} (recomendada) & 12 bits, \SI{500}{kS/s}, \SIrange{0}{3.3}{\volt} & Ejemplo oficial \texttt{adc/dma\_capture}~\cite{picoex}. ENOB $\approx$8,7 bits~\cite{rp2040err}: suficiente para ver la onda & Didácticas (\$19.900) \\
+ESP32 DevKitC & 12 bits, modo continuo (DMA) & No lineal; ventana útil $\approx$\SIrange{0.15}{2.45}{\volt}: usar $V_{MID}\approx\SI{1.3}{\volt}$ y menor ganancia. Usar ADC1~\cite{espadc} & Caldas (\$27.300) \\
+Arduino Uno & 10 bits, $\approx$\SI{10}{kS/s} & Solo ráfagas cortas a \SI{1}{\kilo\hertz}; 2~kB de RAM & Caldas \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Frecuencia de muestreo.} Para ver la forma de un tono de \SI{1}{\kilo\hertz} bastan 20--50 muestras por ciclo
+(\SIrange{20}{50}{kS/s}). Para toda la banda de audio, Nyquist exige $f_s>\SI{40}{\kilo\hertz}$; con el
+antialias de \SI{34}{\kilo\hertz} se recomienda sobremuestrear a \SIrange{100}{200}{kS/s} (posible en el Pico).
+
+\textbf{Captura por ráfagas.} Un puerto serie a \SI{115200}{baud} transmite $\approx$\SI{11.5}{kB/s},
+insuficiente para transmitir audio en tiempo real. Por eso el microcontrolador \textbf{captura un bloque} (p.\,ej.\ 4096
+muestras) en RAM vía DMA y luego lo envía. En el PC, un script de Python grafica la forma de onda y su FFT:
+
+\begin{lstlisting}[language=Python]
+import serial, numpy as np, matplotlib.pyplot as plt
+FS = 100_000                                   # frecuencia de muestreo [Hz]
+s = serial.Serial("COM5", 115200, timeout=5)   # puerto del Pico
+s.write(b"c")                                  # pedir una captura
+x = np.array([int(l) for l in s.read_until(b"END").decode().split()[:-1]])
+v = x * 3.3 / 4095                             # cuentas -> voltios
+t = np.arange(len(v)) / FS * 1e3
+f = np.fft.rfftfreq(len(v), 1/FS)
+V = 20*np.log10(np.abs(np.fft.rfft((v - v.mean()) * np.hanning(len(v)))) + 1e-12)
+fig, (a, b) = plt.subplots(2, 1)
+a.plot(t, v); a.set_xlabel("t [ms]"); a.set_ylabel("V")
+b.plot(f, V); b.set_xlabel("f [Hz]"); b.set_ylabel("dB")
+plt.show()
+\end{lstlisting}
+Alternativas sin programar la interfaz: \emph{SerialPlot}~\cite{serialplot} o \emph{Scoppy} (osciloscopio con Pico + app Android)~\cite{scoppy}.
+
+%=====================================================================
+\section{Alimentación, tierra y ruido}
+
+\begin{itemize}
+  \item \textbf{Fuente:} fuente de laboratorio a \SI{24}{\volt} con límite de corriente en \SIrange{30}{50}{\milli\ampere}
+        (o dos baterías de \SI{12}{\volt} en serie, la opción más silenciosa). Diodo 1N4007 en serie contra inversión de
+        polaridad, filtro RC \SI{47}{\ohm} + \SI{100}{\micro\farad}/\SI{35}{\volt} + \SI{100}{\nano\farad}.
+  \item \textbf{Nunca} conectar \SI{24}{\volt} directo al BNC, ni usar phantom de \SI{48}{\volt}~\cite{pcbguide}.
+  \item \textbf{El amplificador} se alimenta con los \SI{3.3}{\volt} del microcontrolador. Las tierras (malla BNC, negativo de \SI{24}{\volt}, GND del micro)
+        se unen en \textbf{un solo punto} (tierra en estrella) junto a los BNC.
+  \item \textbf{El ruido dominante} a frecuencias de audio no es la fuente de corriente (su aporte, estimado en
+        $\approx$\SI{4}{\micro\volt} rms, es menor que el ruido propio del micrófono), sino el \textbf{zumbido de \SI{60}{\hertz}}
+        por lazos de tierra: osciloscopio a tierra física + fuente + USB del PC. Medidas: fuente flotante o baterías,
+        portátil con batería al usar el USB, cable coaxial corto.
+\end{itemize}
+
+%=====================================================================
+\section{Construcción sin PCB}
+
+\textbf{¿Protoboard o no?} La capacitancia entre filas de una protoboard es de $\approx$\SI{2}{\pico\farad}~\cite{breadboard}; a
+\SI{20}{\kilo\hertz} eso es $\approx$\SI{4}{\mega\ohm} de reactancia, despreciable frente a la salida de $<\SI{50}{\ohm}$ del micrófono.
+Analog Devices desaconseja la protoboard para circuitos analógicos de alto desempeño~\cite{mt100}, pero para audio con fuente
+de baja impedancia suele ser utilizable si se cuidan las tierras. Plan propuesto:
+\begin{enumerate}
+  \item \textbf{Prototipo en protoboard} con cables cortos, condensadores de desacople en cada op-amp, la protoboard
+        dentro de una lata metálica conectada a tierra y los BNC fijos a la lata (no colgando de la protoboard). Se mide el ruido
+        con la entrada en corto.
+  \item \textbf{Si hay demasiado ruido}, se rehace sobre \textbf{placa de cobre virgen} en técnica \emph{Manhattan}~\cite{manhattan}:
+        toda la placa es plano de tierra, los nodos se hacen con pequeños cuadros de cobre pegados, no hay que perforar, y son
+        $\approx$20 soldaduras. Es más rápido y limpio que la perforada punto a punto.
+  \item Para el op-amp: zócalo DIP pegado sobre la placa, o el op-amp invertido (\emph{dead bug}).
+\end{enumerate}
+
+%=====================================================================
+\section{Plan de pruebas}
+
+\begin{enumerate}
+  \item \textbf{Fuente de corriente con carga ficticia.} Amperímetro en serie con una resistencia de \SI{3.3}{\kilo\ohm} ($\approx$ un
+        micrófono a \SI{12}{\volt}). Variar la resistencia de \SI{0}{} a \SI{4.7}{\kilo\ohm} y verificar que $I_0$ no cambia más
+        de unos pocos por ciento. Medir la tensión en circuito abierto ($\approx$\SI{22}{\volt}).
+  \item \textbf{RG-50.} Conectar, esperar \SI{1}{\minute}, medir $V_B$ con multímetro (esperado \SI{12.5}{\volt}). Observar en el
+        osciloscopio (AC) la respuesta a la voz y a un tono de \SI{1}{\kilo\hertz} de un celular.
+  \item \textbf{SV 12 recuperado.} (a) Verificar si tiene cápsula: sin cápsula no responde al sonido; no tocar el pin central.
+        (b) Conectar con adaptador TNC hembra--BNC macho a la fuente de \SI{2.5}{\milli\ampere}. (c) Medir $V_B$ tras \SI{1}{\minute}:
+        un valor estable entre \SI{2}{} y \SI{20}{\volt} indica que está vivo (registrar el valor, no es público);
+        $\approx$\SI{22}{\volt} indica circuito abierto/dañado; $\approx$\SI{0}{\volt} indica corto. (d) Prueba acústica con
+        el celular. (e) Si no tiene cápsula: inyectar una senoidal de $\leq$\SI{1}{\volt} a través de \SI{18}{\pico\farad}
+        (el ``dummy'' ST~02 de Svantek) y verificar la salida (atenuación $\approx$\SI{0.7}{\decibel})~\cite{svan977w}.
+  \item \textbf{Cadena de ADC.} Con el generador de funciones (\SI{1}{\kilo\hertz}, \SI{50}{\milli\volt}) en lugar del
+        micrófono, verificar $G=11$, nivel medio de \SI{1.65}{\volt} y la ausencia de recorte.
+  \item \textbf{Ruido.} Entrada en corto: medir el piso de ruido y el zumbido de \SI{60}{\hertz} en el osciloscopio y en la FFT.
+\end{enumerate}
+
+%=====================================================================
+\section{Lista de materiales y costo estimado}
+
+Precios consultados en línea el 4 de noviembre de 2026; \textbf{verificar existencias} antes de ir
+(Electrónicos Caldas: 321~896~5106). Los artículos sin precio se estiman.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{Yllr}
+\toprule
+Artículo & Cant. & Proveedor & Costo [COP] \\
+\midrule
+TL431 & 2 & Electrónicos Caldas & 1.100 \\
+Transistor PNP 2N3906 / BC557 & 2 (+2 repuesto) & Local (\nota{verificar}) & $\approx$2.000 \\
+Condensador poliéster \SI{1}{\micro\farad} & 2 & Electrónicos Caldas & 900 \\
+Resistencias, 1N4148, 1N4007, condensadores varios & --- & Electrónicos Caldas & $\approx$5.000 \\
+MCP6002 (DIP-8) \textit{o} LM358 & 1 & Didácticas \textit{o} Caldas & 3.142 \textit{o} 1.100 \\
+Conector BNC hembra de chasis & 2 & Didácticas (CON-035A) & 4.056 \\
+Adaptador TNC hembra -- BNC macho (para el SV 12) & 1 & Didácticas & 3.928 \\
+Interruptor SPDT de palanca & 1 & Local & $\approx$1.500 \\
+Placa de cobre virgen $10\times5$ cm & 1 & Electrónicos Caldas & 1.500 \\
+Raspberry Pi Pico \textit{(o ESP32 DevKitC)} & 1 & Didácticas \textit{(o Caldas)} & 19.897 \textit{(27.300)} \\
+Caja: lata metálica reutilizada & 1 & --- & 0 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total aproximado} (sin envío)} & \textbf{$\approx$ 43.000} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+Elementos del laboratorio: fuente de \SI{24}{\volt}, osciloscopio, multímetro, generador de funciones, cables BNC y T BNC, protoboard.
+
+%=====================================================================
+\section{Cronograma}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lY}
+\toprule
+Fecha & Actividad \\
+\midrule
+4--7 nov & Presentar esta propuesta y obtener aprobación. Identificar físicamente los micrófonos. \\
+7--10 nov & Compra de componentes (recogida en Electrónicos Caldas + pedido a Didácticas). \\
+10--13 nov & Montaje de las fuentes de corriente, prueba con carga ficticia, prueba del SV 12. \textbf{Hito 1: forma de onda en el osciloscopio.} \\
+13--18 nov & Etapa de acople, ganancia y antialias; captura con el microcontrolador; script de Python. \textbf{Hito 2.} \\
+18--21 nov & Traslado a placa de cobre / caja metálica, medición de ruido, ajustes. \\
+21--24 nov & Informe y presentación. \\
+\textbf{25 nov} & \textbf{Entrega.} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+%=====================================================================
+\section{Riesgos y preguntas abiertas}
+
+\begin{itemize}
+  \item \textbf{El SV 12 recuperado puede estar dañado o no tener cápsula.} Mitigación: el sistema se demuestra con el RG-50; el
+        SV 12 se caracteriza eléctricamente (polarización y prueba con \SI{18}{\pico\farad}).
+  \item \textbf{Datos no publicados del SV 12:} tensión de polarización y corriente máxima. Se usa \SI{2.5}{\milli\ampere}, valor
+        documentado por Svantek.
+  \item \textbf{Versión del RG-50:} si es antigua, el rango es \SIrange{2}{6}{\milli\ampere}; los \SI{3.9}{\milli\ampere} propuestos sirven igual.
+  \item \textbf{Disponibilidad y tiempos de envío} desde Medellín: hay alternativas locales para casi todo (LM358, ESP32).
+  \item \textbf{Zumbido de \SI{60}{\hertz}:} plan de tierras y blindaje descrito en las secciones 9 y 10.
+\end{itemize}
+
+\subsection{Extensión opcional: nivel de presión sonora}
+\label{sec:extension}
+Con la sensibilidad $S$ conocida, el nivel se obtiene de las muestras como
+\begin{equation}
+  L_p = 20\log_{10}\!\left(\frac{v_{\text{rms}}/(G\,S)}{\SI{20}{\micro\pascal}}\right)\ \si{\decibel}\ \text{SPL},
+\end{equation}
+y la ponderación A puede aplicarse con un filtro digital (por ejemplo, el del proyecto \texttt{esp32-i2s-slm}~\cite{slm}).
+
+%=====================================================================
+\begin{thebibliography}{99}
+\small
+\bibitem{svan977w} Svantek, \emph{SVAN 977W — Appendix C: Technical specifications}, 2017. \url{https://svantek.com/wp-content/uploads/2021/05/svan_977w_appendix_c_2017-03-06.pdf}
+\bibitem{svan958a} Svantek, \emph{SVAN 958A User Manual} v1.02, 2023. \url{https://svantek.com/wp-content/uploads/2023/01/SVAN958A-Man.EN_v.1.02_2023-03-03.pdf}
+\bibitem{sv977d} Svantek, \emph{SV 977D User Manual} v1.00, 2022. \url{https://svantek.com/wp-content/uploads/2022/06/SV-977D_Man_EN_v.1.00_2022-11-23.pdf}
+\bibitem{sv971a} Svantek, \emph{SV 971A User Manual} v1.03, 2024. \url{https://svantek.com/wp-content/uploads/2023/01/SV971A-Man.EN_v.1.03_2024-05-28.pdf}
+\bibitem{rg50} ROGA Instruments, \emph{RG-50 Measurement Microphone — Datasheet}. \url{https://roga-instruments.com/downloads/PDF/RG-50-EN.pdf}
+\bibitem{roga14} ROGA Instruments, \emph{1/4'' measurement microphones}. \url{https://roga-instruments.com/1-4-inch-mic/}
+\bibitem{pcbguide} PCB Piezotronics, \emph{General Signal Conditioning Guide} (G0001E). \url{https://www.pcb.com/techsupport/docs/pcb/PCB-G0001E-0303.pdf}
+\bibitem{pcbcable} PCB Piezotronics / IMI, \emph{Tip from Tech: Driving Long Cable Lengths}. \url{https://www.pcb.com/contentstore/mktgcontent/IMI_Downloads/TipfromTech-DrivingLongCableLengths.pdf}
+\bibitem{hbk} HBK, \emph{TN119: IEPE Sensing}, 2021. \url{https://www.hbm.com/fileadmin/mediapool/files/technical-articles-technotes-white-papers/2021/TN119_HBK_IEPE-Sensing.pdf}
+\bibitem{tida010249} Texas Instruments, \emph{TIDA-010249: Four-channel IEPE vibration sensor interface} (TIDUF13). \url{https://www.ti.com/lit/pdf/TIDUF13}
+\bibitem{tida01471} Texas Instruments, \emph{TIDA-01471: IEPE vibration sensor interface reference design for PLC analog input} (TIDUD62). \url{https://www.ti.com/lit/pdf/TIDUD62}
+\bibitem{slyt768} Texas Instruments, \emph{High-side current sources for industrial applications}, Analog Design Journal (SLYT768). \url{https://www.ti.com/lit/pdf/SLYT768}
+\bibitem{tl431} Texas Instruments, \emph{TL431 / TL432 Precision Programmable Reference — Datasheet}. \url{https://www.ti.com/lit/ds/symlink/tl431.pdf}
+\bibitem{lm334} Texas Instruments, \emph{LM134/LM234/LM334 3-Terminal Adjustable Current Sources} (SNVS746E). \url{https://www.ti.com/lit/ds/symlink/lm334.pdf}
+\bibitem{lm317} onsemi, \emph{LM317 Three-Terminal Adjustable Positive Voltage Regulator}. \url{https://www.onsemi.com/download/data-sheet/pdf/lm317-d.pdf}
+\bibitem{cn0540} Analog Devices, \emph{CN0540: IEPE-compatible data acquisition for piezo sensors}. \url{https://www.analog.com/CN0540}
+\bibitem{cn0582} Analog Devices, \emph{CN0582: IEPE sensor interface}. \url{https://www.analog.com/CN0582}
+\bibitem{mt100} W.~Kester, J.~Bryant, \emph{MT-100: Breadboarding and Prototyping Techniques}, Analog Devices. \url{https://www.analog.com/media/en/training-seminars/tutorials/MT-100.pdf}
+\bibitem{endevco} Endevco, \emph{Integrating Isotron (IEPE) accelerometers with your own current source}. \url{https://endevco.com/our-resources/ask-the-experts/integrating-isotron-iepe-accelerometers-with-your-own-current-source}
+\bibitem{esp134} R.~Elliott, \emph{Project 134: 4 mA current loop microphone supply}, ESP. \url{https://www.sound-au.com/project134.htm}
+\bibitem{breadboard} Wikipedia, \emph{Breadboard}. \url{https://en.wikipedia.org/wiki/Breadboard}
+\bibitem{manhattan} \emph{Manhattan style construction}. \url{https://pic.hallikainen.org/techref/pcb/manhattan.htm}
+\bibitem{picoex} Raspberry Pi, \emph{pico-examples: adc/dma\_capture}. \url{https://github.com/raspberrypi/pico-examples/tree/master/adc}
+\bibitem{rp2040err} kitanokitsune, \emph{rp2040adc\_correction} (corrección del error E11 del ADC del RP2040). \url{https://github.com/kitanokitsune/rp2040adc_correction}
+\bibitem{espadc} Espressif, \emph{ESP-IDF: ADC continuous mode driver}. \url{https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/adc/adc_continuous.html}
+\bibitem{serialplot} H.~Y.~Özderya, \emph{SerialPlot}. \url{https://github.com/hyOzd/serialplot}
+\bibitem{scoppy} \emph{Scoppy: oscilloscope and logic analyzer for the Raspberry Pi Pico}. \url{https://github.com/fhdm-dev/scoppy}
+\bibitem{slm} I.~Kostoski, \emph{esp32-i2s-slm: sound level meter}. \url{https://github.com/ikostoski/esp32-i2s-slm}
+\bibitem{caldas} Electrónicos Caldas, catálogo en línea. \url{https://www.electronicoscaldas.com/es/}
+\bibitem{didacticas} Didácticas Electrónicas, catálogo en línea. \url{https://didacticaselectronicas.com/}
+\end{thebibliography}
+
+\end{document}
