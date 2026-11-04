@@ -49,7 +49,7 @@ extension only.
   earlier attempt. The owner asked to restart from scratch: do **not** rely on or extend it unless
   the owner explicitly asks. The current work lives in `propuesta/` and this file.
 - **Git:**
-  - **Never commit to `main`.** The owner's personal workspace branch is `workspace/jevargaso`
+  - **Never commit to `main`.** The owner's personal workspace branch is `workspace/voxter`
     (created from `docs/lt3092-simulacion-2026-10-27`, which is already merged into main).
   - Commit author email: `jevargaso@unal.edu.co` (already set in the repo's git config; GitHub
     account `Voxtercin`, a collaborator on `anhenaobe/Sonometro`).
