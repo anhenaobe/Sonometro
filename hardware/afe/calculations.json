@@ -1,0 +1,221 @@
+{
+  "status": "CALCULATED_NOT_MEASURED",
+  "band_Hz": [
+    20.0,
+    20000.0
+  ],
+  "temperature_K": 300.0,
+  "sensitivity_V_per_Pa_PROVISIONAL": 0.0556,
+  "gain_A_ideal": 0.37174721189591076,
+  "gain_A_Rs50": 0.37105751391465674,
+  "gain_B": 10.09,
+  "gain_C_high": 3.7509293680297393,
+  "amplitudes": [
+    {
+      "level_dB": 30,
+      "definition": "RMS",
+      "p_rms_Pa": 0.0006324555320336759,
+      "p_peak_Pa": 0.0008944271909999159,
+      "sensor_Vrms_sine": 3.516452758107238e-05,
+      "sensor_Vpeak": 4.973015181959533e-05,
+      "A_Vpeak": 1.8487045286094916e-05,
+      "B_Vpeak": 0.0005017772318597169,
+      "C_high_Vpeak": 0.00018653428693669768,
+      "A_within_1p5Vpeak": true,
+      "B_within_1p5Vpeak": true,
+      "C_high_within_1p5Vpeak": true
+    },
+    {
+      "level_dB": 60,
+      "definition": "RMS",
+      "p_rms_Pa": 0.02,
+      "p_peak_Pa": 0.028284271247461905,
+      "sensor_Vrms_sine": 0.001112,
+      "sensor_Vpeak": 0.0015726054813588817,
+      "A_Vpeak": 0.000584611703107391,
+      "B_Vpeak": 0.015867589306911116,
+      "C_high_Vpeak": 0.005898732084353574,
+      "A_within_1p5Vpeak": true,
+      "B_within_1p5Vpeak": true,
+      "C_high_within_1p5Vpeak": true
+    },
+    {
+      "level_dB": 94,
+      "definition": "RMS",
+      "p_rms_Pa": 1.0023744672545452,
+      "p_peak_Pa": 1.4175715661678836,
+      "sensor_Vrms_sine": 0.0557320203793527,
+      "sensor_Vpeak": 0.07881697907893433,
+      "A_Vpeak": 0.029299992222652164,
+      "B_Vpeak": 0.7952633189064473,
+      "C_high_Vpeak": 0.2956369215265603,
+      "A_within_1p5Vpeak": true,
+      "B_within_1p5Vpeak": true,
+      "C_high_within_1p5Vpeak": true
+    },
+    {
+      "level_dB": 120,
+      "definition": "RMS",
+      "p_rms_Pa": 20.0,
+      "p_peak_Pa": 28.284271247461902,
+      "sensor_Vrms_sine": 1.1119999999999999,
+      "sensor_Vpeak": 1.5726054813588817,
+      "A_Vpeak": 0.584611703107391,
+      "B_Vpeak": 15.867589306911116,
+      "C_high_Vpeak": 5.898732084353574,
+      "A_within_1p5Vpeak": true,
+      "B_within_1p5Vpeak": false,
+      "C_high_within_1p5Vpeak": false
+    },
+    {
+      "level_dB": 130,
+      "definition": "PEAK",
+      "p_rms_Pa": 44.7213595499958,
+      "p_peak_Pa": 63.2455532033676,
+      "sensor_Vrms_sine": 2.4865075909797665,
+      "sensor_Vpeak": 3.5164527581072385,
+      "A_Vpeak": 1.3072315085900514,
+      "B_Vpeak": 35.481008329302036,
+      "C_high_Vpeak": 13.189965921673618,
+      "A_within_1p5Vpeak": true,
+      "B_within_1p5Vpeak": false,
+      "C_high_within_1p5Vpeak": false
+    }
+  ],
+  "noise_typical_estimate": {
+    "A": {
+      "voltage_noise_out_uVrms": 1.3643653242986378,
+      "resistors_out_uVrms_including_Rs": 1.4428974729953103,
+      "current_noise_out_uVrms": 0.0013335212295594848,
+      "total_out_uVrms": 1.9858115806902854,
+      "total_input_uVrms": 5.35176220996032,
+      "equivalent_Pa_rms": 9.625471600648058e-05,
+      "equivalent_dB_SPL_rms": 13.647840426521487,
+      "bias_reference_noise_transfer": 0.6289424860853432,
+      "feedback_reference_noise_transfer": 0,
+      "reference_allowance_uVrms": 1.0
+    },
+    "B": {
+      "voltage_noise_out_uVrms": 13.766446122173257,
+      "resistors_out_uVrms_including_Rs": 5.6609166830991295,
+      "current_noise_out_uVrms": 0.0019302818947860311,
+      "total_out_uVrms": 14.884925940483457,
+      "total_input_uVrms": 1.4752156531698175,
+      "equivalent_Pa_rms": 2.6532655632550674e-05,
+      "equivalent_dB_SPL_rms": 2.4550144937118685,
+      "bias_reference_noise_transfer": 0.0,
+      "feedback_reference_noise_transfer": -9.09,
+      "reference_allowance_uVrms": 1.0
+    },
+    "C_high": {
+      "voltage_noise_out_uVrms": 13.766446122173257,
+      "resistors_out_uVrms_including_Rs": 15.566650911485091,
+      "current_noise_out_uVrms": 0.013592561908204171,
+      "total_out_uVrms": 20.78066034062628,
+      "total_input_uVrms": 5.550434055301073,
+      "equivalent_Pa_rms": 9.98279506349114e-05,
+      "equivalent_dB_SPL_rms": 13.964443198437458,
+      "bias_reference_noise_transfer": 6.346029684601112,
+      "feedback_reference_noise_transfer": -9.09,
+      "reference_allowance_uVrms": 1.0
+    }
+  },
+  "headroom": {
+    "A": {
+      "max_sensor_Vpeak": 4.035,
+      "max_dB_SPL_peak": 131.194775036241,
+      "max_dB_SPL_RMS_sine": 128.18447507960119
+    },
+    "B": {
+      "max_sensor_Vpeak": 0.14866204162537167,
+      "max_dB_SPL_peak": 102.52190611145464,
+      "max_dB_SPL_RMS_sine": 99.51160615481483
+    },
+    "C_high": {
+      "max_sensor_Vpeak": 0.3999008919722498,
+      "max_dB_SPL_peak": 111.11695171150281,
+      "max_dB_SPL_RMS_sine": 108.106651754863
+    }
+  },
+  "corners": {
+    "A_0K": {
+      "min": 0.3712802292348803,
+      "max": 0.3722144341857205
+    },
+    "A_50K": {
+      "min": 0.3706968389180145,
+      "max": 0.3727987979917933
+    },
+    "B_0K": {
+      "min": 10.071838161838162,
+      "max": 10.108198198198197
+    },
+    "B_50K": {
+      "min": 10.049186880535196,
+      "max": 10.13099719243649
+    },
+    "C_high_0K": {
+      "min": 3.7394743815438884,
+      "max": 3.7624172729794614
+    },
+    "C_high_50K": {
+      "min": 3.7252018103107805,
+      "max": 3.776823575798556
+    }
+  },
+  "upstream_example_loaded": [
+    {
+      "frequency_Hz": 20,
+      "gain_sensor_to_out": 0.34731332152382904,
+      "loading_error_dB_vs_ideal_A": -0.5905255720127434,
+      "phase_deg": 20.53198571362271
+    },
+    {
+      "frequency_Hz": 50,
+      "gain_sensor_to_out": 0.36677952068393244,
+      "loading_error_dB_vs_ideal_A": -0.11685282739994698,
+      "phase_deg": 8.520031399430906
+    },
+    {
+      "frequency_Hz": 100,
+      "gain_sensor_to_out": 0.369836363160754,
+      "loading_error_dB_vs_ideal_A": -0.04476220488053421,
+      "phase_deg": 4.283696274590512
+    },
+    {
+      "frequency_Hz": 1000,
+      "gain_sensor_to_out": 0.37086201801643326,
+      "loading_error_dB_vs_ideal_A": -0.02070725673017443,
+      "phase_deg": 0.42916154913078747
+    },
+    {
+      "frequency_Hz": 10000,
+      "gain_sensor_to_out": 0.3708723176997005,
+      "loading_error_dB_vs_ideal_A": -0.020466033133357667,
+      "phase_deg": 0.042916949498674924
+    },
+    {
+      "frequency_Hz": 20000,
+      "gain_sensor_to_out": 0.3708723957308792,
+      "loading_error_dB_vs_ideal_A": -0.020464205630729527,
+      "phase_deg": 0.021458477759232455
+    }
+  ],
+  "existing_return_DC": {
+    "Rdc_ohm": 100000,
+    "bias_reference_required_V": 2.713857998289136,
+    "bias_reference_E96_8k45_10k_from5V": 2.710027100271003,
+    "output_center_with_E96_V": 2.4964709851984255
+  },
+  "max_signal_resistor_power_W": {
+    "RT": 0.00014439818134077755,
+    "RB": 8.54427108525311e-05
+  },
+  "slew_required_V_per_us_at_20k_1p5Vpeak": 0.1884955592153876,
+  "notes": [
+    "No guaranteed noise maximum; en fit is an estimate, common-mode crossover remains OPEN.",
+    "Noise excludes upstream electronics, actual Vref, ADC and out-of-band aliasing.",
+    "Separate bias and feedback references are required when NG>1 and input DC is not Vcenter.",
+    "PCM SNR99dB is A-weighted: not summed with unweighted20Hz-20kHz budget."
+  ]
+}

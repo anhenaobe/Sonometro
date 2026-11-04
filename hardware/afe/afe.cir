@@ -1,0 +1,22 @@
+* Original AFE testbench; TI OPAx192 Final 1.7 must be supplied separately.
+* This source assumes the PREVIOUS BLOCK has already protected and centered IN.
+* No new AC coupling or signal filter is designed here.
+.include "models/ti/OPAx192.LIB"
+.param VSUP=5 VCM=2.5 VUP=2.5 AMP=3.516 FREQ=1k RS=50
+.param RT=16.9k RB=10k RF=0.001 RG=1e12
+Vcc vcc 0 {VSUP}
+Vref ref 0 {VCM}
+Vsignal source 0 DC {VUP} AC 1 SIN({VUP} {AMP} {FREQ})
+Rsource source input {RS}
+Rtop input plus {RT}
+Rbottom plus ref {RB}
+Xamp plus minus vcc 0 output OPAx192
+Rf output minus {RF}
+Rg minus ref {RG}
+* Representative ADC load: 60k nominal PCM input; 20pF is an ASSUMPTION.
+Rload output ref 60k
+Cload output 0 20p
+.ac dec 80 20 20Meg
+.tran 0.5u 5m 0 0.5u
+.noise V(output) Vsignal dec 100 20 20k
+.end

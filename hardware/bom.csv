@@ -18,3 +18,16 @@ CDEC,Desacoplo y referencia ADC,OPEN,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Cantid
 J1,Entrada IEPE,1,OPEN,OPEN,BNC hembra panel o PCB,OPEN,,,OPEN,Verificar cable y retorno de masa compatible con sensor,
 J2,Conexión USB de aplicación,1,OPEN,OPEN,Conector o adaptador OPEN,OPEN,,,OPEN,Definir VBUS ESD y conexión al USB del MCU; ST-LINK no lo sustituye,
 LOAD1,Cargas de prueba fuente IEPE,OPEN,OPEN,OPEN,Resistencias de banco,OPEN,,,OPEN,Dimensionar por tensión potencia y corriente; no son BOM final,
+DEV_L432,Plataforma actual de prototipo por decisión 2026-11-04,1,STMicroelectronics,NUCLEO-L432KC,Placa Nucleo-32,OPEN,,,PROVISIONAL,No sustituye DEV1 como historial ni decide MCU final de PCB,https://www.st.com/en/evaluation-tools/nucleo-l432kc.html
+AFE_U1,Buffer de señal y referencia para alternativa A,1,Texas Instruments,OPA2192ID,SOIC-8,OPEN,,,PROVISIONAL,Familia OPA192 dual a 5 V; montaje y ruido físico OPEN,https://www.ti.com/lit/ds/symlink/opa192.pdf
+AFE_ALT1,Alternativa operacional audio,1,Texas Instruments,OPA1652ID,SOIC-8,OPEN,,,PROVISIONAL,Alternativa excluyente a AFE_U1; requiere revisar modo común y alimentación,https://www.ti.com/lit/ds/symlink/opa1652.pdf
+AFE_ALT2,Alternativa operacional audio,1,Texas Instruments,OPA1656ID,SOIC-8,OPEN,,,PROVISIONAL,Alternativa excluyente a AFE_U1; para A requiere mayor tensión por modo común,https://www.ti.com/lit/ds/symlink/opa1656.pdf
+AFE_RT,Resistencia superior atenuación,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,16.9 kohm E96; 0.1 por ciento; TCR hasta25ppm/K; al menos0.1W,
+AFE_RB,Resistencia inferior atenuación hacia Vb,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,10.0 kohm E96; 0.1 por ciento; TCR hasta25ppm/K; al menos0.1W,
+AFE_VBT,Divisor referencia superior,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,8.45 kohm; depende del retorno DC real y ADC; revisar antes de montar,
+AFE_VBB,Divisor referencia inferior,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,10.0 kohm; 0.1 por ciento; TCR hasta25ppm/K,
+AFE_RF,Realimentación rango alto opcional C,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,9.09 kohm; 0.1 por ciento; al menos0.1W; omitir en A,
+AFE_RG,Realimentación a Vc rango alto opcional C,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,1.00 kohm; 0.1 por ciento; al menos0.1W; omitir en A,
+AFE_VC,Referencia independiente bufferizada para C alto,OPEN,OPEN,OPEN,SOIC preferido,OPEN,,,OPEN,Centro2.5V PCM o1.65V STM; solo C; pendiente circuito y ruido,
+AFE_BYP,Desacoplo alimentación operacional,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,100nF alimentación según fabricante; no es filtro de señal,
+PCM_CLK,Oscilador externo para PCM1808 maestro,1,OPEN,OPEN,Convencional preferido,OPEN,,,PROVISIONAL,12.288MHz salida3.3V para48kSPS; jitter y MPN OPEN,

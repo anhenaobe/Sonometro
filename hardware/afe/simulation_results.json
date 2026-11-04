@@ -1,0 +1,827 @@
+{
+  "status": "SIMULATED_NOT_MEASURED",
+  "engine": "ngspice46, KiCad10",
+  "model": "TI OPAx192 Final1.7, unchanged",
+  "cases": {
+    "ac_nom": {
+      "analysis": "ac",
+      "options": [],
+      "data_sha256": "23a452c758aa38fa7147d06faae7137f6613385b9b2ee5295db7349a1581735d",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "ac_nom"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.3710574909685249,
+      "phase_at_20Hz_deg": -0.0004010776429185841,
+      "gain_at_1000Hz": 0.3710574829601817,
+      "phase_at_1000Hz_deg": -0.020098899982189392,
+      "gain_at_20000Hz": 0.37105411076642,
+      "phase_at_20000Hz_deg": -0.40102546457466476
+    },
+    "ac_high": {
+      "analysis": "ac",
+      "options": [
+        "--ng",
+        "10.09"
+      ],
+      "data_sha256": "463ebcff0a95d025c074faeab9d29c7195a4e7cff38406f25c06df9ca262c45e",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "10.09",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "ac_high"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 3.7439619098086623,
+      "phase_at_20Hz_deg": -0.0014117341697158132,
+      "gain_at_1000Hz": 3.7439604723759925,
+      "phase_at_1000Hz_deg": -0.07067661431781787,
+      "gain_at_20000Hz": 3.7433914916555637,
+      "phase_at_20000Hz_deg": -1.410104778403326
+    },
+    "zout": {
+      "analysis": "zout",
+      "options": [],
+      "data_sha256": "b3206eae04d528bc681f49615b9597649b9400f9ac8d5fbf4f0535e149a85aec",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "zout",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "zout"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.0009692014006279218,
+      "phase_at_20Hz_deg": 47.139290179596784,
+      "gain_at_1000Hz": 0.034714592864041154,
+      "phase_at_1000Hz_deg": 88.87131146248213,
+      "gain_at_20000Hz": 0.6924616311702338,
+      "phase_at_20000Hz_deg": 89.19572519582685,
+      "units": "ohm, 1 A small-signal current injection"
+    },
+    "loop": {
+      "analysis": "loop",
+      "options": [],
+      "data_sha256": "06a632e5f33d9373aaa5b6a8487b268d68e4b5f9a5ce8624543ab0f22e682b97",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "loop",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "loop"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "unity_loop_frequency_Hz": 7962143.411070138,
+      "phase_margin_estimate_deg": 65.80174094114238,
+      "scope": "TI model, 60kOhm load, assumed20pF only; not guaranteed"
+    },
+    "loop_high": {
+      "analysis": "loop",
+      "options": [
+        "--ng",
+        "10.09"
+      ],
+      "data_sha256": "9d771b79cd33e0dbe3b906df0c889a28278b7b7a13b875c01736ba603acfca0a",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "loop",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "10.09",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "loop_high"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "unity_loop_frequency_Hz": 1002374.467254565,
+      "phase_margin_estimate_deg": 81.67755133370208,
+      "scope": "TI model, 60kOhm load, assumed20pF only; not guaranteed"
+    },
+    "noise_nom": {
+      "analysis": "noise",
+      "options": [],
+      "data_sha256": "8072a63a255fb5ca54362e50b72973a2ad485b6e645eb530c7c6659555a7a331",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "noise",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "noise_nom"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "interpretation": "OPEN: incompatible noise output; do not use as design budget",
+      "reason": "ngspice integrated noise print is inconsistent with exported spectrum and datasheet; model compatibility not established",
+      "integrated_output_noise_Vrms": 3.683602865927003e-05,
+      "integrated_input_noise_Vrms": 9.927340509390992e-05
+    },
+    "noise_high": {
+      "analysis": "noise",
+      "options": [
+        "--ng",
+        "10.09"
+      ],
+      "data_sha256": "601029558315684b9d07b7346742879b02a7201691e440774a61dd1e0e5a43db",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "noise",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "10.09",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "noise_high"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "interpretation": "OPEN: incompatible noise output; do not use as design budget",
+      "reason": "ngspice integrated noise print is inconsistent with exported spectrum and datasheet; model compatibility not established",
+      "integrated_output_noise_Vrms": 0.00037170118813114396,
+      "integrated_input_noise_Vrms": 9.928522154747215e-05
+    },
+    "tolerance_min": {
+      "analysis": "ac",
+      "options": [
+        "--rt",
+        "16938.046124999997",
+        "--rb",
+        "9977.5125"
+      ],
+      "data_sha256": "354333e730f9685377aba27b5dae2a5b0fece2fbd8fcededa86730801c69fa9c",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16938.046124999997",
+          "rb": "9977.5125",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "tolerance_min"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.37000946403305335,
+      "phase_at_20Hz_deg": -0.000400907758828677,
+      "gain_at_1000Hz": 0.3700094557481809,
+      "phase_at_1000Hz_deg": -0.020090385598781655,
+      "gain_at_20000Hz": 0.3700060983849306,
+      "phase_at_20000Hz_deg": -0.4008555840469941
+    },
+    "tolerance_max": {
+      "analysis": "ac",
+      "options": [
+        "--rt",
+        "16861.996124999998",
+        "--rb",
+        "10022.512499999997",
+        "--nodeset"
+      ],
+      "data_sha256": "40747ae3c797398da32e993da4d5367f8b1924dd1341c53c43147e05b20a43ba",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16861.996124999998",
+          "rb": "10022.512499999997",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "True",
+          "tag": "tolerance_max"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.3721067280883515,
+      "phase_at_20Hz_deg": -0.00040124551974068484,
+      "gain_at_1000Hz": 0.3721067194203768,
+      "phase_at_1000Hz_deg": -0.020107313733027946,
+      "gain_at_20000Hz": 0.3721033333452017,
+      "phase_at_20000Hz_deg": -0.40119333786980593
+    },
+    "rs1000": {
+      "analysis": "ac",
+      "options": [
+        "--rs",
+        "1000"
+      ],
+      "data_sha256": "a3e50c67274607b6f4e8ca0834dca93107fae2a55a8bfe417dce7fdcf2584fb3",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "1000.0",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "rs1000"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.35842291740060317,
+      "phase_at_20Hz_deg": -0.0004068997960609446,
+      "gain_at_1000Hz": 0.3584229083584822,
+      "phase_at_1000Hz_deg": -0.020390698815298,
+      "gain_at_20000Hz": 0.3584194807425202,
+      "phase_at_20000Hz_deg": -0.40684749049275787
+    },
+    "existing_ac": {
+      "analysis": "ac",
+      "options": [
+        "--existing-coupling"
+      ],
+      "data_sha256": "164a976f741f0bdd566f8d2ea1caf91375e90c326baf50ae877a52ab43c4f4cc",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "ac",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "True",
+          "nodeset": "False",
+          "tag": "existing_ac"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "gain_at_20Hz": 0.3473130322561854,
+      "phase_at_20Hz_deg": 20.53156801316766,
+      "gain_at_1000Hz": 0.3708617095461366,
+      "phase_at_1000Hz_deg": 0.40804571246551347,
+      "gain_at_20000Hz": 0.3708686683087654,
+      "phase_at_20000Hz_deg": -0.3795666128606443
+    },
+    "existing_tran": {
+      "analysis": "tran",
+      "options": [
+        "--existing-coupling"
+      ],
+      "data_sha256": "a96fa9acdaa317597ede1301fea492a1bfe6a98efd148e7774d937f29d25fed1",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "True",
+          "nodeset": "False",
+          "tag": "existing_tran"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.183102960207169,
+      "output_max_V": 3.800418467665283,
+      "steady_output_min_V": 1.192519351565278,
+      "steady_output_max_V": 3.800418467665283,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "existing_high": {
+      "analysis": "tran",
+      "options": [
+        "--existing-coupling",
+        "--ng",
+        "10.09",
+        "--amplitude",
+        ".07881698"
+      ],
+      "data_sha256": "d1abfd6cfab418f9b6b60f29fde2d8a17c70243343251a8cec0d14a6fbbd7e96",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "0.07881698",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "10.09",
+          "existing_coupling": "True",
+          "nodeset": "False",
+          "tag": "existing_high"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 2.167308066585219,
+      "output_max_V": 2.759303825391412,
+      "steady_output_min_V": 2.169438500202329,
+      "steady_output_max_V": 2.759303825391412,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "supply45": {
+      "analysis": "tran",
+      "options": [
+        "--supply",
+        "4.5"
+      ],
+      "data_sha256": "c89ba80f2838123c35dde37ca6b9fea65397188fdb67a6f40f8f9eadd9d33cd5",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "4.5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "supply45"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.195360016309631,
+      "output_max_V": 3.804636085169006,
+      "steady_output_min_V": 1.195360017659482,
+      "steady_output_max_V": 3.804636085048978,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "supply55": {
+      "analysis": "tran",
+      "options": [
+        "--supply",
+        "5.5"
+      ],
+      "data_sha256": "7f5e20824c2ed52e58672cabb263449231928cc0c385160505659ee975742ffa",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5.5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "supply55"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.195365068344209,
+      "output_max_V": 3.804635488340503,
+      "steady_output_min_V": 1.195372246315623,
+      "steady_output_max_V": 3.804624376282577,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "overload": {
+      "analysis": "overload",
+      "options": [
+        "--amplitude",
+        "10"
+      ],
+      "data_sha256": "3bd03c1e842a44d52b6811eb609cda37c2b1cc3d24c2ca6b6ea02a1a6e48b132",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "overload",
+          "amplitude": "10.0",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "overload"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 0.02125119750728352,
+      "output_max_V": 4.960805682315073,
+      "steady_output_min_V": 0.02125300632481595,
+      "steady_output_max_V": 4.960801777974754,
+      "exceeds_PCM_1_to_4V": true
+    },
+    "startup": {
+      "analysis": "startup",
+      "options": [],
+      "data_sha256": "bf4f1f907282a6d2bd9748299c1d9a6c53189bf447b745617b20122904c5f157",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "startup",
+          "amplitude": "3.516",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "startup"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": -0.007001543334750449,
+      "output_max_V": 4.960793443298132,
+      "steady_output_min_V": 2.499998225850092,
+      "steady_output_max_V": 3.365735598529483,
+      "exceeds_PCM_1_to_4V": true
+    },
+    "30dB": {
+      "analysis": "tran",
+      "options": [
+        "--amplitude",
+        "4.973015e-05"
+      ],
+      "data_sha256": "fac6defdbf2e7493c69fda53d892bcfc832ce80616f614eddfa3e92781c877a6",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "4.973015e-05",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "30dB"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 2.499979728560408,
+      "output_max_V": 2.500016635106398,
+      "steady_output_min_V": 2.499979728580661,
+      "steady_output_max_V": 2.500016635106398,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "60dB": {
+      "analysis": "tran",
+      "options": [
+        "--amplitude",
+        "0.0015726055"
+      ],
+      "data_sha256": "32b089a2242786548fcbb89c708b874a126c95dbed4562453106881eca54c752",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "0.0015726055",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "60dB"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 2.499414654426187,
+      "output_max_V": 2.50058170823769,
+      "steady_output_min_V": 2.499414661527335,
+      "steady_output_max_V": 2.50058170823769,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "94dB": {
+      "analysis": "tran",
+      "options": [
+        "--amplitude",
+        "0.07881698"
+      ],
+      "data_sha256": "98e9ac92db1665d3874963e11f3e5465a12ae1ee4f423333401e5a85cc98fb2f",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "0.07881698",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "94dB"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 2.470752557966659,
+      "output_max_V": 2.529243800991706,
+      "steady_output_min_V": 2.470752601538836,
+      "steady_output_max_V": 2.529243800991706,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "120dB": {
+      "analysis": "tran",
+      "options": [
+        "--amplitude",
+        "1.5726055"
+      ],
+      "data_sha256": "4dd27b688b80aa7d0f76a6a01af87d92b9938aa7a8f730efb39b37f6bc4e781a",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "1.5726055",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "120dB"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.916475727143814,
+      "output_max_V": 3.083516506076986,
+      "steady_output_min_V": 1.916480071034656,
+      "steady_output_max_V": 3.083516291590734,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "130dB_peak": {
+      "analysis": "tran",
+      "options": [
+        "--amplitude",
+        "3.51645276"
+      ],
+      "data_sha256": "3afe96e85ad4c95a9cb4246883b81acc98b4893509b0bb0c75e39e6ad5a09292",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.51645276",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "130dB_peak"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.195195803223277,
+      "output_max_V": 3.804800559420722,
+      "steady_output_min_V": 1.1951958032298,
+      "steady_output_max_V": 3.804800559420722,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "freq20": {
+      "analysis": "tran",
+      "options": [
+        "--frequency",
+        "20"
+      ],
+      "data_sha256": "0b93bc870ec266bca0e2b8d9a8b0f525953b55ce50872ebf82157a23a482b618",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.516",
+          "frequency": "20.0",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "freq20"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.195364719670116,
+      "output_max_V": 3.804635222010616,
+      "steady_output_min_V": 1.195368642684455,
+      "steady_output_max_V": 3.804635222010616,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "freq20000": {
+      "analysis": "tran",
+      "options": [
+        "--frequency",
+        "20000"
+      ],
+      "data_sha256": "b616de91b9ba8e84e78873cb64ba7a6d0b1b3238c3fcde525471834614dc42dc",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "3.516",
+          "frequency": "20000.0",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "1",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "freq20000"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 1.195377390097554,
+      "output_max_V": 3.804618979295631,
+      "steady_output_min_V": 1.195377390097618,
+      "steady_output_max_V": 3.804618979295631,
+      "exceeds_PCM_1_to_4V": false
+    },
+    "high_overload": {
+      "analysis": "tran",
+      "options": [
+        "--ng",
+        "10.09",
+        "--amplitude",
+        "1.5726055"
+      ],
+      "data_sha256": "09bb8b4ab2f8832e284ef0a95773c3af0865a0e09593ec64b266ca894d8e206e",
+      "manifest": {
+        "engine": "ngspice shared",
+        "arguments": {
+          "dll": "C:\\Program Files\\KiCad\\10.0\\bin\\ngspice.dll",
+          "codemodel_dir": "None",
+          "case": "tran",
+          "amplitude": "1.5726055",
+          "frequency": "1000",
+          "supply": "5",
+          "rs": "50",
+          "rt": "16900",
+          "rb": "10000",
+          "ng": "10.09",
+          "existing_coupling": "False",
+          "nodeset": "False",
+          "tag": "high_overload"
+        },
+        "dll_sha256": "9d228c7744b17672aaf5ba2d6fd566f53a1f07d252ac9d45f64fa2ab779d181e",
+        "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033"
+      },
+      "output_min_V": 0.02554739423006986,
+      "output_max_V": 4.956552492940997,
+      "steady_output_min_V": 0.02554778381121255,
+      "steady_output_max_V": 4.956552292064756,
+      "exceeds_PCM_1_to_4V": true
+    }
+  }
+}

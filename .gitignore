@@ -1,3 +1,7 @@
 .venv/
 __pycache__/
 sims/lt3092/runs/
+firmware/build/
+hardware/afe/models/
+hardware/afe/runs/
+software/captures/
