@@ -1,0 +1,38 @@
+Fuente 470 ohm: 3.769 mA a 0 V, 3.721 mA a 20 V (variacion 1.3 %)
+Fuente 750 ohm: 2.378 mA a 0 V, 2.348 mA a 20 V (variacion 1.3 %)
+
+Frecuencia | variante | |H| [dB] | fase [grados] | retardo de grupo [us]
+     20 Hz | A |  -0.034 |    4.470 |     639.79
+     20 Hz | B |  -0.007 |    0.379 |      74.02
+     20 Hz | C |  -0.006 |   -0.082 |      11.34
+     50 Hz | A |  -0.011 |    1.629 |     111.91
+     50 Hz | B |  -0.006 |   -0.011 |      20.85
+     50 Hz | C |  -0.006 |   -0.204 |      11.34
+     85 Hz | A |  -0.008 |    0.744 |      45.76
+     85 Hz | B |  -0.007 |   -0.221 |      14.23
+     85 Hz | C |  -0.006 |   -0.347 |      11.34
+    100 Hz | A |  -0.008 |    0.525 |      36.04
+    100 Hz | B |  -0.007 |   -0.295 |      13.25
+    100 Hz | C |  -0.006 |   -0.408 |      11.34
+    300 Hz | A |  -0.007 |   -0.854 |      13.53
+    300 Hz | B |  -0.007 |   -1.128 |      11.00
+    300 Hz | C |  -0.007 |   -1.225 |      11.34
+   1000 Hz | A |  -0.017 |   -3.767 |      10.96
+   1000 Hz | B |  -0.017 |   -3.849 |      10.73
+   1000 Hz | C |  -0.017 |   -4.082 |      11.33
+  10000 Hz | A |  -1.005 |  -37.024 |       9.48
+  10000 Hz | B |  -1.005 |  -37.032 |       9.48
+  10000 Hz | C |  -1.044 |  -39.168 |      10.03
+  20000 Hz | A |  -3.424 |  -66.846 |       7.05
+  20000 Hz | B |  -3.424 |  -66.850 |       7.05
+  20000 Hz | C |  -3.540 |  -70.763 |       7.50
+
+Barrido: error rms relativo (salida/11 - entrada) por banda, con retardo constante compensado
+  A: 30 Hz 8.23 %, 100 Hz 1.97 %, 1 kHz 0.38 %, 10 kHz 12.28 % (retardo compensado 11.0 us)
+  B: 30 Hz 1.17 %, 100 Hz 0.91 %, 1 kHz 0.67 %, 10 kHz 11.79 % (retardo compensado 10.7 us)
+  C: 30 Hz 0.07 %, 100 Hz 0.07 %, 1 kHz 0.20 %, 10 kHz 12.47 % (retardo compensado 11.3 us)
+
+Voz: error rms relativo (retardo constante compensado)
+  A: 0.92 %
+  B: 0.71 %
+  C: 0.71 %

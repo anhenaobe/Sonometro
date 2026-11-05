@@ -243,6 +243,10 @@ Estimated BOM ≈ 43,000 COP (lab supplies the scope and the 24 V supply).
 - To visually check PDFs, render pages to PNG (PyMuPDF in a throwaway venv) and inspect the
   circuit figures — label overlaps are common.
 - Shell: PowerShell 5.1 and Git Bash are both available.
+- **ngspice 47** at `%LOCALAPPDATA%\Programs\ngspice47\Spice64\bin\ngspice_con.exe` (not on PATH).
+  Run simulations with `NGSPICE=<that path> PYTHON=<python with numpy+matplotlib> bash simulacion_fase/correr_todo.sh`.
+- The owner **presents on a Linux laptop**: everything must run there with
+  `sudo apt install ngspice python3-numpy python3-matplotlib` (no LTspice, no Windows-only tools).
 
 ---
 
@@ -252,5 +256,42 @@ Estimated BOM ≈ 43,000 COP (lab supplies the scope and the 24 V supply).
 AGENTS.md                         ← this file (CLAUDE.md just imports it)
 propuesta/propuesta_sonometro.tex ← Spanish proposal for the professor (LaTeX source)
 propuesta/propuesta_sonometro.pdf ← compiled proposal
+simulacion_fase/                  ← ngspice + Python: phase / group delay study (answers the professor)
 (legacy: README.md, docs/, hardware/, sims/, firmware/, software/, tests/ — see §2)
 ```
+
+---
+
+## 10. Professor feedback on proposal v1 (first review, early Nov 2026)
+
+The professor **did not approve** v1. He distrusts AI-generated work: deliverables must stand on
+primary sources, hand calculations and simulations the group can reproduce.
+
+His objections:
+
+1. **"Coupling capacitors introduce phase shift; voice changes frequency fast over 20 Hz–20 kHz."**
+   Answered in `simulacion_fase/` with ngspice; see its README for numbers and talking points.
+   - Phase shift is not distortion; group-delay variation is.
+   - A (1 µF) gives 640 µs at 20 Hz; B (10 µF) gives 74 µs.
+   - With voice, B's error equals the DC-coupled design: 0.71 % vs 0.71 %.
+2. **Dislikes the DC offset (mid-scale V_MID) — "no defined reference".**
+   - In v1, V_MID came from a 10k/10k divider of the MCU 3.3 V rail, **not** from the TL431.
+     The owner initially thought it came from the TL431.
+3. **Criticised the G = 11 stage.** The exact reason is unknown. Next version must *derive* the
+   gain from a stated SPL range.
+4. **His suggestion: differential amplifier (to reject noise) + bipolar ADC** (measures
+   negative voltages).
+   - The owner has **no DAQ / myDAQ**.
+
+New possibility: build the circuit **on a classmate's PCB** (Altium library parts, ordered from
+JLCPCB), keeping it small. Not confirmed:
+- order date;
+- whether JLCPCB assembly (PCBA) is available;
+- which supply rails exist;
+- which MCU will be used.
+
+Next: get approval of the *idea* first, then design v2.
+- Candidate v2 architecture: TL431+PNP sources, a DC-coupled difference amp that subtracts a
+  reference (CN0540-style), and a bipolar ADC such as the AD7606 (±10 V from a single 5 V supply).
+- Not yet checked: the ±12 V rail this needs and JLCPCB stock.
+- Also fix the v1 anti-alias filter, which droops −3.4 dB at 20 kHz.

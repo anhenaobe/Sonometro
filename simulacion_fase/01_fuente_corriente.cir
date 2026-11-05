@@ -1,0 +1,24 @@
+* 01 - Fuente de corriente TL431 + PNP: corriente vs. tension del microfono
+* El microfono se modela como una fuente de tension (su polarizacion) que se
+* barre de 0 a 23 V. Si la fuente es buena, la corriente no cambia hasta llegar
+* al limite de compliancia (~22 V con 24 V de alimentacion).
+.include modelos.lib
+
+Vcc vcc 0 24
+X750 vcc n1 FUENTE_I RE=750
+X470 vcc n2 FUENTE_I RE=470
+Va n1 nl 0
+Vb n2 nl 0
+Vload nl 0 12.5
+
+.control
+set wr_singlescale
+set wr_vecnames
+dc Vload 0 23 0.05
+let i_sv12 = i(Va)*1000
+let i_rg50 = i(Vb)*1000
+wrdata resultados/fuente_corriente.txt i_sv12 i_rg50
+op
+print i(Va) i(Vb)
+.endc
+.end

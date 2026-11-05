@@ -1,0 +1,16 @@
+* 04 - Transitorio con voz: sintetica (cambios de tono muy rapidos) o una
+* grabacion real convertida con:  python3 generar_senal_voz.py mi_voz.wav
+* La senal se carga desde senal_voz.inc (fuente PWL + linea .tran).
+.include circuito.inc
+.include senal_voz.inc
+
+.options interp
+
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=8
+run
+wrdata resultados/tran_voz.txt v(sig) v(adcA) v(adcB) v(adcC)
+.endc
+.end

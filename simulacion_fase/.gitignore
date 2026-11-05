@@ -1,0 +1,8 @@
+# Datos crudos de ngspice (grandes, se regeneran con correr_todo.sh)
+resultados/*.txt
+resultados/*.log
+!resultados/resumen.txt
+# Senal generada por generar_senal_voz.py
+senal_voz.inc
+# Grabaciones personales
+*.wav

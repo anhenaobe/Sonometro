@@ -1,0 +1,23 @@
+* 02 - Analisis AC: magnitud, fase y retardo de grupo de las tres variantes
+* La senal acustica (sig) es una fuente AC de 1 V; la salida en adcX dividida
+* por 11 es la funcion de transferencia normalizada.
+.include circuito.inc
+
+Vsig sig 0 DC 0 AC 1
+
+.control
+set wr_singlescale
+set wr_vecnames
+option numdgt=8
+op
+print v(nA) v(nC) v(adcA) v(adcC)
+ac dec 200 0.1 200k
+let magA = mag(v(adcA))/11
+let magB = mag(v(adcB))/11
+let magC = mag(v(adcC))/11
+let phA = cph(v(adcA))
+let phB = cph(v(adcB))
+let phC = cph(v(adcC))
+wrdata resultados/ac_fase.txt magA phA magB phB magC phC
+.endc
+.end
