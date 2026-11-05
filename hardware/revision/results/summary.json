@@ -1,0 +1,208 @@
+{
+  "status": "ANALYTICAL_AND_LTI_SIMULATION_NOT_PHYSICAL_VALIDATION",
+  "band_Hz": [
+    20,
+    20000
+  ],
+  "sensitivity_V_per_Pa_PROVISIONAL": 0.0556,
+  "versions": {
+    "python": "3.11.7",
+    "numpy": "2.3.4",
+    "scipy": "1.16.3",
+    "matplotlib": "3.10.7"
+  },
+  "chain_models": [
+    {
+      "key": "A1",
+      "label": "1 Codex + PCM48",
+      "gain": 0.37174721189591076,
+      "fs_Hz": 48000,
+      "assumption": "PCM internal HP approximated first-order; digital FIR coefficients unknown"
+    },
+    {
+      "key": "A2",
+      "label": "2 Bipolar ADS8681",
+      "gain": 1.0,
+      "fs_Hz": 96000,
+      "assumption": "15kHz second-order Bessel surrogate; datasheet internal poles not published"
+    },
+    {
+      "key": "A3",
+      "label": "3 Buffer HV + PCM96",
+      "gain": 0.37174721189591076,
+      "fs_Hz": 96000,
+      "assumption": "60k typical ADC impedance, ideal input bias, PCM HP first-order approximation"
+    },
+    {
+      "key": "A4",
+      "label": "4 Diferencial ADS127L01",
+      "gain": 0.604,
+      "fs_Hz": 64000,
+      "assumption": "Ideal FDA gain .604; switched-cap ADC loading/driver design still OPEN"
+    }
+  ],
+  "important": {
+    "ads8681_analog_bandwidth_3dB_Hz": 15000,
+    "stm32_has_usable_VREFBUF": false,
+    "stm32_differential_physical_negative_allowed": false
+  },
+  "recommended_architecture": "A3 conditional on protection,capacitorselectionandbench;notfabricationrelease",
+  "sk": {
+    "num": [
+      1.0
+    ],
+    "den": [
+      4.4960687732342e-12,
+      2.998689591078067e-06,
+      1.0
+    ],
+    "f0_Hz": 75059.15290462581,
+    "Q": 0.7071067136707058
+  },
+  "reference_results": {
+    "perturbations": [
+      {
+        "test": "mid_independent_1mVpeak",
+        "error_output_Vrms": 0.007066231428997176,
+        "error_sensor_equiv_Vrms": 0.0006423846753633797,
+        "equivalent_Pa_rms": 0.011553681211571578,
+        "equivalent_dBSPL": 55.233807693626645,
+        "status": "DETERMINISTIC_PERTURBATION_NOT_RANDOM_NOISE"
+      },
+      {
+        "test": "shared_VDDA_mid_10mVpeak",
+        "error_output_Vrms": 0.038888945377639546,
+        "error_sensor_equiv_Vrms": 0.003535358670694504,
+        "equivalent_Pa_rms": 0.06358558760241914,
+        "equivalent_dBSPL": 70.04657386696883,
+        "status": "DETERMINISTIC_PERTURBATION_NOT_RANDOM_NOISE"
+      },
+      {
+        "test": "ideal_tracking_topology_NOT_Voxter",
+        "error_output_Vrms": 0.0013136298871861407,
+        "error_sensor_equiv_Vrms": 0.0001194208988351037,
+        "equivalent_Pa_rms": 0.0021478578927176927,
+        "equivalent_dBSPL": 40.61951096758591,
+        "status": "DETERMINISTIC_PERTURBATION_NOT_RANDOM_NOISE"
+      },
+      {
+        "test": "filtered_mid_shared_VDDA_10mVpeak",
+        "error_output_Vrms": 0.003982185896162305,
+        "error_sensor_equiv_Vrms": 0.00036201689965111863,
+        "equivalent_Pa_rms": 0.0065110953174661625,
+        "equivalent_dBSPL": 50.25248114938425,
+        "status": "DETERMINISTIC_PERTURBATION_NOT_RANDOM_NOISE"
+      },
+      {
+        "test": "dedicated_residual10uVpeak",
+        "error_output_Vrms": 7.06623142899711e-05,
+        "error_sensor_equiv_Vrms": 6.423846753633737e-06,
+        "equivalent_Pa_rms": 0.00011553681211571471,
+        "equivalent_dBSPL": 15.23380769362657,
+        "status": "DETERMINISTIC_PERTURBATION_NOT_RANDOM_NOISE"
+      }
+    ],
+    "subtractor_12p5V_offset_worst_V": 0.013643811917322946,
+    "caveat": "Reference noise10uV is an injected test level, NOT a REF5025 guaranteed noise specification"
+  },
+  "noise_results": {
+    "afe_total_output_Vrms": 1.4040588137655e-06,
+    "afe_total_input_Vrms": 3.776918209029195e-06,
+    "afe_equivalent_dBSPL": 10.620655856570668,
+    "lt3092_previous_noise_Vrms": 4.64e-07,
+    "mic_catalog_noise_Vrms": 4.4269517365548907e-05,
+    "chain_total_noise_Vrms": null,
+    "reason": "ADC PCM noise is A weighted400Hz-20k;cannot sum with unweighted20Hz-20k budget"
+  },
+  "mt": [
+    {
+      "architecture": "A1",
+      "input_rms_V": 0.20784609690826544,
+      "output_rms_V": 0.07620639272817403,
+      "gain_normalized_rms_error_dB": -0.11996377723595586,
+      "difference_raw_rms_V": 0.30872544184067846,
+      "difference_delay_aligned_rms_V": 0.05004683663521225,
+      "test": "SYNTHETIC_STEADY_PERIODIC_MULTITONE_NOT_CAPTURE"
+    },
+    {
+      "architecture": "A2",
+      "input_rms_V": 0.20784609690826544,
+      "output_rms_V": 0.18955937040636217,
+      "gain_normalized_rms_error_dB": -0.7999323164620402,
+      "difference_raw_rms_V": 0.1248244972394811,
+      "difference_delay_aligned_rms_V": 0.1248244972394811,
+      "test": "SYNTHETIC_STEADY_PERIODIC_MULTITONE_NOT_CAPTURE"
+    },
+    {
+      "architecture": "A3",
+      "input_rms_V": 0.20784609690826544,
+      "output_rms_V": 0.07717016240310039,
+      "gain_normalized_rms_error_dB": -0.010803583797466581,
+      "difference_raw_rms_V": 0.2252539183421053,
+      "difference_delay_aligned_rms_V": 0.0381627070533731,
+      "test": "SYNTHETIC_STEADY_PERIODIC_MULTITONE_NOT_CAPTURE"
+    },
+    {
+      "architecture": "A4",
+      "input_rms_V": 0.20784609690826544,
+      "output_rms_V": 0.12547604056503545,
+      "gain_normalized_rms_error_dB": -0.0043601216462190555,
+      "difference_raw_rms_V": 0.28705650368049096,
+      "difference_delay_aligned_rms_V": 0.03683777677256433,
+      "test": "SYNTHETIC_STEADY_PERIODIC_MULTITONE_NOT_CAPTURE"
+    }
+  ],
+  "limits": [
+    {
+      "range": "A",
+      "gain": 0.37174721189591076,
+      "max_sensor_Vpeak": 4.035,
+      "max_sine_dBSPL_RMS": 128.18447507960119,
+      "max_dBSPL_peak": 131.194775036241
+    },
+    {
+      "range": "B",
+      "gain": 10.09,
+      "max_sensor_Vpeak": 0.14866204162537167,
+      "max_sine_dBSPL_RMS": 99.51160615481483,
+      "max_dBSPL_peak": 102.52190611145464
+    },
+    {
+      "range": "C_high",
+      "gain": 3.750929368,
+      "max_sensor_Vpeak": 0.39990089197542045,
+      "max_sine_dBSPL_RMS": 108.10665175493185,
+      "max_dBSPL_peak": 111.11695171157167
+    },
+    {
+      "range": "Voxter",
+      "gain": 11,
+      "max_sensor_Vpeak": 0.13636363636363635,
+      "max_sine_dBSPL_RMS": 98.76157577638853,
+      "max_dBSPL_peak": 101.77187573302834
+    },
+    {
+      "range": "A3_high",
+      "gain": 1,
+      "max_sensor_Vpeak": 1.5,
+      "max_sine_dBSPL_RMS": 119.58942947955305,
+      "max_dBSPL_peak": 122.59972943619286
+    }
+  ],
+  "unknowns": [
+    "actualRG50certificate",
+    "SV12identity/capsule/supplyrequirements",
+    "unweightedPCMnoise20-20k",
+    "exactPCMHP/FIRcoefficients",
+    "ADS8681internalfiltercoefficients",
+    "MCP6002SPICEmodelnotretrieved",
+    "LT3092encryptedmodelnotrerun",
+    "protectionpoweroff",
+    "CacMPNleakage/DA",
+    "supplyandclocknoise"
+  ],
+  "source_hashes": {
+    "models.py": "44c0f9a94a588a109089bd0e7988ed159a449b5f8311b25616c620fcfc1c91f0",
+    "simulate.py": "49e643797b27a464e13d2fa97937145f992fb06132c4de4d62e21f62f75d0583"
+  }
+}

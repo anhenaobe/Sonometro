@@ -1,0 +1,10 @@
+{
+  "status": "FAILED_NO_SPICE_RESULT_ACCEPTED",
+  "case": "ac",
+  "engine": "ngspice46 shared",
+  "model_sha256": "1c438e45e978ffaf5aa13c7e2bb18ad5da70259775522ec41f47633a5db99033",
+  "deck_sha256": "ccfa7a410d4be2a38de785b5f1de1d62beb873cc267ada48ff7b54632d25e516",
+  "reason": "Official TI macro model operating point fails: singular internal clamp nodes; no valid AC/transient result",
+  "log": "spice_failure.log",
+  "physical_test": false
+}

@@ -1,0 +1,12 @@
+{
+  "MPN": "LM334M/NOPB",
+  "Rset_ohm": 24.3,
+  "I_nominal_mA": 2.7860082304526745,
+  "current_error_max_at1to5mA_percent": 8,
+  "typical_drift_percent_per_K": 0.336,
+  "typical_line_percent_per_V": 0.02,
+  "headroom_V": 1,
+  "approximate_drift_25K_percent": 8.4,
+  "noise_rms_A": null,
+  "reason": "noise spectrum/integrated limits not guaranteed; no numeric total invented"
+}

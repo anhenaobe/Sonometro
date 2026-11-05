@@ -5,3 +5,4 @@ firmware/build/
 hardware/afe/models/
 hardware/afe/runs/
 software/captures/
+hardware/revision/runs/

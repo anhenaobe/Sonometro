@@ -1,0 +1,26 @@
+* Original testbench. Electrical sensor surrogate, NOT a microphone model.
+* TI OPAx192 official model supplied separately; see spice.py and README.md.
+.include "../afe/models/ti/OPAx192.LIB"
+.param VS=24 AMP=3.516 FREQ=1k RS=50 RT=1690 RB=1000
+.options rshunt=1e12
+Vcc vcc 0 {VS}
+Vsig src 0 DC 12.5 AC 1 SIN(12.5 {AMP} {FREQ})
+Rsource src sensor {RS}
+Xbuffer sensor bm vcc 0 b OPAx192
+Rfb b bm 0.001
+Rt b divider {RT}
+Rb divider 0 {RB}
+R1 divider middle 1370
+R2 middle plus 2000
+C1 middle filtered 1500p
+C2 plus 0 750p
+Xfilter plus fm vcc 0 filtered OPAx192
+Rff filtered fm 0.001
+Cac filtered adc 4.7u
+Vbias bias 0 2.5
+Rin adc bias 60k
+* 20pF is a load test assumption, not a PCM1808 guaranteed input capacitor.
+Cin adc 0 20p
+.nodeset V(b)=12.5 V(bm)=12.5 V(plus)=4.64684 V(fm)=4.64684 V(filtered)=4.64684 V(adc)=2.5
+* NO clamps: unsafe startup is intentionally exposed, not a protection design.
+.end
