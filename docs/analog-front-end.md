@@ -1,5 +1,7 @@
 # Etapa de amplitud y adaptación — PROVISIONAL, 2026-11-04
 
+Antecedente del primer incremento, conservado para trazabilidad. La [revisión integral para el 5/11](revision-arquitectura.md) amplía el alcance a fuente, filtrado y ADC, y propone otra ubicación del acoplamiento. Sus decisiones actuales prevalecen; este documento no constituye liberación de PCB.
+
 Recomendación del primer incremento: **A, divisor 16,9 kΩ/10,0 kΩ + buffer OPA2192ID a 5 V**. Ganancia ideal `100/269 = 0,3717472`; con fuente resistiva de 50 Ω, 0,3710575. Preparar C como rango alto opcional; no utilizar B para cubrir todo el rango acústico. Ninguna de estas propuestas está medida físicamente.
 
 ## Evidencia y límites de interfaz

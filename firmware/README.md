@@ -1,6 +1,6 @@
 # NUCLEO-L432KC — ADC+DMA, validación física OPEN
 
-Proyecto C **STM32Cube HAL**, con captura de la entrada física. Prototipo solicitado el 2026-11-04; MCU final de PCB OPEN y F446RE conservada como propuesta anterior. Auditoría de todas las referencias disponibles: no había código de adquisición reutilizable. Base `origin/main` bbe481b; fuente IEPE conservada.
+Proyecto C **STM32Cube HAL**, con captura de la entrada física. Actualización de decisión para revisión 5/11: MCU **STM32L432KC cerrada**, NUCLEO-L432KC como prototipo y PCB convencional final. F446RE queda como antecedente. Auditoría inicial: no había código de adquisición reutilizable. Base `origin/main` bbe481b; fuente IEPE conservada. El código de este incremento no se reescribe en la revisión; [plan de cambios según ADC y pinout](../docs/revision-arquitectura.md#11-firmware-y-cableado-reutilizar-sin-reescribir).
 
 ## Implementación
 

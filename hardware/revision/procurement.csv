@@ -1,0 +1,8 @@
+MPN,fabricante,encapsulado,stock_publicado,precio_qty1_USD,fecha_consulta_local,proveedor,URL,estado
+LT3092EST#PBF,Analog Devices,SOT-223,0,6.61,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/analog-devices-inc/LT3092EST-PBF/2136214,OPEN entrega; alternativa de encapsulado abajo
+LT3092ETS8#TRMPBF,Analog Devices,TSOT-23-8,12856,6.23,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/analog-devices-inc/LT3092ETS8-TRMPBF/2136072,PROVISIONAL stock publicado; no compra ni plazo Colombia confirmado
+OPA2192ID,Texas Instruments,SOIC-8,7835,7.17,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/texas-instruments/OPA2192ID/5405192,PROVISIONAL
+PCM1808PW,Texas Instruments,TSSOP-14,97,2.37,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/texas-instruments/PCM1808PW/1095997,PROVISIONAL
+ADS8681IPW,Texas Instruments,TSSOP-16,8,13.26,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/texas-instruments/ADS8681IPW/6128438,ALTERNATIVA banda reducida; no sumar con PCM
+ADS127L01IPBS,Texas Instruments,TQFP-32,406,21.96,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/texas-instruments/ADS127L01IPBS/6164944,ALTERNATIVA excluyente; requiere FDA y referencia
+SMDTD04470YA00MS00,WIMA,SMD pelicula,0,,2026-11-04,DigiKey,https://www.digikey.com/en/products/detail/wima/SMDTD04470YA00MS00/9370784,OPEN a pedido MOQ2000; no seleccionada para prototipo

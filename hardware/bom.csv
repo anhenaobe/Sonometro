@@ -1,9 +1,9 @@
 id,funcion,cantidad,fabricante,MPN,encapsulado,disponibilidad,costo_verificado,moneda,estado,notas,fuente
 MIC1,Micrófono IEPE externo de referencia,1,ROGA Instruments,RG-50,Externo BNC,OPEN,,,PROVISIONAL,Verificar unidad y certificado antes de conexión; no implica compra,https://www.roga-instruments.com/downloads/PDF/RG-50-EN.pdf
-DEV1,Placa MCU prototipo,1,STMicroelectronics,NUCLEO-F446RE,Placa Nucleo-64,OPEN,,,PROVISIONAL,Incluye MCU y ST-LINK; no sumar MCU1 al mismo prototipo,https://www.st.com/en/evaluation-tools/nucleo-f446re.html
-MCU1,MCU alternativa para PCB propia,1,STMicroelectronics,STM32F446RET6,LQFP-64,OPEN,,,PROVISIONAL,Alternativa a DEV1; decidir placa final y verificar sufijo antes de compra,https://www.st.com/resource/en/datasheet/stm32f446re.pdf
-U1,Fuente de corriente IEPE,1,Analog Devices,LT3092EST#PBF,SOT-223,OPEN,,,PROVISIONAL,Ensayar con cargas antes del micrófono,https://www.analog.com/media/en/technical-documentation/data-sheets/lt3092.pdf
-U2,ADC de audio externo,1,Texas Instruments,PCM1808PW,TSSOP-14,OPEN,,,PROVISIONAL,Estéreo; un canal acústico; definir tratamiento entrada no usada,https://www.ti.com/lit/ds/symlink/pcm1808.pdf
+DEV1,Placa MCU prototipo,1,STMicroelectronics,NUCLEO-F446RE,Placa Nucleo-64,OPEN,,,HISTORICAL,Propuesta F446 anterior; MCU actual cerrada STM32L432KC; conservar historial; no comprar por esta revisión,https://www.st.com/en/evaluation-tools/nucleo-f446re.html
+MCU1,MCU alternativa para PCB propia,1,STMicroelectronics,STM32F446RET6,LQFP-64,OPEN,,,HISTORICAL,Propuesta F446 anterior; MCU actual cerrada STM32L432KC; conservar historial; no comprar por esta revisión,https://www.st.com/resource/en/datasheet/stm32f446re.pdf
+U1,Fuente de corriente IEPE,1,Analog Devices,LT3092EST#PBF,SOT-223,0 stock publicado DigiKey consulta2026-11-04; entrega Colombia OPEN,6.61,USD,PROVISIONAL,Ensayar con cargas antes del micrófono; ver hardware/revision/procurement.csv; precio sin envio/impuestos; alternativa no simultanea a REV,https://www.analog.com/media/en/technical-documentation/data-sheets/lt3092.pdf
+U2,ADC de audio externo,1,Texas Instruments,PCM1808PW,TSSOP-14,97 stock publicado DigiKey consulta2026-11-04; entrega Colombia OPEN,2.37,USD,PROVISIONAL,Estéreo; un canal acústico; definir tratamiento entrada no usada; ver hardware/revision/procurement.csv; precio sin envio/impuestos; alternativa no simultanea a REV,https://www.ti.com/lit/ds/symlink/pcm1808.pdf
 PS1,Alimentación IEPE de banco,1,OPEN,OPEN,Instrumento externo,OPEN,,,OPEN,Ajustable; 24 V candidato; verificar compliance y ruido,
 PS2,Alimentación analógica 5 V,1,OPEN,OPEN,OPEN,OPEN,,,OPEN,Evaluar fuente disponible o regulador y desacoplo,
 PS3,Alimentación digital 3.3 V,1,OPEN,OPEN,OPEN,OPEN,,,OPEN,Verificar presupuesto de corriente de Nucleo antes de añadir regulador,
@@ -18,8 +18,8 @@ CDEC,Desacoplo y referencia ADC,OPEN,OPEN,OPEN,0805 preferido,OPEN,,,OPEN,Cantid
 J1,Entrada IEPE,1,OPEN,OPEN,BNC hembra panel o PCB,OPEN,,,OPEN,Verificar cable y retorno de masa compatible con sensor,
 J2,Conexión USB de aplicación,1,OPEN,OPEN,Conector o adaptador OPEN,OPEN,,,OPEN,Definir VBUS ESD y conexión al USB del MCU; ST-LINK no lo sustituye,
 LOAD1,Cargas de prueba fuente IEPE,OPEN,OPEN,OPEN,Resistencias de banco,OPEN,,,OPEN,Dimensionar por tensión potencia y corriente; no son BOM final,
-DEV_L432,Plataforma actual de prototipo por decisión 2026-11-04,1,STMicroelectronics,NUCLEO-L432KC,Placa Nucleo-32,OPEN,,,PROVISIONAL,No sustituye DEV1 como historial ni decide MCU final de PCB,https://www.st.com/en/evaluation-tools/nucleo-l432kc.html
-AFE_U1,Buffer de señal y referencia para alternativa A,1,Texas Instruments,OPA2192ID,SOIC-8,OPEN,,,PROVISIONAL,Familia OPA192 dual a 5 V; montaje y ruido físico OPEN,https://www.ti.com/lit/ds/symlink/opa192.pdf
+DEV_L432,Plataforma actual de prototipo por decisión 2026-11-04,1,STMicroelectronics,NUCLEO-L432KC,Placa Nucleo-32,OPEN,,,CONFIRMED_DECISION,MCU STM32L432KC cerrada; prototipo NUCLEO; no implica disponibilidad ni validación física,https://www.st.com/en/evaluation-tools/nucleo-l432kc.html
+AFE_U1,Buffer de señal y referencia para alternativa A,1,Texas Instruments,OPA2192ID,SOIC-8,7835 stock publicado DigiKey consulta2026-11-04; entrega Colombia OPEN,7.17,USD,PROVISIONAL,Familia OPA192 dual a 5 V; montaje y ruido físico OPEN; ver hardware/revision/procurement.csv; precio sin envio/impuestos; alternativa no simultanea a REV,https://www.ti.com/lit/ds/symlink/opa192.pdf
 AFE_ALT1,Alternativa operacional audio,1,Texas Instruments,OPA1652ID,SOIC-8,OPEN,,,PROVISIONAL,Alternativa excluyente a AFE_U1; requiere revisar modo común y alimentación,https://www.ti.com/lit/ds/symlink/opa1652.pdf
 AFE_ALT2,Alternativa operacional audio,1,Texas Instruments,OPA1656ID,SOIC-8,OPEN,,,PROVISIONAL,Alternativa excluyente a AFE_U1; para A requiere mayor tensión por modo común,https://www.ti.com/lit/ds/symlink/opa1656.pdf
 AFE_RT,Resistencia superior atenuación,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,16.9 kohm E96; 0.1 por ciento; TCR hasta25ppm/K; al menos0.1W,
@@ -31,3 +31,16 @@ AFE_RG,Realimentación a Vc rango alto opcional C,1,OPEN,OPEN,0805,OPEN,,,PROVIS
 AFE_VC,Referencia independiente bufferizada para C alto,OPEN,OPEN,OPEN,SOIC preferido,OPEN,,,OPEN,Centro2.5V PCM o1.65V STM; solo C; pendiente circuito y ruido,
 AFE_BYP,Desacoplo alimentación operacional,1,OPEN,OPEN,0805,OPEN,,,PROVISIONAL,100nF alimentación según fabricante; no es filtro de señal,
 PCM_CLK,Oscilador externo para PCM1808 maestro,1,OPEN,OPEN,Convencional preferido,OPEN,,,PROVISIONAL,12.288MHz salida3.3V para48kSPS; jitter y MPN OPEN,
+REV_SRC,Alternativa encapsulado fuente IEPE,1,Analog Devices,LT3092ETS8#TRMPBF,TSOT-23-8,12856; entrega local OPEN,6.23,USD,PROVISIONAL,Alternativa excluyente a U1 SOT223; no modificar fuente existente; footprint distinto; 120k/430ohm solo cálculo; validar ruido y arranque,https://www.analog.com/media/en/technical-documentation/data-sheets/lt3092.pdf
+REV_OPA,A3 buffer IEPE y filtro unidad,1,Texas Instruments,OPA2192ID,SOIC-8,7835; entrega local OPEN,7.17,USD,PROVISIONAL,Alternativa a AFE_U1 anterior; ambos canales24V; potencia y protección ADC OPEN,https://www.ti.com/lit/ds/symlink/opa192.pdf
+REV_ADS8681,ADC bipolar alternativa banda reducida,1,Texas Instruments,ADS8681IPW,TSSOP-16,8; entrega local OPEN,13.26,USD,PROVISIONAL,Alternativa excluyente a U2; filtro interno15kHz impide plano20kHz,https://www.ti.com/lit/ds/symlink/ads8681.pdf
+REV_ADS127,ADC diferencial alternativa alta precisión,1,Texas Instruments,ADS127L01IPBS,TQFP-32,406; entrega local OPEN,21.96,USD,PROVISIONAL,Excluyente; FDA y referencia extra; implementación OPEN,https://www.ti.com/lit/ds/symlink/ads127l01.pdf
+REV_RT,Pasivo 1690ohm,1,OPEN,OPEN,0805 o1206,OPEN; entrega local OPEN,,,PROVISIONAL,A3 divisor superior; 0.1%;25ppm/K; >=0.25W por fallo24V,
+REV_RB,Pasivo 1000ohm,1,OPEN,OPEN,0805 o1206,OPEN; entrega local OPEN,,,PROVISIONAL,A3 divisor inferior aGND;0.1%;25ppm/K;>=0.25W,
+REV_R1,Pasivo 1370ohm,1,OPEN,OPEN,0805,OPEN; entrega local OPEN,,,PROVISIONAL,A3 SK;0.1%;>=0.125W; sumar Rth628.253ohm del divisor,
+REV_R2,Pasivo 2000ohm,1,OPEN,OPEN,0805,OPEN; entrega local OPEN,,,PROVISIONAL,A3 SK;0.1%;>=0.125W,
+REV_C1,Pasivo 1500pF,1,OPEN,OPEN,0805,OPEN; entrega local OPEN,,,PROVISIONAL,C0G1%;>=50V; nodo intermedio a salidaSK,
+REV_C2,Pasivo 750pF,1,OPEN,OPEN,0805,OPEN; entrega local OPEN,,,PROVISIONAL,C0G1%;>=50V; entrada positiva aGND,
+REV_CAC,Único acoplamiento AC al PCM,1,OPEN,OPEN,OPEN,OPEN; entrega local OPEN,,,OPEN,4.7uF no polar >=50V; película preferida; fuga/DA y disponibilidad OPEN; reemplaza ubicación de C_AC en arquitecturaA3 sin duplicarlo,
+REV_OSC,Reloj PCM maestro96kSPS,1,OPEN,OPEN,SMD convencional,OPEN; entrega local OPEN,,,OPEN,24.576MHz salida3.3V; jitter/duty y entrega OPEN; alternativo a PCM_CLK12.288MHz48k,
+REV_PROT,Protección directa ADC y secuenciación,OPEN,OPEN,OPEN,SMD convencional,OPEN; entrega local OPEN,,,OPEN,BLOQUEO fabricación; definir clamp limitación descarga mute y corriente conADCapagado; no diodos como referencia,

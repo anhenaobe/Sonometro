@@ -11,7 +11,9 @@ Micrófono IEPE externo → corriente constante → protección y acoplamiento A
 → acondicionamiento analógico → ADC de audio → STM32 → USB → Python/PC
 ```
 
-**PROVISIONAL:** LT3092 y PCM1808. Desde 2026-11-04 la plataforma de prototipo es **NUCLEO-L432KC**, por decisión del equipo; NUCLEO-F446RE queda como propuesta anterior y la MCU final de PCB sigue OPEN. Hay [firmware STM32Cube HAL](firmware/README.md) compilable para ADC interno de 12 bits + temporizador + DMA y capturas por bloques vía ST-LINK VCP, y [herramienta Python](software/README.md). La adquisición física sigue OPEN; SAI/PCM1808 queda preparado, sin validación física.
+**PROVISIONAL:** LT3092 y PCM1808. **STM32L432KC es la MCU decidida**, con NUCLEO-L432KC para prototipo y PCB convencional como implementación final; F446RE se conserva como antecedente. Hay [firmware STM32Cube HAL](firmware/README.md) compilable para ADC interno de 12 bits + temporizador + DMA y capturas por bloques vía ST-LINK VCP, y [herramienta Python](software/README.md). La adquisición física sigue OPEN; SAI/PCM1808 requiere implementación y validación.
+
+**Revisión para el 5/11:** [propuesta breve en PDF](output/pdf/propuesta-revisada-iepe.pdf), [informe de cálculos y decisiones](docs/revision-arquitectura.md) y [simulaciones reproducibles con gráficas](hardware/revision/README.md). Compara fuentes, filtros, referencias y cuatro arquitecturas ADC. Recomendación A3 condicionada a protección y pruebas; no autoriza fabricación todavía. Plazo actualizado de entrega: aproximadamente **25/11/2026**.
 
 La [propuesta analógica](docs/analog-front-end.md) compara tres arquitecturas y entrega cálculos/netlists/simulaciones reproducibles. El contrato de protección, polarización y carga del acoplamiento previo sigue pendiente de cierre entre equipos.
 

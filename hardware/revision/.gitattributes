@@ -1,0 +1,5 @@
+# Keep hashed simulation sources identical on Windows and Linux checkouts.
+*.py text eol=lf
+*.cir text eol=lf
+*.json text eol=lf
+*.svg text eol=lf
