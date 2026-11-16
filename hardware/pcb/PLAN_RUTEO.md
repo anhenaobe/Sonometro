@@ -471,6 +471,12 @@ Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públi
   - Prototipo en una copia → aprobado (`colocar_bloque5b.json`): R38/R39/R40 en columna en x 141.7 (el courtyard de J8
     llega a x 140.90), C57 en el lugar de C56 de CH1 y R43 vertical como R8. CH2 queda con la geometría de CH1
     desplazada 22.5 mm en y.
+- **Resto de CH2 (aprobado, `colocar_bloque5c.json`):** con lo anterior, REST_SV quedaba partido en {U9.1, R43.1, R44.2}
+  y {C57.2, TP4}. TP4 estaba encerrado por DC_MON2 (R44.1 → R45.2 → C55), C54 y el enlace de 5V_A de U9.8.
+  - TP4, C54, R44, R45 y C55 pasaron al lugar de TP2, C7, R15, R17 y C8 de CH1. R44/R45/C55 van 0.2 mm más a la
+    derecha por la columna. CH2 queda idéntico a CH1.
+  - C54 queda a 0.97 mm de U9.8.
+  - C57, R41 y R42 pierden el designador en la serigrafía y quedan en el PDF de montaje.
 - **Aprobado por el dueño tras el bloque 5:**
   - **Nodo SUM:** el enlace CF → resistencia de entrada (C56.1 → R18.1, C57.1 → R41.1) no puede entrar por el eje con los
     quiebres fuera de los pads (1.52 mm en x, 1.76 mm en y, con el otro pad del CF al lado). Queda el enlace de 2.2 mm
@@ -480,6 +486,6 @@ Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públi
     ≤ 4 mm (DS22039D §8.3; `DESACOPLO_LIMITE`).
 - **Reservado para otros bloques:**
   - I2C (bloque 7): vías a la derecha de U2/U10 en SCL (148.6, 129.5/152.0) y SDA (148.0, 130.45/152.95).
-  - 5V_A (bloque 8): vías en (152.28, 120.9) junto a C7.2 y en (153.1125, 146.15) bajo C54.2.
-  - REST_OUT → C9 sale de TP2 y REST_SV → C14 de TP4/R44.2 (bloque 6).
-- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 30 conexiones sin rutear.
+  - 5V_A (bloque 8): vías en (152.28, 120.9) junto a C7.2 y en (152.28, 143.4) junto a C54.2.
+  - REST_OUT → C9 sale de TP2 y REST_SV → C14 de TP4, los dos por la derecha (bloque 6).
+- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 29 conexiones sin rutear.
