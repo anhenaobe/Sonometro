@@ -347,3 +347,59 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
   - Eran 23 de los 25 hallazgos iniciales.
   - Los otros 2 eran reales: IEPE_SV pasaba sobre el anillo de JP2.1. Se corrigió el trazado.
 - **H:** IEPE_FEED e IEPE_FEED_SV se tratan como alimentación, como pidió el dueño.
+
+### 9.1 Decisiones del dueño tras el bloque 3
+
+- Aceptado: la ruta de 24 V de CH2 bajo J2, los condensadores de entrada de los LT3092 donde están y la ubicación
+  de C56/C57.
+- **Cruce de IEPE en el AFE** (CH1 hacia R13 y CH2 hacia R38), en este orden de preferencia:
+  1. Bajar a B.Cu el enlace salida del DAC → R12 (o R37 en CH2), que es el tramo anterior al filtro RC: es un nivel
+     casi estático.
+  2. Si no cabe, bajar a B.Cu las líneas I2C en ese punto.
+  3. Nunca cruzar el nodo R12/C4 después del filtro, ni el nodo SUM, ni nada de alta impedancia.
+- Siempre con puente corto, a 90°, con vías de cosido, e IEPE cruzando en su tramo de baja impedancia.
+- Si la opción 1 o la 2 funciona, se hace y se reporta con imagen. Solo se detiene si ninguna funciona.
+
+
+## 10. Bloques 4–8: análisis antes de rutear (oráculo en copias, `tools/ruteo/oraculo/`)
+
+**Etapa 1, redes críticas solas** (Analogica y Reloj de los bloques 4–7, solo F.Cu; las salidas de los DAC pueden ir
+en B.Cu):
+- Con el placement actual queda sin rutear el AFE de CH1, en dos enlaces:
+  - IEPE → R13.2;
+  - R16 → R18, el final de la cadena de 1 MΩ.
+- Causa: en CH1, R14 y R16 están a la derecha de U3. En CH2, R39 y R40 están abajo y a la izquierda. U3 queda cerrado
+  por sus redes (REST_OUT → R8, 5V_A → C7, U3B+ → C4/R12, SUM). La cadena es de alta impedancia, así que no admite
+  puentes.
+- **Propuesta (requiere aprobación):** R13, R14 y R16 en la columna libre x = 140.6, verticales y apilados
+  (`propuesta_columna_ch1.json`):
+  - IEPE entra a R13 por la izquierda, sin meterse al AFE;
+  - la cadena sube y entra a R18.2 pasando entre los pads de R17;
+  - DRC sin solapes de courtyard (solo serigrafía por reubicar).
+- **Resultado con la propuesta:** todas las redes críticas de los bloques 4–7 salen en F.Cu, con 0 vías. Ni siquiera
+  hace falta bajar la salida del DAC.
+- Queda una observación: DOUT pasa a menos de 0.5 mm de R19.1. Freerouting no conoce esa regla; se corrige al trazar.
+
+**Etapa 2: el resto** (alimentación, I2C, DC_MON*, straps), con el ruteo crítico congelado:
+
+| Corrida | Uso de B.Cu | Bajo cuántas redes críticas | Sin rutear |
+|---|---|---|---|
+| B.Cu libre para esas redes | ~140 mm en 7 tramos | ~12 (REST_SV, SAI_FS/SCK, DOUT, VINL, AC_RIGHT, Y1-OUT, R39-Pad1, VSHIFT, REST_OUT…) | 3 |
+| Vías penalizadas | I2C casi entero en B.Cu: entra por los pines THT de la NUCLEO, unos 37 mm por línea | ~10 | 17 |
+
+- **Causa estructural:**
+  - I2C y DC_MON/DC_MON2 nacen dentro de los dos AFE (izquierda) y van a la NUCLEO (derecha).
+  - Entre ellos, las entradas del ADC y REST_SV (AFE CH2 → C14) bajan de arriba abajo.
+  - 5V_A y 3V3 salen arriba y tienen que entrar a grupos cerrados (U3.8, U9.8, U4.3, el grupo 3V3 del ADC, C20/R49).
+- Con la regla aprobada (puentes cortos, solo bajo redes no críticas, I2C/DC_MON solo en la zona digital), el ruteo
+  no se puede completar en 2 capas.
+
+**Decisión pendiente del dueño:**
+
+| Opción | Qué implica |
+|---|---|
+| A' | 2 capas con excepciones: tramos largos de B.Cu bajo redes críticas |
+| B | 4 capas (sección 2), sin excepciones; los bloques 1–3 siguen valiendo |
+| C | Recolocar la mitad derecha |
+
+Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públicas son viejas o de terceros.
