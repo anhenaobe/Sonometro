@@ -14,6 +14,7 @@ Uso (Python de KiCad): python polilineas.py <pcb> <bloque>   (KiCad cerrado)
 import importlib.util
 import math
 import os
+import subprocess
 import sys
 
 import pcbnew
@@ -68,7 +69,6 @@ def aplicar(b, nombre, mod):
         errs += validar(red, pts)
     if errs:
         raise SystemExit('el bloque no cumple las reglas de trazado:\n  ' + '\n  '.join(errs))
-    borrar_grupo(b, nombre)
     grupo = pcbnew.PCB_GROUP(b)
     grupo.SetName('ruteo:' + nombre)
     b.Add(grupo)
@@ -126,9 +126,22 @@ def rellenar(b):
 
 def main():
     path, nombre = sys.argv[1], sys.argv[2]
-    b = pcbnew.LoadBoard(path)
     mod = cargar_bloque(nombre)
     nombre = os.path.splitext(os.path.basename(nombre))[0]
+    if '--solo-borrar' in sys.argv:
+        b = pcbnew.LoadBoard(path)
+        borrar_grupo(b, nombre)
+        pcbnew.SaveBoard(path, b)
+        return
+    # SWIG: después de b.Remove() la tabla de redes queda inservible y una segunda LoadBoard en el mismo proceso
+    # también: el grupo viejo se borra en un proceso aparte y aquí se carga la placa limpia
+    r = subprocess.run([sys.executable, os.path.abspath(__file__), path, sys.argv[2], '--solo-borrar'],
+                       capture_output=True, text=True)
+    if r.returncode:
+        raise SystemExit('no se pudo borrar el grupo anterior: ' + r.stdout + r.stderr)
+    b = pcbnew.LoadBoard(path)
+    if any(g.GetName() == 'ruteo:' + nombre for g in b.Groups()):
+        raise SystemExit('el grupo anterior sigue en la placa')
     n = aplicar(b, nombre, mod)
     rellenar(b)
     pcbnew.SaveBoard(path, b)

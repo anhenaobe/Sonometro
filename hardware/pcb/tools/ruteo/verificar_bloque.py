@@ -28,9 +28,11 @@ def run(args, **kw):
 
 
 def drc(pcb, out):
+    if os.path.exists(out):
+        os.remove(out)                               # nunca leer un informe viejo
     code, txt = run([KCLI, 'pcb', 'drc', '--schematic-parity', '--severity-all', '--format', 'json', '-o', out, pcb])
-    if not os.path.exists(out):
-        raise SystemExit('kicad-cli drc falló: ' + txt)
+    if code or not os.path.exists(out):
+        raise SystemExit(f'kicad-cli drc falló (código {code}): ' + txt)
     return json.load(open(out, encoding='utf-8'))
 
 
@@ -61,8 +63,13 @@ def main():
     malo |= bool(otros) or bool(d['schematic_parity'])
     for v in otros:
         print('   ', v['type'], '|', v['description'][:90], '|', ' / '.join(i['description'][:50] for i in v['items']))
-    code, txt = run([KCLI, 'sch', 'erc', '--severity-all', '--format', 'json', '-o', os.path.join(out, 'erc.json'),
+    erc = os.path.join(out, 'erc.json')
+    if os.path.exists(erc):
+        os.remove(erc)
+    code, txt = run([KCLI, 'sch', 'erc', '--severity-all', '--format', 'json', '-o', erc,
                      os.path.join(PCB_DIR, 'pcb.kicad_sch')])
+    if code or not os.path.exists(erc):
+        raise SystemExit(f'kicad-cli erc falló (código {code}): ' + txt)
     e = json.load(open(os.path.join(out, 'erc.json'), encoding='utf-8'))
     n_erc = sum(len(s['violations']) for s in e['sheets'])
     print(f'[esquemático] ERC: {n_erc}')
@@ -86,7 +93,12 @@ def main():
     malo |= bool(d2['violations'])
     for v in d2['violations']:
         print('   ', v['type'], '|', v['description'][:90], '|', ' / '.join(i['description'][:50] for i in v['items']))
-    code, txt = run([KPY, os.path.join(HERE, 'revisar_pistas.py'), cpcb, '--json', os.path.join(out, 'revisar.json')])
+    rj = os.path.join(out, 'revisar.json')
+    if os.path.exists(rj):
+        os.remove(rj)
+    code, txt = run([KPY, os.path.join(HERE, 'revisar_pistas.py'), cpcb, '--json', rj])
+    if not os.path.exists(rj):
+        raise SystemExit('revisar_pistas.py no terminó: ' + txt[-800:])
     print('[copia + GND temporal] revisar_pistas.py:')
     print('   ' + '\n   '.join(l for l in txt.splitlines() if l.strip() and 'memory leak' not in l))
     malo |= code != 0

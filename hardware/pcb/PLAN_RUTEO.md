@@ -176,21 +176,23 @@ C4 C19 C20 C29 C30 C32 C33 C34 C39 C40 C42 C43 L1 L2 R6 R12 R13 R19 R22 R23 R29 
 - U3/U9 TLV9152IDDFR; CIN C153031, COUT C694469, C36/C46 C125847.
 - Pasivos a basic que cumplen tus criterios. CHF queda con el original de 100 V.
 
-**Serigrafía después de colocar las vías del bloque 1:** caben 107 de 127. Se omiten 20, ninguno U, D, J, JP ni TP:
-C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R29 R31 R43 R49.
+**Serigrafía con el bloque 1 puesto:** caben 109 de 127. Se omiten 18, ninguno U, D, J, JP ni TP:
+C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
 
 ## 7. Bloque 1 — bucks U6/U7 (`tools/ruteo/bloques/b1_bucks.py`)
 
 - **Lazo de potencia** (VIN–CHF–PGND–SW–L–COUT) entero en F.Cu, según TI SNVSB49D fig. 12-2. U7 es el mismo trazado
   desplazado 21.6 mm.
-- **Pin 3 (NC) unido a SW (pin 12)** con una zona de SW de 1.3 × 0.5 mm, como en la EVM. Con pistas no se puede
-  entrar al centro del pin 12 sin un giro de 90° ni pasar entre los pines 1/2 o 10/11 (0.4 mm libres).
+- **Pin 3 (NC) unido a SW (pin 12)** en la placa (SNVSB49D §12.1 ítem 3 y tabla de pines p.4), con una zona de SW de
+  1.3 × 0.5 mm. Con pistas no se puede entrar al centro del pin 12 sin un giro de 90° ni pasar entre los pines 1/2 o
+  10/11 (0.4 mm libres). No leí el layout de la EVM; la fuente es solo el datasheet.
+- **Salidas del integrado:** cada pista sale del pin con el ancho del pad (0.25 mm) y se ensancha fuera de él. Así
+  ninguna esquina entre pistas queda fuera del cobre del pad (por ejemplo EN–VIN en el pin 10).
 - **CBOOT:** BOOT sale por la izquierda del pin 4 y baja por fuera de la pista de SW hasta C35/C45.
 - **FB:** R29/R30 (R31/R32) junto al pin 7. El sensado de VOUT llega desde abajo:
   - U6: desde el tronco de 3V3;
   - U7: desde R33.1, en el punto de carga.
-- **Puentes en B.Cu aprobados** bajo el bus de 24 V (y = 117.4, se rutea en el bloque 2), con vías 0.6/0.3 en los
-  extremos:
+- **Puentes en B.Cu aprobados** bajo el bus de 24 V (bloque 2), con vías 0.6/0.3 en los extremos:
 
   | Red | x (mm KiCad) | y | Largo |
   |---|---|---|---|
@@ -198,20 +200,45 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R29 R31 R43 R49.
   | 3V3, sensado FB U6 | 132.7 | 116.35 → 118.5 | 2.15 mm |
   | 5V, sensado FB U7 | 154.3 | 116.35 → 118.5 | 2.15 mm |
 
-- **Zonas:** VOUT_3V3 y VOUT_5V (F.Cu, prioridad 2) sobre la salida de L1/L2 y los COUT; SW_3_PIN3 y SW_5_PIN3 (prioridad 3).
-- **Anchos:** SW a L 0.6 mm; VIN 0.4–0.5 mm; PGND 0.4–0.5 mm; tronco de 3V3 0.5 mm; el resto 0.2–0.25 mm. No hay
-  pistas de menos de 0.2 mm.
-- **Vías GND:** 11 por buck, junto a cada pad GND (CIN, CHF, COUT, CVCC, RFBB) y en AGND.
-- **Pendiente para el bloque 2:** VIN de los dos lados de cada integrado (pin 2 y pin 10) se une por el peine del
-  bus de 24 V.
+- **Zonas:** VOUT_3V3 y VOUT_5V (F.Cu, prioridad 2) sobre la salida de L1/L2 y los COUT; SW_3_PIN3 y SW_5_PIN3
+  (prioridad 3).
+- **Vías GND:** 13 por buck, junto a cada pad GND:
+  - pines 1, 6 y 11 del integrado: 0.50–0.75 mm del pad;
+  - CIN, CHF, COUT, CVCC y RFBB: 0.10–0.20 mm.
+- **Anchos y vías por debajo de la clase (decisión deliberada):**
+  - El ancho de clase de Potencia/Conmutado (0.5 mm) es el ancho por defecto de KiCad, no un mínimo del DRC.
+  - SW a L va a 0.6 mm, VIN y PGND a 0.4–0.5 mm, el tronco de 3V3 a 0.5 mm.
+  - Las salidas de pin van a 0.25 mm y el sensado de FB a 0.2 mm.
+  - Las vías son 0.6/0.3 frente a 0.8/0.4 de la clase.
+  - La corriente es de 5–20 mA por riel. CALCULOS.md justifica cada ancho y cada vía con IPC-2221.
+  - No hay pistas de menos de 0.2 mm.
+- **Pendiente para el bloque 2:** VIN de los dos lados de cada integrado (pin 2 y pin 10) se une por el bus de 24 V.
+
+**Prueba del bus de 24 V (solo en copia, para validar los puentes):**
+- El bus es una franja de zona 24V_PROT en F.Cu (y = 116.9–117.75, x = 121.3–158.3), con dientes de pista que van
+  recto desde el centro de cada CIN.
+- Resultado: DRC 0. Une los pines 2 y 10 de U6 y U7. Los 6 vías de los puentes quedan a ≥ 0.45 mm de la franja, y la
+  franja termina a la izquierda del sensado de 5V (x = 161.275).
+- **Una unión en T sobre pista desnuda la marca el DRC nativo** (`track_angle`, 90°). Tres ramas no pueden quedar
+  todas a ≥ 135° entre sí, así que en toda la placa las ramificaciones van en un pad o en una zona, nunca en pista.
+
+**Cambios al chequeo `revisar_pistas.py`** (para que lo revises):
+- **B:**
+  - En el centro de un pad o de una vía calcula la esquina interior entre los bordes de las dos pistas. Si cae dentro
+    del cobre, se lista como «cumple»; si cae fuera, es hallazgo.
+  - Ahora también marca las uniones en T sobre pista desnuda, igual que el DRC.
+- **K:** ahora cubre también los pines GND SMD de los integrados. Mide borde a borde (≤ 1.0 mm). Las piezas que
+  todavía no tienen ninguna pista se cuentan como pendientes.
+- **L (nuevo):** condensador de desacoplo a ≤ 1.0 mm borde a borde de su pin (tabla `DESACOPLO`, se completa por
+  bloque).
 
 **Verificación** (`python tools/ruteo/verificar_bloque.py b1_bucks`):
 
 | Chequeo | Resultado |
 |---|---|
-| DRC de la placa real (paridad incluida) | 22 `via_dangling`, que son las 22 vías GND: conectan solo en F.Cu hasta que exista el plano (bloque 9). Ninguna otra violación |
-| Paridad | 0 |
-| ERC | 0 |
+| DRC de la placa real | 26 `via_dangling`, exactamente las 26 vías GND: conectan solo en F.Cu hasta que exista el plano (bloque 9). Ninguna otra violación |
+| Paridad / ERC | 0 / 0 |
 | DRC de la copia con relleno GND temporal en B.Cu | 0 violaciones |
-| `revisar_pistas.py` (en la copia) | 0 hallazgos |
+| `revisar_pistas.py` (en la copia) | **2 hallazgos (L): C36 y C46 a 3.00 mm del pin 5 (VCC)**. Decide el dueño |
+| Cumple | 14 uniones en el centro de un pad con la esquina dentro del cobre; 22 pads GND con su vía (K); 4 CHF a 0.92 mm de su pin (L) |
 | Conexiones sin rutear | 209 en la placa real, 178 en la copia con plano |

@@ -2,9 +2,9 @@
 
 Chequeos (pedido del dueño + REGLAS.md):
   A  orientación de cada segmento múltiplo de 45°
-  B  ángulo entre segmentos unidos >= 135° (sin 90° ni agudos)  [también lo hace el DRC: track_angle]. Igual que el
-     DRC, no cuenta la unión en el centro de un pad o de una vía: ahí cada pista entra por separado (chequeo C) y la
-     esquina queda dentro del cobre del pad o de la vía.
+  B  ángulo entre segmentos unidos >= 135° (sin 90° ni agudos)  [también lo hace el DRC: track_angle]. En el centro
+     de un pad o de una vía se calcula la esquina interior entre los bordes de las dos pistas: si cae dentro del cobre
+     del pad o de la vía no hay esquina de pista (se lista aparte, como información); si cae fuera, es hallazgo.
   C  unión pista-pad: termina en el centro del pad y llega paralela a un eje del pad
   D  segmentos de menos de 0.1 mm
   E  extremos sueltos (stubs) y segmentos duplicados o superpuestos
@@ -13,8 +13,9 @@ Chequeos (pedido del dueño + REGLAS.md):
   H  ninguna pista crítica pasa por encima de una pista de B.Cu
   I  GND continuo en B.Cu debajo de cada pista crítica (contra el relleno de la zona)
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
-  K  desacoplo: vía GND junto al pad GND de cada condensador de desacoplo (<= 1.0 mm), en los condensadores que ya
-     tienen alguna pista (los de bloques sin rutear se cuentan aparte como pendientes)
+  K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
+     integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
+  L  condensador de desacoplo pegado a su pin: <= 1.0 mm borde a borde entre su pad y el pin (tabla DESACOPLO)
 Uso (Python de KiCad):  python revisar_pistas.py [pcb] [--json salida.json]
 Sale con código 1 si hay hallazgos.
 """
@@ -40,6 +41,12 @@ EXCEPCIONES_BCU = [                              # [(red, (x0, y0, x1, y1))] apr
 CRITICAL_CLASSES = {'Analogica', 'Reloj', 'Conmutado'}
 DIGITAL_CLASSES = {'Reloj'}
 DIGITAL_NETS = {'I2C_SCL', 'I2C_SDA'}
+VIA_GND_MAX = 1.0                                # mm, borde del pad a borde de la vía (chequeo K)
+DESACOPLO_MAX = 1.0                              # mm, borde a borde condensador-pin (chequeo L)
+DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
+    'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
+    'C39': ('U7', '2'), 'C40': ('U7', '10'), 'C46': ('U7', '5'),
+}
 
 
 def mm(v):
@@ -77,6 +84,42 @@ def seg_seg_dist(a, b, c, d):
     return min(seg_dist(a, c, d), seg_dist(b, c, d), seg_dist(c, a, b), seg_dist(d, a, b))
 
 
+def pad_gap(p1, p2):
+    """Separación borde a borde entre dos pads (cajas alineadas a los ejes; pads a 0°/90°)."""
+    b1, b2 = p1.GetBoundingBox(), p2.GetBoundingBox()
+    dx = max(mm(b1.GetLeft()) - mm(b2.GetRight()), mm(b2.GetLeft()) - mm(b1.GetRight()), 0)
+    dy = max(mm(b1.GetTop()) - mm(b2.GetBottom()), mm(b2.GetTop()) - mm(b1.GetBottom()), 0)
+    return math.hypot(dx, dy)
+
+
+def pad_via_gap(pad, via):
+    bb = pad.GetBoundingBox()
+    x, y = pt(via.GetPosition())
+    dx = max(mm(bb.GetLeft()) - x, x - mm(bb.GetRight()), 0)
+    dy = max(mm(bb.GetTop()) - y, y - mm(bb.GetBottom()), 0)
+    return math.hypot(dx, dy) - mm(via.GetWidth(pcbnew.F_Cu)) / 2
+
+
+def esquina_interior(p, q1, w1, q2, w2):
+    """Esquina interior entre los bordes de dos pistas que salen de p hacia q1 y q2 (anchos w1, w2)."""
+    u1 = ((q1[0] - p[0]), (q1[1] - p[1]))
+    u2 = ((q2[0] - p[0]), (q2[1] - p[1]))
+    n = math.hypot(*u1), math.hypot(*u2)
+    u1, u2 = (u1[0] / n[0], u1[1] / n[0]), (u2[0] / n[1], u2[1] / n[1])
+    d = u1[0] * u2[0] + u1[1] * u2[1]
+    if abs(abs(d) - 1) < 1e-9:
+        return None
+    n1 = (u2[0] - d * u1[0], u2[1] - d * u1[1])
+    n2 = (u1[0] - d * u2[0], u1[1] - d * u2[1])
+    l1, l2 = math.hypot(*n1), math.hypot(*n2)
+    n1, n2 = (n1[0] / l1, n1[1] / l1), (n2[0] / l2, n2[1] / l2)
+    a = (p[0] + n1[0] * w1 / 2, p[1] + n1[1] * w1 / 2)          # p + h1·n1 + s·u1 = p + h2·n2 + t·u2
+    c = (p[0] + n2[0] * w2 / 2, p[1] + n2[1] * w2 / 2)
+    det = u1[0] * (-u2[1]) - u1[1] * (-u2[0])
+    s = ((c[0] - a[0]) * (-u2[1]) - (c[1] - a[1]) * (-u2[0])) / det
+    return (a[0] + s * u1[0], a[1] + s * u1[1])
+
+
 def in_box(p, boxes):
     return any(x0 <= p[0] <= x1 and y0 <= p[1] <= y1 for x0, y0, x1, y1 in boxes)
 
@@ -87,6 +130,7 @@ def main():
     out_json = sys.argv[sys.argv.index('--json') + 1] if '--json' in sys.argv else None
     b = pcbnew.LoadBoard(path)
     F = collections.defaultdict(list)            # hallazgos por chequeo
+    INFO = collections.defaultdict(list)         # lo que se revisó y cumple, para mostrarlo
     tracks = [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']
     vias = [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']
     pads = [p for fp in b.GetFootprints() for p in fp.Pads()]
@@ -139,16 +183,31 @@ def main():
             t, a, c, lay, net, w = s
             others = [o for o in lst if o[0] is not s and o[0][4] == net]
             pd = pads_at(p, layer, net)
-            centro = via_at(p, net) or any(near(pt(x.GetPosition()), p, 0.01) for x in pd)
+            cobre = via_at(p, net) + [x for x in pd if near(pt(x.GetPosition()), p, 0.01)]
             # B: ángulo entre segmentos (vector saliente de cada uno desde el punto común)
-            for (s2, p2, q2) in ([] if centro else others):
+            for (s2, p2, q2) in others:
                 v1 = (q[0] - p[0], q[1] - p[1])
                 v2 = (q2[0] - p2[0], q2[1] - p2[1])
                 n1, n2 = math.hypot(*v1), math.hypot(*v2)
                 if n1 > 0 and n2 > 0:
                     ang = math.degrees(math.acos(max(-1, min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / (n1 * n2)))))
                     if ang < 135 - 0.01 and id(s) < id(s2):
-                        F['B_angulo_union'].append(f'{net} en {p}: {ang:.1f}°')
+                        e = esquina_interior(p, q, w, q2, s2[5]) if cobre else None
+                        dentro = False
+                        if e is not None:
+                            k = math.dist(e, p)
+                            e2 = (e[0] + (p[0] - e[0]) * 0.01 / k, e[1] + (p[1] - e[1]) * 0.01 / k) if k else e
+                            dentro = any(c.HitTest(pcbnew.VECTOR2I(int(round(e2[0] * 1e6)), int(round(e2[1] * 1e6))))
+                                         for c in cobre)
+                        donde = ('pad ' + ', '.join(f'{x.GetParentFootprint().GetReference()}.{x.GetNumber()}'
+                                                    for x in cobre if isinstance(x, pcbnew.PAD))) if cobre else ''
+                        if dentro:
+                            INFO['B_union_dentro_del_pad'].append(f'{net} en {p} ({donde or "vía"}): {ang:.0f}°, '
+                                                                  f'esquina interior dentro del cobre')
+                        else:
+                            F['B_angulo_union'].append(f'{net} en {p}: {ang:.1f}°' +
+                                                       (f' (esquina fuera del cobre de {donde or "la vía"})'
+                                                        if cobre else ''))
             if pd:
                 for pdx in pd:
                     ruteados.add(pdx.GetParentFootprint().GetReference())
@@ -165,10 +224,20 @@ def main():
                                 f'entra a {ang_of(p, q):.1f}° (pad a {pdx.GetOrientation().AsDegrees():.0f}°)')
             elif not others and not via_at(p, net) and not zone_at(p, layer, net):
                 # ¿unión en T sobre el cuerpo de otro segmento de la misma red?
-                tee = any(o[4] == net and o[3] == layer and o[0] is not t and seg_dist(p, o[1], o[2]) < 0.01
-                          for o in segs)
-                if not tee:
+                tees = [o for o in segs if o[4] == net and o[3] == layer and o[0] is not t
+                        and seg_dist(p, o[1], o[2]) < 0.01]
+                if not tees:
                     F['E_extremo_suelto'].append(f'{net} {b.GetLayerName(layer)} en {p}')
+                for o in tees:                   # unión en T sobre pista desnuda: el DRC (track_angle) también la ve
+                    v1 = (q[0] - p[0], q[1] - p[1])
+                    for e in (o[1], o[2]):
+                        v2 = (e[0] - p[0], e[1] - p[1])
+                        if math.hypot(*v2) < 1e-6:
+                            continue
+                        ang = math.degrees(math.acos(max(-1, min(1, (v1[0] * v2[0] + v1[1] * v2[1]) /
+                                                          (math.hypot(*v1) * math.hypot(*v2))))))
+                        if ang < 135 - 0.01:
+                            F['B_angulo_union'].append(f'{net} en {p}: unión en T a {ang:.0f}°')
     # E: duplicados/superpuestos (colineales de la misma red y capa que se solapan)
     by = collections.defaultdict(list)
     for s in segs:
@@ -245,31 +314,49 @@ def main():
             ov = min(max(t1, t2), L) - max(min(t1, t2), 0)
             if ov > 2.0:
                 F['J_paralelo_analogico_digital'].append(f'{s[4]} con {d[4]}: {ov:.1f} mm a < 1 mm')
-    # K: desacoplo (condensador con un pad GND y otro a una red de alimentación)
+    # K: vía GND junto al pad GND (condensadores de desacoplo y pines GND SMD de los integrados)
     supplies = {'3V3', '5V', '5V_A', '24V_PROT', '/3V3_DAC', '/3V3_DAC_SV', '/IEPE_SUP', '/IEPE_SUP_SV'}
     pendientes = []
+    gvias = [v for v in vias if v.GetNetname() == 'GND']
     for fp in b.GetFootprints():
-        if not fp.GetReference().startswith('C'):
+        ref = fp.GetReference()
+        es_c = ref.startswith('C') and 'GND' in {p.GetNetname() for p in fp.Pads()} and \
+            supplies & {p.GetNetname() for p in fp.Pads()}
+        es_u = ref.startswith('U')
+        if not (es_c or es_u):
             continue
-        if fp.GetReference() not in ruteados:
-            pendientes.append(fp.GetReference())
+        if ref not in ruteados:
+            pendientes.append(ref)
             continue
-        nets = {p.GetNetname(): p for p in fp.Pads()}
-        if 'GND' in nets and supplies & set(nets):
-            gp = pt(nets['GND'].GetPosition())
-            dmin = min([math.dist(gp, pt(v.GetPosition())) for v in vias if v.GetNetname() == 'GND'] + [99])
-            pad_r = max(mm(nets['GND'].GetSize().x), mm(nets['GND'].GetSize().y)) / 2
-            if dmin - pad_r > 1.0:
-                F['K_desacoplo_sin_via_gnd'].append(f'{fp.GetReference()}: vía GND más cercana a {dmin:.2f} mm del pad')
+        for pad in fp.Pads():
+            if pad.GetNetname() != 'GND' or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
+                continue
+            dmin = min([pad_via_gap(pad, v) for v in gvias] + [99])
+            linea = f'{ref}.{pad.GetNumber()}: vía GND a {dmin:.2f} mm del pad'
+            (INFO['K_via_gnd'] if dmin <= VIA_GND_MAX else F['K_sin_via_gnd_junto_al_pad']).append(linea)
+    # L: condensador de desacoplo pegado al pin que desacopla
+    for cref, (uref, pin) in DESACOPLO.items():
+        cf, uf = b.FindFootprintByReference(cref), b.FindFootprintByReference(uref)
+        if cf is None or uf is None or cref not in ruteados:
+            continue
+        up = uf.FindPadByNumber(pin)
+        cp = [p for p in cf.Pads() if p.GetNetname() == up.GetNetname()]
+        g = min(pad_gap(p, up) for p in cp) if cp else 99
+        linea = f'{cref} -> {uref}.{pin} ({up.GetNetname()}): {g:.2f} mm borde a borde'
+        (INFO['L_desacoplo_pegado'] if g <= DESACOPLO_MAX else F['L_desacoplo_lejos_del_pin']).append(linea)
     total = sum(len(v) for v in F.values())
     print(f'pistas: {len(tracks)}  vías: {len(vias)}  hallazgos: {total}')
-    print(f'  (condensadores sin ninguna pista todavía, chequeo K pendiente: {len(pendientes)})')
+    print(f'  (piezas sin ninguna pista todavía, chequeo K pendiente: {len(pendientes)})')
     for k in sorted(F):
         print(f'  {k}: {len(F[k])}')
-        for line in F[k][:12]:
+        for line in F[k][:40]:
+            print('     ', line)
+    for k in sorted(INFO):
+        print(f'  [cumple] {k}: {len(INFO[k])}')
+        for line in INFO[k][:40]:
             print('     ', line)
     if out_json:
-        json.dump(F, open(out_json, 'w'), indent=1)
+        json.dump({'hallazgos': F, 'cumple': INFO, 'pendientes_K': pendientes}, open(out_json, 'w'), indent=1)
     sys.exit(1 if total else 0)
 
 
