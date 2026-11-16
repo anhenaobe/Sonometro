@@ -232,6 +232,16 @@ def mover_bucks(b):
 def main():
     path, what = sys.argv[1], sys.argv[2]
     b = pcbnew.LoadBoard(path)
+    if what == 'alinear':                          # micro-alineación de pads (aprobada): {ref: [dx, dy]} en mm
+        import json
+        movs = json.load(open(sys.argv[3]))
+        for ref, (dx, dy) in movs.items():
+            if abs(dx) > 0.1 or abs(dy) > 0.1:
+                raise SystemExit(f'{ref}: {dx}, {dy} supera 0.1 mm (requiere aprobación aparte)')
+            fp = b.FindFootprintByReference(ref)
+            p = fp.GetPosition()
+            fp.SetPosition(pcbnew.VECTOR2I(p.x + int(round(dx * 1e6)), p.y + int(round(dy * 1e6))))
+        print(f'alineadas {len(movs)} piezas')
     if what == 'cp2':                              # cambios del punto de control (bucks, CF, piezas)
         mover_bucks(b)
         pads = lambda r, n: (pcbnew.ToMM(b.FindFootprintByReference(r).FindPadByNumber(n).GetPosition().x),  # noqa
