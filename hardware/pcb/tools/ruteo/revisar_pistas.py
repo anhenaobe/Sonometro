@@ -14,8 +14,8 @@ Chequeos (pedido del dueño + REGLAS.md):
      alimentación y señales lentas
   H  (2 capas) sin uso en 4 capas: la referencia de F.Cu es In1, no B.Cu
   I  GND continuo en In1.Cu debajo de cada pista crítica de F.Cu (contra el relleno de la zona). Los puntos que caen en el anillo
-     libre del plano alrededor de un pad THT de la misma red (donde la pista termina) se listan aparte: ese anillo
-     existe siempre alrededor de un pad pasante que no es GND.
+     libre del plano alrededor de un pad THT o de una vía de la misma red (donde la pista termina) se listan aparte:
+     ese anillo existe siempre alrededor de un agujero que no es GND.
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
   K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
      integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
@@ -323,6 +323,9 @@ def main():
     tht = [(pt(p.GetPosition()), max(mm(p.GetSize().x), mm(p.GetSize().y)) / 2, p.GetNetname(),
             f'{p.GetParentFootprint().GetReference()}.{p.GetNumber()}')
            for p in pads if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
+    # las vías de la misma red también dejan su anillo libre en el plano (DC_MON/DC_MON2 terminan en vía)
+    tht += [(pt(v.GetPosition()), mm(v.GetWidth(pcbnew.F_Cu)) / 2, v.GetNetname(), f'vía {pt(v.GetPosition())}')
+            for v in vias]
 
     def en_anillo_propio(x, y, net):
         for c, r, n, nombre in tht:
@@ -347,7 +350,7 @@ def main():
                     if not any(z.GetFilledPolysList(PLANO).Contains(q) for z in gnd_b):
                         propio = en_anillo_propio(mm(q.x), mm(q.y), net)
                         if propio:
-                            INFO['I_anillo_de_su_pad_THT'].append(f'{net} en ({x:.2f}, {y:.2f}) junto a {propio}')
+                            INFO['I_anillo_de_su_pad_THT_o_via'].append(f'{net} en ({x:.2f}, {y:.2f}) junto a {propio}')
                             continue
                         F['I_sin_gnd_debajo'].append(f'{net} en ({x:.2f}, {y:.2f})')
                         break

@@ -510,3 +510,58 @@ Todo en F.Cu, sin vías.
   - Entra a C14.1 por la izquierda, por debajo de REST_OUT; las dos diagonales paralelas quedan a 0.40 mm.
 - **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 25 conexiones sin rutear.
   - Faltan alimentación (3V3, 5V_A), I2C, SAI, DC_MON/DC_MON2 y dos uniones GND para el relleno.
+
+## 14. Bloque 7 — digital (`b7_digital.py`)
+
+### SAI (F.Cu, clase Reloj)
+- El orden está invertido entre las dos puntas:
+  - del lado de las resistencias, de arriba abajo: SD (R24), SCK (R22), FS (R23);
+  - en A1: FS (pin 1), SD (pin 2), SCK (pin 12).
+- Se resuelve como el oráculo, pero con entrada por el eje:
+  - SAI_FS sale de R23.1 por arriba y sube por x 168.55–168.70, entre los pads de R22 y de R24 (0.325 mm a cada lado);
+  - SAI_SD sale de R24.1 por arriba;
+  - SAI_SCK sale de R22.1 por la derecha y baja por x 171.4.
+- Las tres entran a A1 por la izquierda.
+
+### I2C de CH1 (B.Cu)
+- **SCL:** U2.5 → vía (148.6, 129.5), y R10.1 → entre R9 y R10 → vía (147.27, 137.1).
+- **SDA:** U2.4 → R11.1 en F.Cu → vía (151.2, 133.02).
+- **Recorrido común:**
+  - corredor entre los AFE (y 137.55–138.15);
+  - vuelta por x 157.6–158.2;
+  - por debajo de TP7 (y 144.4–145.0);
+  - suben por x 171.0/171.6 y entran a A1.7/A1.8 por la izquierda.
+
+### I2C de CH2 (In2.Cu)
+- U10.4/U10.5 → vías → In2 por y 151.2/152.0 → x 170.4/171.0 → A1.7/A1.8.
+- En B.Cu tendría que cruzar DC_MON/DC_MON2.
+
+### DC_MON (B.Cu)
+- Recorrido:
+  - R15.1 → vía → x 139.4, a la izquierda de la cadena de CH1;
+  - corredor y 139.4 → x 156.3 → y 146.25, bajo la columna izquierda y el cuerpo de la NUCLEO;
+  - entra a A1.27 por la izquierda.
+
+### DC_MON2 (B.Cu e In2.Cu)
+- Recorrido:
+  - R44.1 → vía → corredor y 140.0 → x 155.7 → y 146.85;
+  - vía en (186.6, 146.85) → In2 → A1.26.
+- Llegan a A1 en orden invertido respecto de DC_MON; el cruce se hace con ese tramo en In2, bajo la NUCLEO.
+
+### Separaciones
+- DC_MON/DC_MON2 quedan a ≥ 1 mm (borde a borde) de I2C en todo el recorrido. Es el criterio del chequeo J, que solo
+  mira F.Cu.
+
+### `tools/ruteo/cruces_capas.py` (nuevo)
+- Para cada pista de In2/B.Cu lista el cobre de F.Cu que tiene encima en planta.
+- Marca como hallazgo los nodos protegidos: SUM, el nodo filtrado del DAC, la cadena de 1 MΩ y el nodo medio de la
+  realimentación.
+- **Resultado:** 0 cruces bajo nodos protegidos. Lo que queda encima es IEPE, REST_SV, SAI e I2C.
+
+### `revisar_pistas` (chequeo I)
+- El anillo libre del plano alrededor de una vía de la misma red se lista como información, igual que el de un pad
+  THT. DC_MON/DC_MON2 son las primeras redes críticas que terminan en vía.
+
+### Verificación
+- DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 14 conexiones sin rutear.
+- Faltan alimentación (bloque 8) y GND (bloque 9).
