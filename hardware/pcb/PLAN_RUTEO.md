@@ -565,3 +565,42 @@ Todo en F.Cu, sin vías.
 ### Verificación
 - DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 14 conexiones sin rutear.
 - Faltan alimentación (bloque 8) y GND (bloque 9).
+
+## 15. Bloque 8 — alimentación 3V3 y 5V_A (`b8_alimentacion.py`)
+Pistas de 0.4 mm en In2.Cu, para corrientes de 5–20 mA (se justifica en CALCULOS.md). Las ramas salen solo de vías.
+
+**Por qué esta topología**
+- Las cargas de 3V3 quedan a los dos lados de las de 5V_A, así que 3V3 rodea a 5V_A por arriba:
+  - 3V3 izquierda: pull-ups y filtro RC de los DAC, R46.
+  - 5V_A al centro: C7, C54, U4.3, C18.
+  - 3V3 derecha: grupo de U4.4, R49, C20.
+
+**5V_A**
+- R33.2 → C47.1 → F.Cu hasta la vía (164.65, 117.0), que queda por debajo del tramo de 3V3.
+- En In2:
+  - una rama va a C7;
+  - otra va a U4.3, y de ahí a C18 y a C54.
+
+**3V3 izquierda**
+- Sale de la vía (139.8, 118.5) y baja por x 139.4, a 0.73 mm en planta de la cadena de CH1.
+- Llega a R9.2, que tiene dos vías unidas por F.Cu. Una alimenta R10/R11 pasando por debajo de la vía SCL. La otra
+  alimenta R46 por x 140.7, a 0.53 mm en planta de la columna de CH2.
+
+**3V3 derecha**
+- Sale de la vía (139.8, 116.3) y va por y 114, por encima del bus de 24 V.
+- Baja por x 168.5, entre 5V_A (x 165.5) y el I2C de CH2 (x 170.4).
+- Llega a R49.1, C20.1 y C13.1 (grupo de U4.4/Y1).
+
+**Correcciones**
+- Las vías de R49.1/C20.1 reservadas en el bloque 4 quedaban a menos de 0.35 mm del pad, porque se reservaron antes
+  de la regla de vías taponadas. Se corrieron.
+- La regla `track_angle` del DRC también evalúa las uniones en vías. Por eso ninguna vía lleva tres pistas en la
+  misma capa: con tres, no todas pueden quedar a ≥ 135°.
+
+**Otros**
+- C47.2 tiene su vía GND.
+- `cruces_capas.py`: 0 pistas de alimentación bajo nodos protegidos.
+
+**Verificación**
+- DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos.
+- Queda 1 conexión sin rutear: C19.2 (GND), que une el relleno de F.Cu del bloque 9.
