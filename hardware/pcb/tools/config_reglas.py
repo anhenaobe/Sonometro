@@ -104,6 +104,18 @@ DRU_TEXT = '''(version 1)
   (condition "A.Layer == 'F.SilkS' && B.Layer == 'Edge.Cuts'")
   (constraint silk_clearance (min 0.3mm)))
 
+# 4 capas (JLC, https://jlcpcb.com/capabilities/pcb-capabilities): "Inner layer via hole to copper clearance 0.2mm",
+# "Inner layer PTH pad hole to copper clearance 0.3mm". Probadas con una regla de control (0.6 / 1.5 mm).
+(rule "agujero_via_a_cobre_interno"
+  (layer inner)
+  (condition "A.Type == 'Via'")
+  (constraint hole_clearance (min 0.2mm)))
+
+(rule "agujero_pth_a_cobre_interno"
+  (layer inner)
+  (condition "A.Type == 'Pad' && A.Pad_Type == 'Through-hole'")
+  (constraint hole_clearance (min 0.3mm)))
+
 # Ancho mínimo de las redes de potencia y conmutadas (= ancho de su clase; los anchos mayores salen de CALCULOS.md).
 (rule "ancho_minimo_potencia"
   (condition "A.Type == 'Track' && (A.hasNetclass('Potencia') || A.hasNetclass('Conmutado'))")

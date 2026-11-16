@@ -198,3 +198,51 @@ Fuentes [doc]: <https://jlcpcb.com/capabilities/pcb-assembly-capabilities>, <htt
 - **Severidades en error:** silk_overlap, silk_over_copper, silk_edge_clearance, text_height, text_thickness,
   track_dangling, via_dangling, track_angle, track_segment_length, courtyards_overlap, lib_footprint_mismatch,
   footprint_symbol_mismatch, isolated_copper.
+
+
+## 9. Placa de 4 capas (decisión del dueño tras el análisis de los bloques 4–8)
+
+Valores leídos el 2026-11-16 en las páginas de JLCPCB:
+- CAP = https://jlcpcb.com/capabilities/pcb-capabilities
+- IMP = https://jlcpcb.com/impedance
+- PCBA = https://jlcpcb.com/capabilities/pcb-assembly-capabilities
+- QUOTE = https://cart.jlcpcb.com/quote
+
+**Uso de las capas:**
+
+| Capa | Uso |
+|---|---|
+| F.Cu | piezas y señales; todas las redes críticas |
+| In1.Cu | GND entero, sin pistas: referencia de F.Cu a 0.21 mm |
+| In2.Cu | alimentación (zonas) y señales lentas (straps, I2C, DC_MON*) |
+| B.Cu | GND y señales lentas |
+
+**Valores de JLC para 4 capas:**
+
+| Concepto | Valor JLC | En la placa | Fuente |
+|---|---|---|---|
+| Apilado 1.6 mm | JLC04161H-7628: Cu 0.035 / prepreg 7628 0.2104 / In1 0.0152 / core 1.065 / In2 0.0152 / prepreg 0.2104 / Cu 0.035 | cargado en el apilado de KiCad | IMP |
+| εr | prepreg 7628 4.4, core 4.6 (una página vieja de JLC dice 4.6 para 7628) | 4.4 / 4.6 | IMP, CAP |
+| Cobre interno | 0.5 oz por defecto | 0.5 oz | CAP, QUOTE |
+| Pista/separación mínimas (multicapa, 1 oz) | 0.09 / 0.09 mm | diseño 0.2 / 0.2–0.3 | CAP |
+| Vía mínima (multicapa) | taladro 0.15 / pad 0.25 mm | 0.3 / 0.6 mm | CAP |
+| Vía sin recargo | taladro ≥ 0.3 mm, o 0.2 mm con pad ≥ 0.45 mm | 0.3 / 0.6 mm | QUOTE |
+| Taladro de vía a cobre interno | 0.2 mm | regla `agujero_via_a_cobre_interno` | CAP |
+| Taladro de pad PTH a cobre interno | 0.3 mm | regla `agujero_pth_a_cobre_interno` | CAP |
+| Anillo PTH (1 oz) | recomendado 0.20, mínimo 0.15 mm | regla `anillo_pth` 0.2 | CAP |
+| Cobre a borde | ≥ 0.2 mm (sin valor propio para capas internas) | 0.5 mm | CAP |
+| PCBA Economic | 2, 4 y 6 capas; espesor 0.8–1.6 mm; solo apilado estándar; 4 capas 1.6 mm, verde, HASL/ENIG | apilado estándar, sin especificar | PCBA |
+| Recubrimiento de vías en 4 capas | **Plugged** por defecto (Tented se pasa a Plugged sin costo) | ver la nota | QUOTE |
+| Precio, 5 placas de 90 × 64 mm, 4 capas, 1.6 mm, verde | HASL con plomo USD 8.00 (oferta); HASL sin plomo USD 13.20; ENIG USD 25.30. Sin envío ni PCBA, sin sesión iniciada | — | QUOTE |
+
+**Nota sobre vías taponadas:**
+- JLC escribe: "vias with a distance less than 0.35mm from the pad cannot be plugged with ink"
+  (https://jlcpcb.com/help/article/pcb-via-covering) y "should have ≥ 0.35 mm clearance from other soldermask
+  openings" (CAP).
+- Hoy 43 de las 59 vías están a menos de 0.35 mm de algún pad. Medido con una regla `physical_clearance` de prueba,
+  que no está aplicada.
+- **Pendiente:** decisión del dueño.
+
+**Comprobaciones de las reglas nuevas:**
+- Las reglas internas se probaron contra reglas de control (0.6 y 1.5 mm): marcaron 4 vías y 64 pads PTH.
+- Con los valores reales, DRC 0.
