@@ -48,6 +48,10 @@ DESACOPLO_MAX = 1.0                              # mm, borde a borde condensador
 ACEPTADOS = {                                    # (chequeo, pieza): motivo; aceptados por el dueño, se listan aparte
     ('L', 'C36'): 'aceptado tras el bloque 1 (VCC 0.3 mm, vía GND pegada y retorno corto a AGND)',
     ('L', 'C46'): 'aceptado tras el bloque 1 (VCC 0.3 mm, vía GND pegada y retorno corto a AGND)',
+    ('L', 'C2'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
+    ('L', 'C3'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
+    ('L', 'C49'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
+    ('L', 'C50'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
 }
 DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
