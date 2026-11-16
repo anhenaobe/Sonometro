@@ -643,3 +643,27 @@ Pistas de 0.4 mm en In2.Cu, para corrientes de 5–20 mA (se justifica en CALCUL
   importan para la lectura impresa.
 - **Verificación final:** DRC 0 (todos los chequeos activos), paridad 0, ERC 0, `revisar_pistas` 0 hallazgos, 0 sin
   conectar, 0 cruces bajo nodos protegidos.
+
+### 17.1 Revisión del bloque 10 (serigrafía sobre vías, orden final)
+- **Chequeo M nuevo en `revisar_pistas` (serigrafía sobre una vía):**
+  - Las vías van tapadas, así que el DRC no ve la serigrafía sobre ellas.
+  - La distancia se mide al trazo real con `geom_serigrafia.py`, no a la caja envolvente.
+  - Encontró 60 casos: vías de cosido bajo serigrafía, y siete más:
+    - **U6/U7:** el punto de pin 1 del footprint RNX tocaba la vía PGND. Se corrió a (−1.75, −1.45) en `buildlib.py`,
+      la biblioteca y las dos instancias. Sigue junto al pin 1, a 0.35 mm del pad.
+    - **D2:** el contorno del D_SMB terminaba sobre sus vías GND laterales. Las vías bajaron 0.55 mm con un quiebre a
+      45° (`b2_entrada.py`).
+    - **U4:** las vías de 3V3 de R49.1/C20.1 estaban bajo su contorno. Pasaron a (166.15, 129.61), bajo el cuerpo,
+      y a (166.95, 131.72). La rama de 5V_A en In2 pasó de x 165.5 a 165.3.
+- **Orden final**, para que las vías de cosido no quiten lugar a los designadores: bloques →
+  `serigrafia.py --aplicar` → `cosido.py` (evita toda la serigrafía) → `b9_gnd` → `teardrops.py` →
+  `verificar_bloque.py`.
+  - Resultado: 235 vías de cosido, 440 teardrops y 21 designadores omitidos (los mismos que antes).
+- **Punto 8, comprobado con herramienta** (`conexion_solida.py`): en cada buck los 10 pads GND (CIN, CHF, COUT, PGND
+  1/11) quedan enteros en la misma isla del relleno de F.Cu, sin alivios.
+- **Mediciones de los bucks** (`medir.py`), iguales al bloque 1:
+  - PGND → CHF: 2.61 y 2.21 mm;
+  - lazos VIN–CHF–PGND: 7.25 mm / 3.32 mm² y 6.97 mm / 2.69 mm²;
+  - nodo FB: 5.49 mm.
+- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 (incluido M), 0 sin conectar, 0 cruces bajo nodos
+  protegidos.

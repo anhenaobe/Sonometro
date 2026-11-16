@@ -5,7 +5,8 @@ el resto). Se descarta el candidato que no cumple en todas las capas, porque la 
 - >= 0.35 mm de todo pad (vía taponada, regla via_tapada_lejos_de_pad); >= 0.9 mm de los fiduciales (sin red);
 - separación a pistas de otras redes en cualquier capa: 0.35 mm a Analogica/Reloj/Conmutado, 0.25 mm al resto;
 - separación a vías de otras redes 0.3 mm (borde a borde) y >= 1.0 mm entre centros con las vías GND;
-- fuera de las zonas de F.Cu de otras redes (5V, 3V3, 24 V, SW) más 0.4 mm; >= 0.8 mm del borde.
+- fuera de las zonas de F.Cu de otras redes (5V, 3V3, 24 V, SW) más 0.4 mm; >= 0.8 mm del borde;
+- >= 0.15 mm de toda la serigrafía, designadores incluidos (orden: serigrafia.py -> cosido.py -> teardrops.py).
 Uso (Python de KiCad): python cosido.py [pcb] [salida.json]
 """
 import json
@@ -46,6 +47,12 @@ def main():
     segs = [(pt(t.GetStart()), pt(t.GetEnd()), mm(t.GetWidth()), t.GetNetname(), t.GetNetClassName())
             for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']
     vias = [(pt(v.GetPosition()), v.GetNetname()) for v in b.GetTracks() if v.GetClass() == 'PCB_VIA']
+    # serigrafía (contornos, marcas de pin 1 y designadores): ninguna vía debajo, medido al trazo real
+    # (geom_serigrafia.py). Orden: serigrafia.py -> cosido.py -> teardrops.py -> verificar_bloque.py, para que las vías
+    # de cosido no quiten lugar a los designadores.
+    sys.path.insert(0, HERE)
+    from geom_serigrafia import items_serigrafia
+    silk = [f for _, f in items_serigrafia(b)]                  # incluye los designadores ya ubicados
     zonas = []
     for z in b.Zones():
         if z.GetNetname() != 'GND':
@@ -70,6 +77,8 @@ def main():
         for a, c, w, net, cls in segs:
             if net != 'GND' and d_pt_seg(q, a, c) - w / 2 - R < sep(cls):
                 return False
+        if any(f(q) - R < 0.15 for f in silk):
+            return False
         for c, net in vias:
             dd = math.dist(q, c)
             if (net != 'GND' and dd - 2 * R < 0.3) or (net == 'GND' and dd < 1.0):

@@ -223,7 +223,7 @@ for num, y in (('11', -1.125), ('10', -0.475), ('9', 0.175), ('8', 0.675)):
 for num, x in (('5', -0.5), ('6', 0.0), ('7', 0.5)):
     rnx.append(smd(num, x, 1.4, 0.25, 0.6))
 rnx.append(smd('12', 0.0, -0.7875, 0.25, 1.825))
-silk = circle(-1.45, -1.55, 0.1, 'F.SilkS', 0.2)
+silk = circle(-1.75, -1.45, 0.1, 'F.SilkS', 0.2)   # pin 1: a >= 0.35 mm del pad 1 y de la vía PGND del ruteo (bloque 10)
 silk += line(-1.0, -1.6, -0.35, -1.6, 'F.SilkS', 0.12) + line(0.35, -1.6, 1.0, -1.6, 'F.SilkS', 0.12)
 footprint('Texas_RNX0012A_VQFN-HR-12_2x3mm_P0.5mm',
           'TI RNX0012A VQFN-HR 12 pin 2x3 mm (LMR36015 RNX). Land pattern from SNVSB49D p.45 (4222858/A). VERIFY against the current TI drawing before ordering.',

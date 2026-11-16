@@ -19,6 +19,7 @@ Chequeos (pedido del dueño + REGLAS.md):
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
   K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
      integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
+  M  serigrafía (gráficos y textos visibles) sobre una vía: las vías van tapadas y el DRC no lo detecta
   L  condensador de desacoplo pegado a su pin: <= 1.0 mm borde a borde entre su pad y el pin (tabla DESACOPLO); para los
      del MCP4725, el límite de su datasheet (DESACOPLO_LIMITE, aprobado por el dueño)
 Uso (Python de KiCad):  python revisar_pistas.py [pcb] [--json salida.json]
@@ -33,6 +34,7 @@ import collections
 import pcbnew
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 TOL = 0.005                                      # mm
 
 # --- política de capas (decisión 1 aprobada) --------------------------------------------------------------
@@ -412,6 +414,16 @@ def main():
             INFO['L_aceptado_por_el_dueño'].append(linea + ': ' + ACEPTADOS[('L', cref)])
         else:
             F['L_desacoplo_lejos_del_pin'].append(linea)
+    # M: serigrafía sobre una vía (las vías van tapadas: el DRC no lo ve como serigrafía sobre máscara abierta).
+    # Distancia al trazo real de la serigrafía (geom_serigrafia.py), no a su caja envolvente.
+    from geom_serigrafia import items_serigrafia
+    silk_items = items_serigrafia(b)
+    for v in vias:
+        c = pt(v.GetPosition())
+        rv = mm(v.GetWidth(pcbnew.F_Cu)) / 2
+        for nombre, f in silk_items:
+            if f(c) < rv + 0.05:
+                F['M_serigrafia_sobre_via'].append(f'{nombre} sobre la vía {v.GetNetname()} en {c}')
     total = sum(len(v) for v in F.values())
     print(f'pistas: {len(tracks)}  vías: {len(vias)}  hallazgos: {total}')
     print(f'  (piezas sin ninguna pista todavía, chequeo K pendiente: {len(pendientes)})')
