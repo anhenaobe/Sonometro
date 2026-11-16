@@ -167,3 +167,51 @@ C4 C19 C20 C29 C30 C32 C33 C34 C39 C40 C42 C43 L1 L2 R6 R12 R13 R19 R22 R23 R29 
 - Las marcas de pin 1 y de polaridad de todos quedan.
 - Los conectores (J*, A1, JP*) y los TP no se omiten nunca.
 - Las vías GND pueden quitar algunos lugares más; el número final se informa al terminar.
+
+## 6. Estado después del punto de control 2
+
+**Cambios aprobados y aplicados** (commit `f78d6b1`):
+- C29/C39 suben 0.3 mm; C35/C45 a la izquierda del integrado, girados 90°.
+- CF = 10 pF C0G: C56 junto a U3, C57 junto a U9.
+- U3/U9 TLV9152IDDFR; CIN C153031, COUT C694469, C36/C46 C125847.
+- Pasivos a basic que cumplen tus criterios. CHF queda con el original de 100 V.
+
+**Serigrafía después de colocar las vías del bloque 1:** caben 107 de 127. Se omiten 20, ninguno U, D, J, JP ni TP:
+C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R29 R31 R43 R49.
+
+## 7. Bloque 1 — bucks U6/U7 (`tools/ruteo/bloques/b1_bucks.py`)
+
+- **Lazo de potencia** (VIN–CHF–PGND–SW–L–COUT) entero en F.Cu, según TI SNVSB49D fig. 12-2. U7 es el mismo trazado
+  desplazado 21.6 mm.
+- **Pin 3 (NC) unido a SW (pin 12)** con una zona de SW de 1.3 × 0.5 mm, como en la EVM. Con pistas no se puede
+  entrar al centro del pin 12 sin un giro de 90° ni pasar entre los pines 1/2 o 10/11 (0.4 mm libres).
+- **CBOOT:** BOOT sale por la izquierda del pin 4 y baja por fuera de la pista de SW hasta C35/C45.
+- **FB:** R29/R30 (R31/R32) junto al pin 7. El sensado de VOUT llega desde abajo:
+  - U6: desde el tronco de 3V3;
+  - U7: desde R33.1, en el punto de carga.
+- **Puentes en B.Cu aprobados** bajo el bus de 24 V (y = 117.4, se rutea en el bloque 2), con vías 0.6/0.3 en los
+  extremos:
+
+  | Red | x (mm KiCad) | y | Largo |
+  |---|---|---|---|
+  | 3V3, tronco | 139.8 | 116.3 → 118.5 | 2.2 mm |
+  | 3V3, sensado FB U6 | 132.7 | 116.35 → 118.5 | 2.15 mm |
+  | 5V, sensado FB U7 | 154.3 | 116.35 → 118.5 | 2.15 mm |
+
+- **Zonas:** VOUT_3V3 y VOUT_5V (F.Cu, prioridad 2) sobre la salida de L1/L2 y los COUT; SW_3_PIN3 y SW_5_PIN3 (prioridad 3).
+- **Anchos:** SW a L 0.6 mm; VIN 0.4–0.5 mm; PGND 0.4–0.5 mm; tronco de 3V3 0.5 mm; el resto 0.2–0.25 mm. No hay
+  pistas de menos de 0.2 mm.
+- **Vías GND:** 11 por buck, junto a cada pad GND (CIN, CHF, COUT, CVCC, RFBB) y en AGND.
+- **Pendiente para el bloque 2:** VIN de los dos lados de cada integrado (pin 2 y pin 10) se une por el peine del
+  bus de 24 V.
+
+**Verificación** (`python tools/ruteo/verificar_bloque.py b1_bucks`):
+
+| Chequeo | Resultado |
+|---|---|
+| DRC de la placa real (paridad incluida) | 22 `via_dangling`, que son las 22 vías GND: conectan solo en F.Cu hasta que exista el plano (bloque 9). Ninguna otra violación |
+| Paridad | 0 |
+| ERC | 0 |
+| DRC de la copia con relleno GND temporal en B.Cu | 0 violaciones |
+| `revisar_pistas.py` (en la copia) | 0 hallazgos |
+| Conexiones sin rutear | 209 en la placa real, 178 en la copia con plano |

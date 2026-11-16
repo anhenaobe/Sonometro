@@ -22,7 +22,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def iu(p):
-    return pcbnew.VECTOR2I(pcbnew.FromMM(p[0]), pcbnew.FromMM(p[1]))
+    # redondeo al nm: FromMM trunca (132.7 -> 132699999 nm) y eso tuerce 45° en 1e-4° (falla track_angle)
+    return pcbnew.VECTOR2I(int(round(p[0] * 1e6)), int(round(p[1] * 1e6)))
 
 
 def validar(red, pts):
@@ -112,7 +113,7 @@ def aplicar(b, nombre, mod):
         ol = zone.Outline()
         ol.NewOutline()
         for p in z['puntos']:
-            ol.Append(pcbnew.FromMM(p[0]), pcbnew.FromMM(p[1]))
+            ol.Append(int(round(p[0] * 1e6)), int(round(p[1] * 1e6)))
         b.Add(zone)
         grupo.AddItem(zone)
         n_z += 1

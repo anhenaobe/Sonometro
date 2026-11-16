@@ -2,7 +2,9 @@
 
 Chequeos (pedido del dueño + REGLAS.md):
   A  orientación de cada segmento múltiplo de 45°
-  B  ángulo entre segmentos unidos >= 135° (sin 90° ni agudos)  [también lo hace el DRC: track_angle]
+  B  ángulo entre segmentos unidos >= 135° (sin 90° ni agudos)  [también lo hace el DRC: track_angle]. Igual que el
+     DRC, no cuenta la unión en el centro de un pad o de una vía: ahí cada pista entra por separado (chequeo C) y la
+     esquina queda dentro del cobre del pad o de la vía.
   C  unión pista-pad: termina en el centro del pad y llega paralela a un eje del pad
   D  segmentos de menos de 0.1 mm
   E  extremos sueltos (stubs) y segmentos duplicados o superpuestos
@@ -11,7 +13,8 @@ Chequeos (pedido del dueño + REGLAS.md):
   H  ninguna pista crítica pasa por encima de una pista de B.Cu
   I  GND continuo en B.Cu debajo de cada pista crítica (contra el relleno de la zona)
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
-  K  desacoplo: vía GND junto al pad GND de cada condensador de desacoplo (<= 1.0 mm)
+  K  desacoplo: vía GND junto al pad GND de cada condensador de desacoplo (<= 1.0 mm), en los condensadores que ya
+     tienen alguna pista (los de bloques sin rutear se cuentan aparte como pendientes)
 Uso (Python de KiCad):  python revisar_pistas.py [pcb] [--json salida.json]
 Sale con código 1 si hay hallazgos.
 """
@@ -29,7 +32,11 @@ TOL = 0.005                                      # mm
 # --- política de capas (decisión 1 aprobada) --------------------------------------------------------------
 BCU_NETS = {'I2C_SCL', 'I2C_SDA', 'DC_MON', 'DC_MON2'}
 DIGITAL_ZONE = [(170.0, 100.0, 190.0, 164.0)]    # KiCad mm: x >= 70 mm desde el borde izquierdo
-EXCEPCIONES_BCU = []                             # [(red, (x0, y0, x1, y1))] aprobadas en el punto de control 2
+EXCEPCIONES_BCU = [                              # [(red, (x0, y0, x1, y1))] aprobadas en el punto de control 2
+    ('3V3', (139.4, 115.9, 140.2, 118.9)),       # tronco de 3V3 bajo el bus de 24 V, entre los bloques de los bucks
+    ('3V3', (132.3, 115.9, 133.1, 118.9)),       # sensado de FB de U6 bajo el bus de 24 V
+    ('5V', (153.9, 115.9, 154.7, 118.9)),        # sensado de FB de U7 bajo el bus de 24 V
+]
 CRITICAL_CLASSES = {'Analogica', 'Reloj', 'Conmutado'}
 DIGITAL_CLASSES = {'Reloj'}
 DIGITAL_NETS = {'I2C_SCL', 'I2C_SDA'}
@@ -125,13 +132,16 @@ def main():
         return False
 
     # B, C, E: uniones
+    ruteados = set()
     for key, lst in ends.items():
         layer = key[0]
         for (s, p, q) in lst:
             t, a, c, lay, net, w = s
             others = [o for o in lst if o[0] is not s and o[0][4] == net]
+            pd = pads_at(p, layer, net)
+            centro = via_at(p, net) or any(near(pt(x.GetPosition()), p, 0.01) for x in pd)
             # B: ángulo entre segmentos (vector saliente de cada uno desde el punto común)
-            for (s2, p2, q2) in others:
+            for (s2, p2, q2) in ([] if centro else others):
                 v1 = (q[0] - p[0], q[1] - p[1])
                 v2 = (q2[0] - p2[0], q2[1] - p2[1])
                 n1, n2 = math.hypot(*v1), math.hypot(*v2)
@@ -139,9 +149,9 @@ def main():
                     ang = math.degrees(math.acos(max(-1, min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / (n1 * n2)))))
                     if ang < 135 - 0.01 and id(s) < id(s2):
                         F['B_angulo_union'].append(f'{net} en {p}: {ang:.1f}°')
-            pd = pads_at(p, layer, net)
             if pd:
                 for pdx in pd:
+                    ruteados.add(pdx.GetParentFootprint().GetReference())
                     cpos = pt(pdx.GetPosition())
                     if not near(cpos, p, 0.01):
                         F['C_pad_fuera_de_centro'].append(
@@ -237,8 +247,12 @@ def main():
                 F['J_paralelo_analogico_digital'].append(f'{s[4]} con {d[4]}: {ov:.1f} mm a < 1 mm')
     # K: desacoplo (condensador con un pad GND y otro a una red de alimentación)
     supplies = {'3V3', '5V', '5V_A', '24V_PROT', '/3V3_DAC', '/3V3_DAC_SV', '/IEPE_SUP', '/IEPE_SUP_SV'}
+    pendientes = []
     for fp in b.GetFootprints():
         if not fp.GetReference().startswith('C'):
+            continue
+        if fp.GetReference() not in ruteados:
+            pendientes.append(fp.GetReference())
             continue
         nets = {p.GetNetname(): p for p in fp.Pads()}
         if 'GND' in nets and supplies & set(nets):
@@ -249,6 +263,7 @@ def main():
                 F['K_desacoplo_sin_via_gnd'].append(f'{fp.GetReference()}: vía GND más cercana a {dmin:.2f} mm del pad')
     total = sum(len(v) for v in F.values())
     print(f'pistas: {len(tracks)}  vías: {len(vias)}  hallazgos: {total}')
+    print(f'  (condensadores sin ninguna pista todavía, chequeo K pendiente: {len(pendientes)})')
     for k in sorted(F):
         print(f'  {k}: {len(F[k])}')
         for line in F[k][:12]:
