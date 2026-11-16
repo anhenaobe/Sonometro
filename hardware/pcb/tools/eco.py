@@ -232,6 +232,13 @@ def mover_bucks(b):
 def main():
     path, what = sys.argv[1], sys.argv[2]
     b = pcbnew.LoadBoard(path)
+    if what == 'colocar':                          # movimientos aprobados por el dueño: {ref: [x, y, giro, 'aprobación']}
+        import json
+        for ref, (x, y, rot, nota) in json.load(open(sys.argv[3], encoding='utf-8')).items():
+            fp = b.FindFootprintByReference(ref)
+            fp.SetOrientationDegrees(rot)
+            fp.SetPosition(pcbnew.VECTOR2I(int(round(x * 1e6)), int(round(y * 1e6))))
+            print(f'  {ref} -> ({x}, {y}) giro {rot}: {nota}')
     if what == 'alinear':                          # micro-alineación de pads (aprobada): {ref: [dx, dy]} en mm
         import json
         movs = json.load(open(sys.argv[3]))

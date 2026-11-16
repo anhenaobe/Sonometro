@@ -287,3 +287,58 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
   - DRC 0, paridad 0, ERC 0;
   - `revisar_pistas` 0 hallazgos (D2 a 0.85 mm de D1.1);
   - 0 conexiones sin rutear en 24V_PROT y 24V_IN; 169 en total.
+
+## 9. Bloque 3 — fuentes IEPE CH1/CH2 (`tools/ruteo/bloques/b3_iepe.py`)
+
+**Cambios previos aprobados:**
+- Micro-alineación de 32 pasivos y puntos de prueba, ≤ 0.094 mm (`alineacion_bloque3.json`, commit `fdf9d7c`).
+- **R6 movido** a (120.70, 139.35), horizontal y girado 180° (`colocar_bloque3.json`). Con R6 en su lugar, el enlace
+  R5.1 → R6.1 no tenía camino en una capa: Freerouting lo dejó sin rutear tras 800 pasadas. Con R6 movido sale
+  completo.
+
+**Alimentación de CH2 (J7.2 → R36):**
+- Queda encerrada:
+  - IEPE baja de CH1 a J2 y sube por el canal entre CH1 y CH2 hasta R13 (por debajo de CH2 lo impide IEPE_SV → J8);
+  - CH2 cierra por la derecha.
+- El puente en B.Cu bajo IEPE_FEED, que el dueño prefería, no alcanza: después de cruzar habría que pasar bajo IEPE.
+- Va por el único camino en F.Cu, el mismo que encontró Freerouting:
+  - baja por el borde izquierdo;
+  - cruza en y = 153.5 bajo el bloque del BNC J2, a 1.1 mm de sus pines y 1.2 mm de sus anclajes;
+  - sube por el hueco entre J2 y J8 (x = 125.5) hasta R36.1.
+  - Son 0.25 mm y unos 63 mm.
+- **Datasheet del KH-BNC75-3511** (Kinghelm, rev. B 2020, LCSC C2837588):
+
+  | Elemento | Material |
+  |---|---|
+  | Cuerpo | zinc |
+  | Patas de fijación | hierro |
+  | Montaje ("fixed mount") | PBT blanco ("BNC WHITE JACK CONNECTOR") |
+
+  - La vista frontal acota 0.5 mm entre el bloque y el plano de la placa.
+  - La vista lateral muestra apoyos moldeados en la base.
+  - Lectura: sobre la placa queda el bloque de plástico, apoyado en sus patas, y el metal no toca la placa.
+  - Confianza media: el plano no rotula qué contorno es cada material.
+  - Por eso no se agregó serigrafía bajo el cuerpo.
+
+**Ruteo:**
+- Ramificación en pads (U1/U8, TP1, TP3, JP1.2, JP2.2, C1.1, R2.1, R2.2...), sin T en pista libre.
+- N2 pasa por debajo de R5 y de R4, entre sus pads (0.85 mm libres, 0.325 mm de separación).
+- Corredor libre para IEPE → R13 (bloque 6): sale de JP1.2 hacia la derecha y sube por x ≈ 124.3.
+
+**Verificación:**
+- DRC 0, paridad 0, ERC 0; 127 conexiones sin rutear.
+- `revisar_pistas`: **4 hallazgos L**, los condensadores de entrada de los LT3092 lejos del pin. Decide el dueño:
+
+  | Condensador | Pin | Distancia borde a borde |
+  |---|---|---|
+  | C2 (1 µF) | U1.8 | 4.30 mm |
+  | C3 (100 nF) | U1.8 | 3.32 mm |
+  | C49 (1 µF) | U8.8 | 4.04 mm |
+  | C50 (100 nF) | U8.7 | 4.33 mm |
+
+**Cambios al chequeo:**
+- **I:** los puntos que caen en el anillo libre del plano alrededor de un pad THT de la misma red (donde la pista
+  termina) se listan como «cumple».
+  - Eran 23 de los 25 hallazgos iniciales.
+  - Los otros 2 eran reales: IEPE_SV pasaba sobre el anillo de JP2.1. Se corrigió el trazado.
+- **H:** IEPE_FEED e IEPE_FEED_SV se tratan como alimentación, como pidió el dueño.

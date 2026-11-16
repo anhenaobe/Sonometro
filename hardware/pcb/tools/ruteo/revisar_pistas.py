@@ -11,7 +11,9 @@ Chequeos (pedido del dueño + REGLAS.md):
   F  vías sin usar (menos de dos capas conectadas por pista o zona)
   G  B.Cu: solo redes permitidas y solo dentro de las zonas permitidas
   H  ninguna pista crítica pasa por encima de una pista de B.Cu
-  I  GND continuo en B.Cu debajo de cada pista crítica (contra el relleno de la zona)
+  I  GND continuo en B.Cu debajo de cada pista crítica (contra el relleno de la zona). Los puntos que caen en el anillo
+     libre del plano alrededor de un pad THT de la misma red (donde la pista termina) se listan aparte: ese anillo
+     existe siempre alrededor de un pad pasante que no es GND.
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
   K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
      integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
@@ -51,7 +53,12 @@ DESACOPLO = {                                    # condensador: (integrado, pin)
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
     'C39': ('U7', '2'), 'C40': ('U7', '10'), 'C46': ('U7', '5'),
     'D2': ('D1', '1'),                           # TVS junto al cátodo de D1 (bloque 2)
+    'C2': ('U1', '8'), 'C3': ('U1', '8'),        # entrada del LT3092 CH1 (bloque 3)
+    'C49': ('U8', '8'), 'C50': ('U8', '7'),      # entrada del LT3092 CH2 (bloque 3)
 }
+# Redes que el dueño pidió tratar como alimentación (no como señal crítica) en la regla de cruces H:
+# IEPE_FEED e IEPE_FEED_SV son el riel DC de 24 V antes del filtro RC de cada fuente.
+NO_CRITICAS_EN_CRUCES = {'Net-(J1-Pin_2)', 'Net-(J7-Pin_2)'}
 
 
 def mm(v):
@@ -281,10 +288,19 @@ def main():
     # H, I, J: críticas
     bsegs = [s for s in segs if s[3] == pcbnew.B_Cu]
     gnd_b = [z for z in b.Zones() if z.GetNetname() == 'GND' and z.IsOnLayer(pcbnew.B_Cu)]
+    tht = [(pt(p.GetPosition()), max(mm(p.GetSize().x), mm(p.GetSize().y)) / 2, p.GetNetname(),
+            f'{p.GetParentFootprint().GetReference()}.{p.GetNumber()}')
+           for p in pads if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
+
+    def en_anillo_propio(x, y, net):
+        for c, r, n, nombre in tht:
+            if n == net and math.dist(c, (x, y)) <= r + 0.3 + 0.45:     # radio + separación de la clase + margen
+                return nombre
+        return None
     for t, a, c, layer, net, w in segs:
         if layer != pcbnew.F_Cu or netclass.get(net) not in CRITICAL_CLASSES:
             continue
-        for s2 in bsegs:
+        for s2 in ([] if net in NO_CRITICAS_EN_CRUCES else bsegs):
             if seg_seg_dist(a, c, s2[1], s2[2]) < (w + s2[5]) / 2 + 0.3:
                 F['H_critica_sobre_bcu'].append(f'{net} {a}->{c} sobre {s2[4]} {s2[1]}->{s2[2]}')
         if gnd_b:
@@ -297,6 +313,10 @@ def main():
                 for off in (-(w / 2 + 0.2), 0.0, w / 2 + 0.2):
                     q = pcbnew.VECTOR2I(pcbnew.FromMM(x - uy * off), pcbnew.FromMM(y + ux * off))
                     if not any(z.GetFilledPolysList(pcbnew.B_Cu).Contains(q) for z in gnd_b):
+                        propio = en_anillo_propio(mm(q.x), mm(q.y), net)
+                        if propio:
+                            INFO['I_anillo_de_su_pad_THT'].append(f'{net} en ({x:.2f}, {y:.2f}) junto a {propio}')
+                            continue
                         F['I_sin_gnd_debajo'].append(f'{net} en ({x:.2f}, {y:.2f})')
                         break
                 else:
