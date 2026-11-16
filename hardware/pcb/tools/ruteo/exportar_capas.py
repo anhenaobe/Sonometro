@@ -2,7 +2,7 @@
 
 Usa kicad-cli (PDF por capa) y pypdfium2 para rasterizar, recortando al contorno de la placa.
 Uso: python exportar_capas.py [pcb] [carpeta_salida]   (Python del sistema con pypdfium2)
-Salida: <carpeta>/F_Cu.png, B_Cu.png, F_Silkscreen.png, F_Mask.png, B_Mask.png
+Salida: <carpeta>/F_Cu.png, In1_Cu.png, In2_Cu.png, B_Cu.png, F_Silkscreen.png, F_Mask.png, B_Mask.png
 """
 import os
 import subprocess
@@ -14,6 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 KCLI = os.environ.get('KICAD_CLI', r'C:\Program Files\KiCad\10.0\bin\kicad-cli.exe')
 SETS = {
     'F_Cu': 'F.Cu,Edge.Cuts',
+    'In1_Cu': 'In1.Cu,Edge.Cuts',
+    'In2_Cu': 'In2.Cu,Edge.Cuts',
     'B_Cu': 'B.Cu,Edge.Cuts',
     'F_Silkscreen': 'F.Silkscreen,Edge.Cuts,F.Mask',
     'F_Fab': 'F.Fab,Edge.Cuts',

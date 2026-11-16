@@ -9,9 +9,11 @@ Chequeos (pedido del dueño + REGLAS.md):
   D  segmentos de menos de 0.1 mm
   E  extremos sueltos (stubs) y segmentos duplicados o superpuestos
   F  vías sin usar (menos de dos capas conectadas por pista o zona)
-  G  B.Cu: solo redes permitidas y solo dentro de las zonas permitidas
-  H  ninguna pista crítica pasa por encima de una pista de B.Cu
-  I  GND continuo en B.Cu debajo de cada pista crítica (contra el relleno de la zona). Los puntos que caen en el anillo
+  G  capas (4 capas, decisión del dueño): In1.Cu sin pistas (plano GND entero); las redes críticas (Analogica, Reloj,
+     Conmutado) solo en F.Cu, salvo DC_MON/DC_MON2 (nivel DC) e IEPE_FEED* (riel DC); In2.Cu y B.Cu para
+     alimentación y señales lentas
+  H  (2 capas) sin uso en 4 capas: la referencia de F.Cu es In1, no B.Cu
+  I  GND continuo en In1.Cu debajo de cada pista crítica de F.Cu (contra el relleno de la zona). Los puntos que caen en el anillo
      libre del plano alrededor de un pad THT de la misma red (donde la pista termina) se listan aparte: ese anillo
      existe siempre alrededor de un pad pasante que no es GND.
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
@@ -271,27 +273,24 @@ def main():
         p = pt(v.GetPosition())
         net = v.GetNetname()
         layers = 0
-        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+        for layer in (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu):
             if ends.get((layer, round(p[0], 3), round(p[1], 3))) or zone_at(p, layer, net) or \
                     any(s[4] == net and s[3] == layer and seg_dist(p, s[1], s[2]) < 0.01 for s in segs) or \
                     pads_at(p, layer, net):
                 layers += 1
         if layers < 2:
             F['F_via_sin_usar'].append(f'{net} en {p} ({layers} capa conectada)')
-    # G: B.Cu
+    # G: capas
+    LENTAS_CRITICAS = {'DC_MON', 'DC_MON2'} | NO_CRITICAS_EN_CRUCES
     for t, a, c, layer, net, w in segs:
-        if layer != pcbnew.B_Cu:
-            continue
-        ok_zone = [z for n, z in EXCEPCIONES_BCU if n == net]
-        if net in BCU_NETS:
-            ok_zone += DIGITAL_ZONE
-        if not ok_zone:
-            F['G_bcu_red_no_permitida'].append(f'{net} {a}->{c}')
-        elif not (in_box(a, ok_zone) and in_box(c, ok_zone)):
-            F['G_bcu_fuera_de_zona'].append(f'{net} {a}->{c}')
+        if layer == pcbnew.In1_Cu:
+            F['G_pista_en_plano_In1'].append(f'{net} {a}->{c}')
+        elif layer != pcbnew.F_Cu and netclass.get(net) in CRITICAL_CLASSES and net not in LENTAS_CRITICAS:
+            F['G_critica_fuera_de_F_Cu'].append(f'{net} {b.GetLayerName(layer)} {a}->{c}')
     # H, I, J: críticas
-    bsegs = [s for s in segs if s[3] == pcbnew.B_Cu]
-    gnd_b = [z for z in b.Zones() if z.GetNetname() == 'GND' and z.IsOnLayer(pcbnew.B_Cu)]
+    bsegs = []                                    # H no aplica en 4 capas
+    PLANO = pcbnew.In1_Cu
+    gnd_b = [z for z in b.Zones() if z.GetNetname() == 'GND' and z.IsOnLayer(PLANO)]
     tht = [(pt(p.GetPosition()), max(mm(p.GetSize().x), mm(p.GetSize().y)) / 2, p.GetNetname(),
             f'{p.GetParentFootprint().GetReference()}.{p.GetNumber()}')
            for p in pads if p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
@@ -316,7 +315,7 @@ def main():
                 x, y = a[0] + (c[0] - a[0]) * f, a[1] + (c[1] - a[1]) * f
                 for off in (-(w / 2 + 0.2), 0.0, w / 2 + 0.2):
                     q = pcbnew.VECTOR2I(pcbnew.FromMM(x - uy * off), pcbnew.FromMM(y + ux * off))
-                    if not any(z.GetFilledPolysList(pcbnew.B_Cu).Contains(q) for z in gnd_b):
+                    if not any(z.GetFilledPolysList(PLANO).Contains(q) for z in gnd_b):
                         propio = en_anillo_propio(mm(q.x), mm(q.y), net)
                         if propio:
                             INFO['I_anillo_de_su_pad_THT'].append(f'{net} en ({x:.2f}, {y:.2f}) junto a {propio}')
