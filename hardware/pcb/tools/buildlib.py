@@ -148,6 +148,22 @@ lib += symbol(
         ('3', 'SHIELD', 'passive', 0, -5.08, 90, True),
         ('4', 'SHIELD', 'passive', 0, -5.08, 90, True),
     ], hide_names=True)
+# Copias locales de símbolos genéricos de KiCad 10 con el filtro de footprint que corresponde al footprint real de la
+# placa (bloque 10): así ni el ERC (footprint_filter, lib_symbol_mismatch) ni la paridad del DRC
+# (footprint_filters_mismatch) avisan. Mismo dibujo, pines y campos que en la biblioteca de KiCad.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sexpr import get_symbol, dump, find  # noqa: E402
+COPIAS = [
+    ('Connector_Generic', 'Conn_01x02', 'Connector*:*_1x??_* Sonometro:TerminalBlock*'),
+    ('Jumper', 'Jumper_2_Open', 'Jumper* TestPoint*2Pads* TestPoint*Bridge* PinHeader_1x02*'),
+    ('Amplifier_Operational', 'TLV9062', 'SOIC*3.9x4.9mm*P1.27mm* TSSOP*4.4x3mm*P0.65mm* VSSOP*3x3mm*P0.5mm* TSOT?23*'),
+]
+for _lib, _name, _filt in COPIAS:
+    _s = get_symbol(_lib, _name)
+    for _p in find(_s, 'property'):
+        if _p[1] == 'ki_fp_filters':
+            _p[2] = _filt
+    lib += '\t' + dump(_s) + '\n'
 lib += ')\n'
 open(os.path.join(OUT, 'Sonometro.kicad_sym'), 'w', encoding='utf-8').write(lib)
 

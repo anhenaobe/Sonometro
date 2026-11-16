@@ -791,7 +791,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector_Generic:Conn_01x02"
+		(symbol "Sonometro:Conn_01x02"
 			(pin_names
 				(offset 1.016)
 				(hide yes)
@@ -865,7 +865,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "Connector*:*_1x??_*"
+			(property "ki_fp_filters" "Connector*:*_1x??_* Sonometro:TerminalBlock*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1709,7 +1709,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Jumper:Jumper_2_Open"
+		(symbol "Sonometro:Jumper_2_Open"
 			(pin_numbers
 				(hide yes)
 			)
@@ -1786,7 +1786,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "Jumper* TestPoint*2Pads* TestPoint*Bridge*"
+			(property "ki_fp_filters" "Jumper* TestPoint*2Pads* TestPoint*Bridge* PinHeader_1x02*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2369,7 +2369,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Amplifier_Operational:TLV9062"
+		(symbol "Sonometro:TLV9062"
 			(pin_names
 				(offset 0.127)
 			)
@@ -2454,7 +2454,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "SOIC*3.9x4.9mm*P1.27mm* TSSOP*4.4x3mm*P0.65mm* VSSOP*3x3mm*P0.5mm*"
+			(property "ki_fp_filters" "SOIC*3.9x4.9mm*P1.27mm* TSSOP*4.4x3mm*P0.65mm* VSSOP*3x3mm*P0.5mm* TSOT?23*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -8026,7 +8026,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
+		(lib_id "Sonometro:Conn_01x02")
 		(at 17.78 57.15 0)
 		(mirror y)
 		(unit 1)
@@ -9120,7 +9120,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
+		(lib_id "Sonometro:Conn_01x02")
 		(at 223.52 26.67 0)
 		(mirror y)
 		(unit 1)
@@ -10055,7 +10055,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Jumper:Jumper_2_Open")
+		(lib_id "Sonometro:Jumper_2_Open")
 		(at 246.38 59.69 270)
 		(unit 1)
 		(body_style 1)
@@ -11014,7 +11014,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x02")
+		(lib_id "Sonometro:Conn_01x02")
 		(at 317.5 39.37 0)
 		(mirror y)
 		(unit 1)
@@ -11629,7 +11629,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Jumper:Jumper_2_Open")
+		(lib_id "Sonometro:Jumper_2_Open")
 		(at 350.52 69.85 270)
 		(unit 1)
 		(body_style 1)
@@ -12219,7 +12219,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 114.3 161.29 0)
 		(unit 1)
 		(body_style 1)
@@ -12336,7 +12336,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 114.3 140.97 0)
 		(unit 2)
 		(body_style 1)
@@ -12453,7 +12453,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 160.02 140.97 0)
 		(unit 3)
 		(body_style 1)
@@ -14858,7 +14858,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 262.89 161.29 0)
 		(unit 1)
 		(body_style 1)
@@ -14986,7 +14986,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 262.89 140.97 0)
 		(unit 2)
 		(body_style 1)
@@ -15114,7 +15114,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Amplifier_Operational:TLV9062")
+		(lib_id "Sonometro:TLV9062")
 		(at 308.61 140.97 0)
 		(unit 3)
 		(body_style 1)

@@ -37,9 +37,9 @@ FP = {
 }
 SYM = {
     'U1': 'Reference_Current:LT3092xTS8', 'U2': 'Analog_DAC:MCP4725xxx-xCH',
-    'U3': 'Amplifier_Operational:TLV9062', 'U4': 'Sonometro:PCM1808PWR',
+    'U3': 'Sonometro:TLV9062', 'U4': 'Sonometro:PCM1808PWR',
     'U5': 'MCU_ST_STM32L4:STM32L432KCUx', 'Y1': 'Sonometro:KC2016Z25.0000C15XXK',
-    'J1': 'Connector_Generic:Conn_01x02', 'J2': 'Connector_Generic:Conn_01x02',
+    'J1': 'Sonometro:Conn_01x02', 'J2': 'Connector_Generic:Conn_01x02',
     'J3': 'Connector_Generic:Conn_01x06', 'J4': 'Connector_Generic:Conn_01x06',
 }
 VALUE_FIX = {'R1': '10R', 'R25': '10R', 'C10': '10nF', 'C19': '10nF', 'C25': '4.7uF',
@@ -97,7 +97,7 @@ C2220 = 'Capacitor_SMD:C_2220_5750Metric'
 TB = 'TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm'
 BUCK_FP = 'Sonometro:Texas_RNX0012A_VQFN-HR-12_2x3mm_P0.5mm'
 
-add('J5', 'Connector_Generic:Conn_01x02', '24V_IN', TB, {'1': '24V_PROT', '2': 'GND'},
+add('J5', 'Sonometro:Conn_01x02', '24V_IN', TB, {'1': '24V_PROT', '2': 'GND'},
     'JL126-50002G01', 'C394556', 'Entrada 18-30 V (doc J501). SIN proteccion de polaridad/TVS')
 
 
@@ -134,7 +134,7 @@ add('C47', 'Device:C', '10uF', C0603, {'1': '5V_A', '2': 'GND'}, 'TCC0603X5R106K
 # ---------------------------------------------------- CH2 IEPE source (doc U111)
 add('J6', 'Connector_Generic:Conn_01x02', 'SV_EXT_IN', TB, {'1': 'SV_SUPPLY_EXTERNAL', '2': 'GND'},
     'JL126-50002G01', 'C394556', 'Alimentacion externa IEPE CH2 (doc J111), separada de 24V')
-add('J7', 'Connector_Generic:Conn_01x02', 'EN_IEPE_CH2', TB,
+add('J7', 'Sonometro:Conn_01x02', 'EN_IEPE_CH2', TB,
     {'1': 'SV_SUPPLY_EXTERNAL', '2': 'IEPE_FEED_SV'}, 'JL126-50002G01', 'C394556',
     'Habilitacion IEPE CH2 (doc J112), mismo conector que J1')
 add('J8', 'Connector_Generic:Conn_01x02', 'MIC_CH2_SV12L', TB, {'1': 'IEPE_SV', '2': 'GND'},
@@ -260,11 +260,11 @@ change('C8', 'Micrófonos: borneras → BNC a 90° (Kinghelm KH-BNC75-3511, C283
 # C9: escalon de corriente para la demo
 add('R47', 'Device:R', '180R', R0603, {'1': 'OUT_I', '2': 'STEP1'}, '0603WAF1800T5E', 'C22828',
     'Con JP1 puesto queda en paralelo con R2||R3: I = 10uA(1+21k/52.9R) = 3.98 mA', 'cambio C9')
-add('JP1', 'Jumper:Jumper_2_Open', 'STEP_CH1', 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
+add('JP1', 'Sonometro:Jumper_2_Open', 'STEP_CH1', 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
     {'1': 'STEP1', '2': 'IEPE'}, 'Header 1x2 2.54 + jumper', '', 'Escalon de corriente CH1', 'cambio C9')
 add('R48', 'Device:R', '150R', R0603, {'1': 'OUT_SV', '2': 'STEP2'}, '0603WAF1500T5E', 'C22808',
     'Con JP2 puesto queda en paralelo con R35: I = 10uA(1+15k/60R) = 2.51 mA', 'cambio C9')
-add('JP2', 'Jumper:Jumper_2_Open', 'STEP_CH2', 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
+add('JP2', 'Sonometro:Jumper_2_Open', 'STEP_CH2', 'Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical',
     {'1': 'STEP2', '2': 'IEPE_SV'}, 'Header 1x2 2.54 + jumper', '', 'Escalon de corriente CH2', 'cambio C9')
 for r in ('JP1', 'JP2'):
     parts[r]['mount'] = 'Manual'

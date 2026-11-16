@@ -621,3 +621,25 @@ Pistas de 0.4 mm en In2.Cu, para corrientes de 5–20 mA (se justifica en CALCUL
     - fuera de las zonas de otras redes;
     - ≥ 0.8 mm del borde.
 - **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos, **0 conexiones sin rutear**.
+
+## 17. Bloque 10 — teardrops, chequeos completos y serigrafía final
+- **Teardrops** (`tools/ruteo/teardrops.py`):
+  - Activados en todos los pads con red y en todas las vías, con los parámetros por defecto de KiCad 10.
+  - Sin GUI: `kicad-cli pcb drc --refill-zones --save-board` genera las 440 zonas teardrop.
+- **Ningún chequeo de DRC en "ignorar":**
+  - `config_reglas.py` pasa a advertencia los 5 que KiCad trae ignorados de fábrica (footprint_filters_mismatch,
+    footprint_type_mismatch, missing_courtyard, track_not_centered_on_via, tuning_profile_track_geometries).
+  - Con ellos activos aparecieron 7 avisos de paridad `footprint_filters_mismatch`: el filtro de los símbolos genéricos
+    de KiCad no incluía el footprint real.
+  - Se corrigió de fondo: `buildlib.py` agrega a `Sonometro.kicad_sym` copias de Conn_01x02, Jumper_2_Open y TLV9062
+    con el filtro correcto, y `design.py` apunta J1/J5/J7, JP1/JP2 y U3/U9 a ellas. El esquemático regenerado solo
+    cambia esos lib_id.
+- **Serigrafía:**
+  - Chequeos de serigrafía como error en el DRC: 0.
+  - 21 designadores sin lugar a 1.0 mm quedan en el PDF de montaje: C10, C12, C19, C20, C29, C30, C32, C33, C39, C40,
+    C42, C43, C57, L1, L2, R7, R18, R19, R22, R41, R42.
+- **ERC:** 0 con las severidades del proyecto. KiCad deja 4 chequeos ignorados de fábrica. Activados en una copia,
+  solo muestran 3 `four_way_junction`: uniones correctas de un pin con tres cables (D1.K, #PWR006, #PWR018), que solo
+  importan para la lectura impresa.
+- **Verificación final:** DRC 0 (todos los chequeos activos), paridad 0, ERC 0, `revisar_pistas` 0 hallazgos, 0 sin
+  conectar, 0 cruces bajo nodos protegidos.

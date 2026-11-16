@@ -147,6 +147,11 @@ def main():
     sev = p['board']['design_settings']['rule_severities']
     for k in SEVERITY_ERROR:
         sev[k] = 'error'
+    # ningún chequeo queda en 'ignore' (pedido del dueño: nada excluido). Los que KiCad trae ignorados de fábrica
+    # pasan a advertencia; con ellos activos el DRC sigue en 0 (comprobado tras el bloque 9).
+    for k, v in list(sev.items()):
+        if v == 'ignore':
+            sev[k] = 'warning'
     ns = p['net_settings']
     base = dict(ns['classes'][0])
     classes, patterns = [], []

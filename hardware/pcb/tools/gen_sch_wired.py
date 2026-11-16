@@ -539,7 +539,7 @@ def close(m, title, pad=2.5):
         dx_, dy_ = DV[d]
         add(q[0] + dx_ * 4, q[1] + dy_ * 4)
     for (ref, unit), (x, y, rot, mirror) in list(placed.items())[m[6]:]:
-        if parts[ref]['sym'].startswith('Connector_Generic:'):
+        if parts[ref]['sym'].startswith(('Connector_Generic:', 'Sonometro:Conn_')):
             ys_ = [q[1] for q, r_, *_ in pin_list if r_ == ref]
             add(x - 1.27, min(ys_) - (6.4 if ref in CONN_ABOVE else 3.9))
             add(x - 1.27 + 1.1 * len(parts[ref]['value']), max(ys_) + 3.2)
@@ -795,7 +795,7 @@ def emit_symbol(lib_id, ref, value, x, y, rot, unit=1, mirror=None, fields=(), f
             j = ['left'] if rot == 0 else ['right']
             s.append(prop('Reference', ref, x + 2.54, y - 1.27, 0, justify=j))
             s.append(prop('Value', value, x + 2.54, y + 1.27, 0, justify=j))
-    elif lib_id.startswith('Connector_Generic:'):
+    elif lib_id.startswith(('Connector_Generic:', 'Sonometro:Conn_')):   # Sonometro:Conn_01x02 = copia local (bloque 10)
         bb = [xform(p_['x'], p_['y'], rot, mirror) for p_ in lib_pins(sdef)]
         miny, maxy = min(b[1] for b in bb), max(b[1] for b in bb)
         j = ['right'] if mirror else ['left']     # a mirrored symbol flips field justification
