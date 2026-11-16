@@ -242,3 +242,48 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
 | `revisar_pistas.py` (en la copia) | **2 hallazgos (L): C36 y C46 a 3.00 mm del pin 5 (VCC)**. Decide el dueño |
 | Cumple | 14 uniones en el centro de un pad con la esquina dentro del cobre; 22 pads GND con su vía (K); 4 CHF a 0.92 mm de su pin (L) |
 | Conexiones sin rutear | 209 en la placa real, 178 en la copia con plano |
+
+### 7.1 Revisión del dueño del bloque 1 (aplicada en `67b9c78`)
+
+**Cambios hechos:**
+- C36/C46 a 3.0 mm, aceptado:
+  - VCC a 0.3 mm (sale del pin a 0.25 mm);
+  - vía GND pegada a C36.2 (0.18 mm);
+  - retorno de C36.2 al pin AGND por F.Cu (0.25 mm, a la derecha de la pista VCC).
+- Clases Potencia/Conmutado con los valores reales (0.25 mm, vía 0.3/0.6). La regla `ancho_minimo_potencia` está
+  probada con control.
+- Plano GND de B.Cu creado (`bloques/gnd_bcu.py`). `verificar_bloque.py` lo rellena en cada verificación: el DRC
+  de la placa real da 0.
+- **Tenting:** comprobado en los Gerber de máscara contra una copia sin tenting (detalle en REGLAS.md §8). Ninguna
+  vía tiene apertura de máscara.
+
+**Mediciones** (`tools/ruteo/medir.py`; U7 da los mismos valores que U6):
+
+| Medición | Valor |
+|---|---|
+| PGND pin 1 → C29.2 (CHF 220 nF) por F.Cu | sí, 2.61 mm de pista |
+| PGND pin 11 → C30.2 por F.Cu | sí, 2.21 mm |
+| Lazo VIN–CHF–PGND, lado pin 2 | 7.25 mm de perímetro, 3.32 mm² |
+| Lazo VIN–CHF–PGND, lado pin 10 | 6.97 mm, 2.69 mm² |
+| Nodo FB | pin 7 → R29.2 3.71 mm; R29.2 → R30.1 1.79 mm; 5.49 mm de cobre en total |
+| Entrada del bus de 24 V | pin VIN solo a su CHF, CHF solo a su CIN, y el bus (zona y D2) solo a CIN |
+
+**Pendientes anotados:**
+- CALCULOS.md: los tramos SW, bobina y COUT se calculan con la corriente de rizado de la bobina en FPWM (≈ 0.42 A
+  p-p a 24 V con 6.8 µH y 1 MHz para 3V3), no con 5–20 mA.
+- Bloque 9: el relleno GND de F.Cu une con conexión sólida los pads GND de CIN y COUT y los pines PGND, sin alivios.
+
+## 8. Bloque 2 — entrada y 24 V (`tools/ruteo/bloques/b2_entrada.py`)
+
+- **Entrada:** J5.1 → D1.2 en recto (6.75 mm), luego D1.1 → D2.1 (3.56 mm), todo a 1.0 mm (camino del TVS).
+- **Ramificación en pads:**
+  - D2.1 reparte hacia C27.1 (bus de los bucks) y hacia J1.1;
+  - J1.1 sigue a J7.1 por la izquierda de J1.2 (a ≥ 1.35 mm del borde). Así el lado derecho de J1.2 y J7.2 queda
+    libre para IEPE_FEED.
+- **Bus de 24 V:** franja de zona `BUS_24V` (F.Cu, y = 116.9–117.75) con dientes de 0.5 mm desde el centro de cada
+  CIN. Queda encima de los tres puentes de B.Cu aprobados.
+- **GND del TVS:** tres vías junto a D2.2 al plano de B.Cu. J5.2 (THT) conecta al plano con alivio térmico.
+- **Verificación:**
+  - DRC 0, paridad 0, ERC 0;
+  - `revisar_pistas` 0 hallazgos (D2 a 0.85 mm de D1.1);
+  - 0 conexiones sin rutear en 24V_PROT y 24V_IN; 169 en total.

@@ -69,6 +69,18 @@ def aplicar(b, nombre, mod):
         errs += validar(red, pts)
     if errs:
         raise SystemExit('el bloque no cumple las reglas de trazado:\n  ' + '\n  '.join(errs))
+    todas = b.GetNetsByName()
+
+    def existe(red):
+        try:
+            todas[red]
+            return True
+        except (IndexError, KeyError):
+            return False
+    faltan = sorted(r for r in {x[0] for x in getattr(mod, 'PISTAS', []) + getattr(mod, 'VIAS', [])} |
+                    {z['red'] for z in getattr(mod, 'ZONAS', [])} if not existe(r))
+    if faltan:
+        raise SystemExit('redes que no existen en la placa: ' + ', '.join(faltan))
     grupo = pcbnew.PCB_GROUP(b)
     grupo.SetName('ruteo:' + nombre)
     b.Add(grupo)

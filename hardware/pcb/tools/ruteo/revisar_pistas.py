@@ -50,6 +50,7 @@ ACEPTADOS = {                                    # (chequeo, pieza): motivo; ace
 DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
     'C39': ('U7', '2'), 'C40': ('U7', '10'), 'C46': ('U7', '5'),
+    'D2': ('D1', '1'),                           # TVS junto al cátodo de D1 (bloque 2)
 }
 
 
