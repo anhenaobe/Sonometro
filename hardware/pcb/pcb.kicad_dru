@@ -32,6 +32,16 @@
   (condition "A.Type == 'Pad' && B.Type == 'Pad'")
   (constraint clearance (min 0.2mm)))
 
+# Serigrafía a pads 0.15 mm (JLC) y a borde 0.3 mm. Probado: el piso de la placa (0.05) solo vale entre
+# serigrafías, para que dos líneas de footprints vecinos a 0.075 mm no cuenten como solape.
+(rule "serigrafia_a_pad"
+  (condition "A.Layer == 'F.SilkS' && B.Type == 'Pad'")
+  (constraint silk_clearance (min 0.15mm)))
+
+(rule "serigrafia_a_borde"
+  (condition "A.Layer == 'F.SilkS' && B.Layer == 'Edge.Cuts'")
+  (constraint silk_clearance (min 0.3mm)))
+
 # Nodos conmutados de los bucks lejos de lo analógico.
 (rule "sw_lejos_de_analogica"
   (condition "A.hasNetclass('Conmutado') && B.hasNetclass('Analogica')")

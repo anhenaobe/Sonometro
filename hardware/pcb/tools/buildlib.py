@@ -235,12 +235,23 @@ s += fp_text('Description', 'NUCLEO-32 socket', 0, 0, 'F.Fab', True)
 s += '\t(attr through_hole)\n'
 s += rect(X0, Y0, X1, Y1, 'F.Fab', 0.1)
 s += rect(5.12, Y0, 10.12, Y0 + 2.0, 'F.Fab', 0.1)                       # micro-USB
-s += rect(X0, Y0, X1, Y1, 'F.SilkS', 0.12)
-s += rect(5.12, Y0 - 0.0, 10.12, Y0 + 2.0, 'F.SilkS', 0.12)
+# Serigrafía (REGLAS.md §7): nada debajo del módulo enchufado ni a menos de 0.5 mm del borde. Solo el
+# contorno de cada tira hembra (CN4 sin su lado derecho: no hay lugar hasta el borde), marca de pin 1 y "USB"
+# fuera del módulo. El contorno de la NUCLEO y los rótulos CN3/CN4 quedan en F.Fab.
+s += line(-1.4, -1.4, 1.4, -1.4, 'F.SilkS', 0.15) + line(1.4, -1.4, 1.4, 37.0, 'F.SilkS', 0.15)
+s += line(1.4, 37.0, -1.4, 37.0, 'F.SilkS', 0.15) + line(-1.4, 37.0, -1.4, -1.4, 'F.SilkS', 0.15)
+s += line(13.84, -1.4, 16.4, -1.4, 'F.SilkS', 0.15) + line(13.84, -1.4, 13.84, 37.0, 'F.SilkS', 0.15)
+s += line(13.84, 37.0, 16.4, 37.0, 'F.SilkS', 0.15)
+s += (f'\t(fp_poly (pts (xy -2.25 -0.35) (xy -1.65 0) (xy -2.25 0.35)) (stroke (width 0.15) (type solid)) '
+      f'(fill yes) (layer "F.SilkS") (uuid "{U("pin1mark")}"))\n')                 # marca de pin 1 (CN3-1)
+s += (f'\t(fp_text user "USB" (at -3.05 -4.6 90) (layer "F.SilkS") (uuid "{U("txtUSB")}")\n'
+      f'\t\t(effects (font (size 1 1) (thickness 0.15))))\n')
+s += (f'\t(fp_poly (pts (xy -3.05 -7.1) (xy -3.45 -6.4) (xy -2.65 -6.4)) (stroke (width 0.15) (type solid)) '
+      f'(fill yes) (layer "F.SilkS") (uuid "{U("usbarrow")}"))\n')               # flecha hacia el USB
 s += rect(-1.55, -1.55, 1.55, 37.11, 'F.CrtYd', 0.05)
 s += rect(13.69, -1.55, 16.79, 37.11, 'F.CrtYd', 0.05)
 for t_, x_, y_ in (('USB', 7.62, -5.9), ('CN3', 0, -3.0), ('CN4', 15.24, -3.0), ('NUCLEO-L432KC', 7.62, 39.6)):
-    s += (f'\t(fp_text user "{t_}" (at {x_} {y_} 0) (layer "F.SilkS") (uuid "{U("txt" + t_)}")\n'
+    s += (f'\t(fp_text user "{t_}" (at {x_} {y_} 0) (layer "F.Fab") (uuid "{U("txt" + t_)}")\n'
           f'\t\t(effects (font (size 1 1) (thickness 0.15))))\n')
 for i in range(15):
     s += tht(str(i + 1), 0, round(2.54 * i, 2), 'rect' if i == 0 else 'circle')

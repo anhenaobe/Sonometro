@@ -4,7 +4,7 @@ Reglas (REGLAS.md / pedido del dueño):
   - alto 1.0 mm, trazo 0.15 mm, solo 0° y 90° (legibles desde abajo y desde la derecha);
   - nunca sobre pads (con 0.15 mm de separación), vías, máscara abierta ni sobre el cuerpo (F.Fab) de ninguna
     pieza; sin solaparse con otra serigrafía; a >= 0.5 mm del borde;
-  - sin ambigüedad: el texto queda más cerca de su pieza que de cualquier otra;
+  - sin ambigüedad: el texto queda más cerca de su pieza que de cualquier otra del mismo tipo (R, C, U...);
   - si no cabe, el designador se omite (queda en F.Fab y en el PDF de montaje), EXCEPTO conectores (J*, A1, JP*)
     y puntos de prueba (TP*), que nunca se omiten: si no caben se reporta como problema.
 
@@ -22,6 +22,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 H, W, TH = 1.0, 0.8, 0.15          # alto, ancho de carácter, trazo (mm); JLC: alto >= 1.0
 PAD_CLR, EDGE_CLR, TXT_CLR = 0.15, 0.5, 0.15
 MUST = ('J', 'A', 'JP', 'TP')
+# separación texto-cuerpo: hasta 3 mm en integrados/conectores (sus pads salen del cuerpo); 1.2 mm en el resto
+GAPS = (0.1, 0.2, 0.35, 0.5, 0.8, 1.2, 1.6, 2.0, 2.5, 3.0)
+SHIFTS = (0, -0.4, 0.4, -0.8, 0.8, -1.2, 1.2, -1.8, 1.8, -2.4, 2.4, -3.0, 3.0)
 
 
 def mm(v):
@@ -65,11 +68,12 @@ def main():
     bodies = {fp.GetReference(): body_box(fp) for fp in fps}
     obst = []                                    # obstáculos fijos: pads, cuerpos, serigrafía gráfica, vías
     for fp in fps:
-        for p in fp.Pads():
-            obst.append(box(p.GetBoundingBox(), PAD_CLR))
+        for p in fp.Pads():                       # con la apertura de máscara (fiduciales: 2 mm)
+            mask = max(0.0, pcbnew.ToMM(p.GetSolderMaskExpansion(pcbnew.F_Mask)))
+            obst.append(box(p.GetBoundingBox(), PAD_CLR + mask))
         obst.append(bodies[fp.GetReference()])
         for g in fp.GraphicalItems():
-            if g.GetLayer() == pcbnew.F_SilkS and g.GetClass() == 'PCB_SHAPE':
+            if g.GetLayer() == pcbnew.F_SilkS and g.GetClass() in ('PCB_SHAPE', 'PCB_TEXT'):
                 obst.append(box(g.GetBoundingBox(), TXT_CLR))
     for t in b.GetTracks():
         if t.GetClass() == 'PCB_VIA':
@@ -79,16 +83,29 @@ def main():
     # primero los obligatorios, luego los más difíciles (pieza pequeña rodeada)
     PRIO = {'U': 0, 'Y': 0, 'D': 0, 'L': 0}          # integrados, cristal, diodos, bobinas antes que pasivos
 
+    fpby = {fp.GetReference(): fp for fp in fps}
+
+    def text_box(ref, ang):
+        """Caja real del texto (KiCad) centrada en el origen, con el tamaño y el giro finales."""
+        f = fpby[ref].Reference()
+        f.SetTextSize(pcbnew.VECTOR2I(pcbnew.FromMM(W), pcbnew.FromMM(H)))
+        f.SetTextThickness(pcbnew.FromMM(TH))
+        f.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER)
+        f.SetVertJustify(pcbnew.GR_TEXT_V_ALIGN_CENTER)
+        f.SetTextAngle(pcbnew.EDA_ANGLE(ang, pcbnew.DEGREES_T))
+        f.SetPosition(pcbnew.VECTOR2I(0, 0))
+        return box(f.GetEffectiveTextShape().BBox())      # trazos reales (lo que mira el DRC), no la caja con márgenes
+
     def candidates(ref):
         bx = bodies[ref]
         cx, cy = (bx[0] + bx[2]) / 2, (bx[1] + bx[3]) / 2
-        tw = W * len(ref) + TH                      # ancho aproximado del texto (paso de carácter ~= W)
         out = []
         for ang in (0, 90):
-            lw, lh = (tw, H + TH) if ang == 0 else (H + TH, tw)
-            for gap in (0.1, 0.2, 0.35, 0.5, 0.8, 1.2, 1.6):
+            tb = text_box(ref, ang)
+            lw, lh = tb[2] - tb[0], tb[3] - tb[1]
+            for gap in (GAPS if prefix(ref)[:1] in 'UYAJ' else [g for g in GAPS if g <= 1.2]):
                 for side in ('arriba', 'abajo', 'izq', 'der'):
-                    for shift in (0, -0.4, 0.4, -0.8, 0.8, -1.2, 1.2, -1.8, 1.8):
+                    for shift in SHIFTS:
                         if side == 'arriba':
                             x, y = cx + shift, bx[1] - gap - lh / 2
                         elif side == 'abajo':
@@ -97,19 +114,21 @@ def main():
                             x, y = bx[0] - gap - lw / 2, cy + shift
                         else:
                             x, y = bx[2] + gap + lw / 2, cy + shift
-                        r = (x - lw / 2, y - lh / 2, x + lw / 2, y + lh / 2)
+                        r = (x + tb[0], y + tb[1], x + tb[2], y + tb[3])
                         if not (edge[0] <= r[0] and r[2] <= edge[2] and edge[1] <= r[1] and r[3] <= edge[3]):
                             continue
                         if any(inter(r, o) for o in obst):
                             continue
                         mine = dist(r, bx)
-                        if any(dist(r, bodies[o]) <= mine + 0.1 for o in bodies if o != ref):
-                            continue                  # ambiguo: queda igual o más cerca de otra pieza
+                        if any(dist(r, bodies[o]) <= mine + 0.1 for o in bodies
+                               if o != ref and prefix(o) == prefix(ref)):
+                            continue                  # ambiguo: igual o más cerca de otra pieza del mismo tipo
                         out.append((gap + abs(shift) * 0.5 + (0.05 if ang else 0), ang, x, y, r))
         out.sort(key=lambda c: c[0])
         return out
 
-    cand = {fp.GetReference(): candidates(fp.GetReference()) for fp in fps}
+    cand = {fp.GetReference(): candidates(fp.GetReference()) for fp in fps
+            if not fp.GetReference().startswith('FID')}     # los fiduciales no llevan designador
     todo = set(cand)
     while todo:
         live = {r: [c for c in cand[r] if not any(inter(c[4], p) for p in placed)] for r in todo}
@@ -137,6 +156,8 @@ def main():
     if mode == '--aplicar':
         for fp in fps:
             ref = fp.GetReference()
+            if ref.startswith('FID'):
+                continue
             f = fp.Reference()
             f.SetTextSize(pcbnew.VECTOR2I(pcbnew.FromMM(W), pcbnew.FromMM(H)))
             f.SetTextThickness(pcbnew.FromMM(TH))

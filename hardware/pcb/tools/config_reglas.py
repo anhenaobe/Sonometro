@@ -29,7 +29,7 @@ JLC = {
     'min_hole_clearance': 0.20,        # agujero de vía a pista (PTH 0.28: regla aparte)
     'min_hole_to_hole': 0.25,
     'min_copper_edge_clearance': 0.20,
-    'min_silk_clearance': 0.15,        # serigrafía a pads
+    'min_silk_clearance': 0.05,        # serigrafía–serigrafía (detecta solapes); a pads 0.15 y a borde 0.3 por regla
     'min_text_height': 1.0,
     'min_text_thickness': 0.15,
     'solder_mask_to_copper_clearance': 0.09,  # JLC: >= 0.09 mm entre apertura de máscara y pistas vecinas
@@ -91,6 +91,16 @@ DRU_TEXT = '''(version 1)
 (rule "pad_a_pad"
   (condition "A.Type == 'Pad' && B.Type == 'Pad'")
   (constraint clearance (min 0.2mm)))
+
+# Serigrafía a pads 0.15 mm (JLC) y a borde 0.3 mm. Probado: el piso de la placa (0.05) solo vale entre
+# serigrafías, para que dos líneas de footprints vecinos a 0.075 mm no cuenten como solape.
+(rule "serigrafia_a_pad"
+  (condition "A.Layer == 'F.SilkS' && B.Type == 'Pad'")
+  (constraint silk_clearance (min 0.15mm)))
+
+(rule "serigrafia_a_borde"
+  (condition "A.Layer == 'F.SilkS' && B.Layer == 'Edge.Cuts'")
+  (constraint silk_clearance (min 0.3mm)))
 
 # Nodos conmutados de los bucks lejos de lo analógico.
 (rule "sw_lejos_de_analogica"

@@ -59,7 +59,7 @@
  "C10": {
   "sym": "Device:C",
   "value": "10nF",
-  "fp": "Capacitor_SMD:C_0402_1005Metric",
+  "fp": "Sonometro:C_0402_1005Metric_JLC",
   "pins": {
    "2": "GND",
    "1": "ADC_INL"
@@ -104,7 +104,7 @@
  "C19": {
   "sym": "Device:C",
   "value": "10nF",
-  "fp": "Capacitor_SMD:C_0402_1005Metric",
+  "fp": "Sonometro:C_0402_1005Metric_JLC",
   "pins": {
    "2": "GND",
    "1": "ADC_INR"
@@ -224,7 +224,7 @@
  "U3": {
   "sym": "Amplifier_Operational:TLV9062",
   "value": "TLV9062IDDFR",
-  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
    "4": "GND",
    "8": "5V_A",
@@ -611,7 +611,7 @@
  "U1": {
   "sym": "Reference_Current:LT3092xTS8",
   "value": "LT3092ETS8#TRPBF",
-  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
    "1": null,
    "2": "OUT_I",
@@ -752,7 +752,7 @@
  "R1": {
   "sym": "Device:R",
   "value": "10R",
-  "fp": "Resistor_SMD:R_0402_1005Metric",
+  "fp": "Sonometro:R_0402_1005Metric_JLC",
   "pins": {
    "2": "IEPE_SUP",
    "1": "IEPE_FEED"
@@ -767,7 +767,7 @@
  "J1": {
   "sym": "Connector_Generic:Conn_01x02",
   "value": "EN_IEPE_CH1",
-  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
    "2": "IEPE_FEED",
    "1": "24V_PROT"
@@ -799,7 +799,7 @@
  "J5": {
   "sym": "Connector_Generic:Conn_01x02",
   "value": "24V_IN",
-  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
    "1": "24V_IN",
    "2": "GND"
@@ -1284,7 +1284,7 @@
  "J7": {
   "sym": "Connector_Generic:Conn_01x02",
   "value": "EN_IEPE_CH2",
-  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
    "1": "24V_PROT",
    "2": "IEPE_FEED_SV"
@@ -1316,7 +1316,7 @@
  "R36": {
   "sym": "Device:R",
   "value": "10R",
-  "fp": "Resistor_SMD:R_0402_1005Metric",
+  "fp": "Sonometro:R_0402_1005Metric_JLC",
   "pins": {
    "1": "IEPE_FEED_SV",
    "2": "IEPE_SUP_SV"
@@ -1361,7 +1361,7 @@
  "U8": {
   "sym": "Reference_Current:LT3092xTS8",
   "value": "LT3092ETS8#TRPBF",
-  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
    "1": null,
    "2": "OUT_SV",
@@ -1427,7 +1427,7 @@
  "U9": {
   "sym": "Amplifier_Operational:TLV9062",
   "value": "TLV9062IDDFR",
-  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
    "4": "GND",
    "8": "5V_A",
@@ -1825,7 +1825,7 @@
  "TP1": {
   "sym": "Connector:TestPoint",
   "value": "TP_IEPE",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "IEPE"
   },
@@ -1839,7 +1839,7 @@
  "TP2": {
   "sym": "Connector:TestPoint",
   "value": "TP_REST_OUT",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "REST_OUT"
   },
@@ -1853,7 +1853,7 @@
  "TP3": {
   "sym": "Connector:TestPoint",
   "value": "TP_IEPE_SV",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "IEPE_SV"
   },
@@ -1867,7 +1867,7 @@
  "TP4": {
   "sym": "Connector:TestPoint",
   "value": "TP_REST_SV",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "REST_SV"
   },
@@ -1881,7 +1881,7 @@
  "TP5": {
   "sym": "Connector:TestPoint",
   "value": "TP_GND",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "GND"
   },
@@ -1895,7 +1895,7 @@
  "TP6": {
   "sym": "Connector:TestPoint",
   "value": "TP_GND",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "GND"
   },
@@ -1909,7 +1909,7 @@
  "TP7": {
   "sym": "Connector:TestPoint",
   "value": "TP_GND",
-  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "fp": "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC",
   "pins": {
    "1": "GND"
   },

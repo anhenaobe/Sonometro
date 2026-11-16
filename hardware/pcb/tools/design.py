@@ -290,6 +290,28 @@ change('C12', 'Alimentación de la NUCLEO',
        'La NUCLEO se alimenta por su USB. Con la placa solo comparte GND y señales; su +3V3/+5V/VIN no se '
        'conectan (connection_matrix.md: no poner en paralelo con el buck de 3V3). Orden: USB primero, luego 24 V.')
 
+# C13/C14 (punto de control 2 del ruteo, aprobados por el dueño): footprints para fabricar en JLCPCB
+for r in ('U1', 'U3', 'U8', 'U9'):
+    parts[r]['fp'] = 'Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI'
+change('C13', 'TSOT-23-8 con pads de 0.40 × 1.22 mm (U1, U3, U8, U9)',
+       'Land pattern de ADI (LTC DWG 05-08-1637): 0.25 mm entre pads en vez de 0.15 mm y puente de máscara de '
+       '0.25 mm. Compatible con el de TI para DDF (pads 0.45 × 1.05, filas a 2.6 mm): cubre todo el pie de la pata '
+       '(ancho máx. 0.38 mm).')
+for r in ('J1', 'J5', 'J7'):
+    parts[r]['fp'] = 'Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde'
+change('C14', 'Borneras con serigrafía recortada al borde (J1, J5, J7)',
+       'Mismo footprint MX126 de KiCad (mismos pads). El contorno de serigrafía queda a ≥ 0.5 mm del borde y la marca '
+       'de pin 1 pasa al lado derecho del cuerpo; antes quedaba fuera de la placa.')
+
+for r, p in parts.items():                       # C15: serigrafía a >= 0.15 mm de los pads (JLC)
+    if p['fp'] in ('Resistor_SMD:R_0402_1005Metric', 'Capacitor_SMD:C_0402_1005Metric',
+                   'TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm'):
+        p['fp'] = 'Sonometro:' + p['fp'].split(':')[1] + '_JLC'
+change('C15', 'Serigrafía a 0.15 mm de los pads (0402, puntos de prueba, Y1)',
+       'Copias locales de R/C_0402 y del punto de prueba con la serigrafía recortada o agrandada a 0.15 mm de los pads '
+       '(mínimo de JLCPCB); en Y1 se quitó el punto de pin 1 que caía sobre el pad (queda la escuadra exterior). '
+       'Los pads no cambian.')
+
 # ------------------------------------------------------------------- sanity
 for ref, p in parts.items():
     for num, net in p['pins'].items():

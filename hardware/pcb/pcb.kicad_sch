@@ -7795,7 +7795,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm"
+		(property "Footprint" "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde"
 			(at 17.78 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -8405,7 +8405,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 266.7 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -8524,7 +8524,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Sonometro:R_0402_1005Metric_JLC"
 			(at 241.3 29.21 0)
 			(hide yes)
 			(show_name no)
@@ -8856,7 +8856,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm"
+		(property "Footprint" "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde"
 			(at 223.52 26.67 0)
 			(hide yes)
 			(show_name no)
@@ -9903,7 +9903,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 261.62 64.77 0)
 			(hide yes)
 			(show_name no)
@@ -10144,7 +10144,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 303.53 74.93 0)
 			(hide yes)
 			(show_name no)
@@ -10255,7 +10255,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 360.68 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -10385,7 +10385,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Sonometro:R_0402_1005Metric_JLC"
 			(at 335.28 41.91 0)
 			(hide yes)
 			(show_name no)
@@ -10728,7 +10728,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm"
+		(property "Footprint" "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde"
 			(at 317.5 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -11433,7 +11433,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 365.76 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -11674,7 +11674,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 397.51 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -11899,7 +11899,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 114.3 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -12005,7 +12005,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 114.3 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -12111,7 +12111,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 160.02 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -13679,7 +13679,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 137.16 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -14371,7 +14371,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 262.89 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -14488,7 +14488,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 262.89 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -14605,7 +14605,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-8"
+		(property "Footprint" "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI"
 			(at 308.61 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -16077,7 +16077,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 285.75 161.29 0)
 			(hide yes)
 			(show_name no)
@@ -16894,7 +16894,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm"
+		(property "Footprint" "Sonometro:TestPoint_THTPad_D2.0mm_Drill1.0mm_JLC"
 			(at 396.24 166.37 0)
 			(hide yes)
 			(show_name no)
@@ -17143,7 +17143,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Sonometro:C_0402_1005Metric_JLC"
 			(at 53.34 226.06 0)
 			(hide yes)
 			(show_name no)
@@ -17470,7 +17470,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Sonometro:C_0402_1005Metric_JLC"
 			(at 53.34 241.3 0)
 			(hide yes)
 			(show_name no)
