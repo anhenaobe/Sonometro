@@ -70,6 +70,8 @@ DESACOPLO = {                                    # condensador: (integrado, pin)
     'C11': ('U4', '4'), 'C12': ('U4', '4'),      # VDD 3V3 del PCM1808
     'C15': ('U4', '1'), 'C16': ('U4', '1'),      # VREF del PCM1808
     'C13': ('Y1', '1'),                          # oscilador
+    'C7': ('U3', '8'),                           # V+ del TLV9152 CH1 (bloque 5)
+    'C5': ('U2', '3'), 'C6': ('U2', '3'),        # VDD del MCP4725 CH1 (también su referencia)
 }
 # Redes que el dueño pidió tratar como alimentación (no como señal crítica) en la regla de cruces H:
 # IEPE_FEED e IEPE_FEED_SV son el riel DC de 24 V antes del filtro RC de cada fuente.
