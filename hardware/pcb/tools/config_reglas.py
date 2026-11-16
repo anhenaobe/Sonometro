@@ -116,6 +116,13 @@ DRU_TEXT = '''(version 1)
   (condition "A.Type == 'Pad' && A.Pad_Type == 'Through-hole'")
   (constraint hole_clearance (min 0.3mm)))
 
+# Vías taponadas (JLC tapona por defecto en 4 capas): "vias with a distance less than 0.35mm from the pad cannot be
+# plugged with ink" (https://jlcpcb.com/help/article/pcb-via-covering). physical_clearance vale también entre una vía
+# y un pad de la misma red. Decisión del dueño: correr las vías a >= 0.35 mm.
+(rule "via_tapada_lejos_de_pad"
+  (condition "A.Type == 'Via' && B.Type == 'Pad'")
+  (constraint physical_clearance (min 0.35mm)))
+
 # Ancho mínimo de las redes de potencia y conmutadas (= ancho de su clase; los anchos mayores salen de CALCULOS.md).
 (rule "ancho_minimo_potencia"
   (condition "A.Type == 'Track' && (A.hasNetclass('Potencia') || A.hasNetclass('Conmutado'))")
