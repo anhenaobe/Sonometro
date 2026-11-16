@@ -1,6 +1,6 @@
 # Fabricación — Sonómetro IEPE Rev B
 
-Exportado por `tools/fabricacion.py` desde el commit **03dceee** (placa sin cambios sin commit), después de un
+Exportado por `tools/fabricacion.py` desde el commit **f1c2c2b** (placa sin cambios sin commit), después de un
 `verificar_bloque.py` limpio: DRC 0 con todos los chequeos activos, paridad 0, ERC 0, `revisar_pistas` 0,
 0 conexiones sin rutear.
 
@@ -21,7 +21,10 @@ Exportado por `tools/fabricacion.py` desde el commit **03dceee** (placa sin camb
   `rotaciones.md`.
 - 3 fiduciales en la placa (FID1–FID3). Rieles y agujeros de herramienta: los agrega JLC (REGLAS.md §2).
 - Piezas a mano: `soldar_a_mano.md` (8 piezas). Designadores omitidos en la serigrafía: `montaje.pdf`.
-- Revisar el stock de cada código LCSC el día del pedido (`auditoria_piezas.md` lo listó en la fase A).
+- Stock y códigos: `stock_bom.md` (`tools/stock_bom.py`, consulta del día). Repetir antes del pedido.
+- **En la vista previa del pedido (DFM de JLC), antes de pagar:** pin 1 de U1–U10 sobre la marca de la placa,
+  cátodo de D1/D2 del lado de la franja, pin 1 de Y1 y el centrado de U6/U7 (RNX, giro de 90° y 0.14 mm de
+  corrimiento respecto del footprint de JLC).
 
 ## Tenting de las vías (punto 6 de la revisión del bloque 1)
 Comparación de los Gerber de máscara contra una copia de control con todas las vías sin tapar:

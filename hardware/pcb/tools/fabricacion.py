@@ -195,8 +195,9 @@ def main():
                 'footprint de JLC respecto del de KiCad (`tools/auditoria_footprints.py`, ajuste q ≈ R(d)·p + t con '
                 'los pads de la pieza LCSC exacta), y la rotación del CPL = θ − d. La columna **pin 1** es la '
                 'distancia entre el pad 1 de la placa y el pad 1 del footprint de JLC colocado con la posición y la '
-                'rotación del CPL: confirma el giro de los integrados y la polaridad de los diodos sin depender de la '
-                'convención de nadie.\n\n'
+                'rotación del CPL. Comprueba la cuenta del CPL contra el footprint de EasyEDA de cada pieza; la '
+                'colocación real la decide la biblioteca de montaje de JLC, así que el pin 1 de U1–U10, D1, D2 e Y1 '
+                'se confirma en la vista previa del pedido (ver LEEME.md).\n\n'
                 '| Pieza | LCSC | Footprint | θ KiCad | d | t (mm) | Rotación CPL | pin 1 |\n|---|---|---|---|---|---|---|---|\n')
         for ref, lcsc, fpn, th, d, (tx, ty), rj, chk in filas_rot:
             f.write(f'| {ref} | {lcsc} | {fpn} | {th:g} | {d} | ({tx:+.2f}, {ty:+.2f}) | {rj:g} | {chk} |\n')
@@ -257,7 +258,10 @@ Exportado por `tools/fabricacion.py` desde el commit **{hash_}** (placa sin camb
   `rotaciones.md`.
 - 3 fiduciales en la placa (FID1–FID3). Rieles y agujeros de herramienta: los agrega JLC (REGLAS.md §2).
 - Piezas a mano: `soldar_a_mano.md` ({len(mano)} piezas). Designadores omitidos en la serigrafía: `montaje.pdf`.
-- Revisar el stock de cada código LCSC el día del pedido (`auditoria_piezas.md` lo listó en la fase A).
+- Stock y códigos: `stock_bom.md` (`tools/stock_bom.py`, consulta del día). Repetir antes del pedido.
+- **En la vista previa del pedido (DFM de JLC), antes de pagar:** pin 1 de U1–U10 sobre la marca de la placa,
+  cátodo de D1/D2 del lado de la franja, pin 1 de Y1 y el centrado de U6/U7 (RNX, giro de 90° y 0.14 mm de
+  corrimiento respecto del footprint de JLC).
 
 ## Tenting de las vías (punto 6 de la revisión del bloque 1)
 Comparación de los Gerber de máscara contra una copia de control con todas las vías sin tapar:

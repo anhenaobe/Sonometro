@@ -222,7 +222,7 @@
   "mount": "JLC"
  },
  "U3": {
-  "sym": "Amplifier_Operational:TLV9062",
+  "sym": "Sonometro:TLV9062",
   "value": "TLV9152IDDFR",
   "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
@@ -765,7 +765,7 @@
   "mount": "JLC"
  },
  "J1": {
-  "sym": "Connector_Generic:Conn_01x02",
+  "sym": "Sonometro:Conn_01x02",
   "value": "EN_IEPE_CH1",
   "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
@@ -797,7 +797,7 @@
   "mount": "Manual"
  },
  "J5": {
-  "sym": "Connector_Generic:Conn_01x02",
+  "sym": "Sonometro:Conn_01x02",
   "value": "24V_IN",
   "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
@@ -1282,7 +1282,7 @@
   "mount": "JLC"
  },
  "J7": {
-  "sym": "Connector_Generic:Conn_01x02",
+  "sym": "Sonometro:Conn_01x02",
   "value": "EN_IEPE_CH2",
   "fp": "Sonometro:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm_Borde",
   "pins": {
@@ -1425,7 +1425,7 @@
   "mount": "JLC"
  },
  "U9": {
-  "sym": "Amplifier_Operational:TLV9062",
+  "sym": "Sonometro:TLV9062",
   "value": "TLV9152IDDFR",
   "fp": "Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI",
   "pins": {
@@ -1778,7 +1778,7 @@
   "mount": "JLC"
  },
  "JP1": {
-  "sym": "Jumper:Jumper_2_Open",
+  "sym": "Sonometro:Jumper_2_Open",
   "value": "STEP_CH1",
   "fp": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
   "pins": {
@@ -1808,7 +1808,7 @@
   "mount": "JLC"
  },
  "JP2": {
-  "sym": "Jumper:Jumper_2_Open",
+  "sym": "Sonometro:Jumper_2_Open",
   "value": "STEP_CH2",
   "fp": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
   "pins": {

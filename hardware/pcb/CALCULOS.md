@@ -12,14 +12,14 @@ Generado por `tools/calculos.py` a partir de `pcb.kicad_pcb`: anchos, largos, v�
 | Cobre en el barril de la vía | 18 µm | [estimado] capacidad publicada por JLC, sin verificar |
 | LMR36015 fOSC, variante 1 MHz | 0.85 / 1 / 1.15 MHz | [doc] SNVSB49D p.7, Electrical Characteristics |
 | LMR36015 tON-MIN / tOFF-MIN | 55 típ, 83 máx ns / 53 típ, 73 máx ns | [doc] SNVSB49D p.7, §8.6 |
-| LMR36015 RDS-ON alto / bajo | 225 típ, 435 máx mΩ / 150 típ, 280 máx mΩ | [doc] SNVSB49D p.6 |
+| LMR36015 RDS-ON alto / bajo | 225 típ, 435 máx mΩ / 150 típ, 280 máx mΩ | [doc] SNVSB49D p.7 |
 | LMR36015 RθJA / RθJB / ψJT | 72.5 / 23.3 / 0.8 °C/W | [doc] SNVSB49D p.6, §8.4 (JEDEC) |
 | LMR36015 FPWM | CCM sin carga, frecuencia fija | [doc] SNVSB49D p.16, Tabla 9-1 |
 | L1 (3V3) / L2 (5V) | 6.8 µH / 10 µH | design.py (XAL4030-682 / XAL4040-103) |
 | PCM1808 ICC (VCC 5 V) | 8.6 típ, 11 máx mA | [doc] SLES177B p.6 |
 | PCM1808 IDD (VDD 3.3 V) | 5.9 típ, 8 máx mA a 48 kHz; 10.2 típ a 96 kHz | [doc] SLES177B p.6 |
 | TLV9152 IQ por amplificador | 560 típ, 685 máx µA; 750 máx (−40…125 °C) | [doc] SBOS986E p.12 |
-| MCP4725 IDD | 210 típ, 400 máx µA | [doc] DS22039D p.2 |
+| MCP4725 IDD | 210 típ, 400 máx µA | [doc] DS22039D p.3 |
 | Oscilador Y1 (O322524576MEEA4SC) | ≤ 10 mA | [estimado] sin datasheet a mano |
 | LT3092 θJA (TS8) | 57 °C/W | [copia] REGLAS.md §4 |
 | Corrientes IEPE | CH1 2.81 → 3.98 mA; CH2 1.51 → 2.51 mA (con JP) | design.py, cambio C9 |
