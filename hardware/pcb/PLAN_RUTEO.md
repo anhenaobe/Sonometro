@@ -489,3 +489,24 @@ Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públi
   - 5V_A (bloque 8): vías en (152.28, 120.9) junto a C7.2 y en (152.28, 143.4) junto a C54.2.
   - REST_OUT → C9 sale de TP2 y REST_SV → C14 de TP4, los dos por la derecha (bloque 6).
 - **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 29 conexiones sin rutear.
+
+## 13. Bloque 6 — rutas analógicas largas (`b6_analogicas.py`)
+Todo en F.Cu, sin vías.
+
+- **IEPE (CH1):**
+  - Sale de JP1.2 por la derecha y sube por x 124.0, entre TP5/R4 y el tramo de 24 V de CH2 (x 125.5).
+  - Cruza a y 127.5 por encima del lazo IEPE_SUP_SV de U8 (0.83 mm) y entra a R13.2 por la izquierda.
+  - Mide unos 33 mm; el nodo IEPE es la salida del sensor (baja impedancia).
+- **IEPE_SV (CH2):**
+  - Va de J8.1 a R38.2 en línea recta por y 153.825, bajo el bloque de PBT de J8. Es el mismo caso que el tramo de
+    24 V bajo J2 aceptado en el bloque 3: el cuerpo queda a 0.5 mm de la placa y el metal no la toca.
+  - Distancias: 1.45 mm al pad GND J8.2 y 0.91 mm al anclaje J8.3.
+- **REST_OUT:**
+  - Sale de TP2 por la derecha y pasa por encima de C14.
+  - Pasa a 0.35 mm del sensado de 5V y a 0.39 mm de la vía GND de R51.2.
+  - Entra a C9.1 desde arriba.
+- **REST_SV:**
+  - Sale de TP4 por la derecha y sube por x 156.5 (la vía GND de C16 está en x 157.425).
+  - Entra a C14.1 por la izquierda, por debajo de REST_OUT; las dos diagonales paralelas quedan a 0.40 mm.
+- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 25 conexiones sin rutear.
+  - Faltan alimentación (3V3, 5V_A), I2C, SAI, DC_MON/DC_MON2 y dos uniones GND para el relleno.
