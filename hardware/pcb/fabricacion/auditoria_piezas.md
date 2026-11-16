@@ -52,7 +52,7 @@ Piezas *extended* distintas hoy (sin contar *preferred*): **30**. En Economic, J
 
 | Refs | Problema | Propuesta | ¿Cambia footprint? | Motivo |
 |---|---|---|---|---|
-| U3, U9 | TLV9062IDDFR (C2867884): **stock 2** para 2 piezas, sin margen | TLV9152IDDFR **C2861011** (stock 542, mismo encapsulado DDF y pinout de doble op-amp estándar; 4.5 MHz, 2.7–16 V). Alternativa: TLV9002IDDFR C2862620 (stock 2331, 1 MHz). | no (mismo TSOT-23-8) | riesgo |
+| U3, U9 | TLV9062IDDFR (C2867884): stock **2 en JLC y 0 en LCSC** para 2 piezas | TLV9152IDDFR **C2861011** (stock 542). Verificado en TI SBOS986E: pinout DDF idéntico (OUT1, IN1−, IN1+, V−, IN2+, IN2−, OUT2, V+; fig. 5-4, p.6), alimentación 2.7–16 V, entrada rail-to-rail (V−)−0.1 a (V+)+0.1 V (p.11), 4.5 MHz y 10.8 nV/√Hz. Nota: el par de entrada principal llega a (V+)−2 V = 3.0 V con 5V_A; VSHIFT del RG-50 = 2.5 V (bien). Alternativa: TLV9002IDDFR C2862620 (stock 2331, 1 MHz; datasheet sin revisar). | no (mismo TSOT-23-8) | riesgo |
 | C27, C28, C37, C38 (CIN) | C5750X7R2A475K230KA (C2168733): **stock 0** | PSA FS55X475K101EGG **C153031** (4.7 µF 100 V X7R 2220, stock 11 756). Mismo valor, tensión y tamaño. | no | riesgo |
 | C31–C34, C41–C44 (COUT) | C3225X7R1C156M250AB (C2167855): **stock 0** | TDK C3225X7R1C156MT000N **C694469** (15 µF 16 V X7R 1210, stock 1338). Misma serie TDK. | no | riesgo |
 | C36, C46 (VCC) | C0805C225K5RACTU: **no está en el catálogo** | Samsung CL21B225KOFNNNE **C28234** (2.2 µF 16 V X7R 0805, stock 73 051). El datasheet pide 1 µF/16 V. Basic más barato: C23630 (0603, cambia el footprint). | no (con C28234) | riesgo |

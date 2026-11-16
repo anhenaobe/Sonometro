@@ -56,6 +56,7 @@ def brief(c):
         lib += ' (preferred)'
     return {'lcsc': c.get('componentCode'), 'mpn': c.get('componentModelEn'), 'brand': c.get('componentBrandEn'),
             'package': c.get('componentSpecificationEn'), 'type': lib, 'stock': c.get('stockCount'),
+            'presale': c.get('canPresaleNumber'),
             'describe': c.get('describe'), 'price1': c.get('initialPrice')}
 
 
@@ -89,7 +90,7 @@ def main():
         report.append(item)
         f = item['found']
         print(f"{','.join(refs)[:28]:28s} {mpn[:22]:22s} {lcsc or '-':9s} -> "
-              + (f"{f['lcsc']:9s} {f['type']:20s} stock={f['stock']} mpn_ok={item['mpn_match']}" if f else 'NO ENCONTRADO'))
+              + (f"{f['lcsc']:9s} {f['type']:20s} stock={f['stock']} preventa={f['presale']} mpn_ok={item['mpn_match']}" if f else 'NO ENCONTRADO'))
         sys.stdout.flush()
 
     json.dump(report, open(os.path.join(OUT, 'auditoria_jlc.json'), 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
