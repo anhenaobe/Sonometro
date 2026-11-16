@@ -16,7 +16,7 @@ Chequeos (pedido del dueño + REGLAS.md):
   I  GND continuo en In1.Cu debajo de cada pista crítica de F.Cu (contra el relleno de la zona). Los puntos que caen en el anillo
      libre del plano alrededor de un pad THT o de una vía de la misma red (donde la pista termina) se listan aparte:
      ese anillo existe siempre alrededor de un agujero que no es GND.
-  J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
+  J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm, en la misma capa (todas las capas)
   K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
      integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
   M  serigrafía (gráficos y textos visibles) sobre una vía: las vías van tapadas y el DRC no lo detecta
@@ -359,10 +359,13 @@ def main():
                 else:
                     continue
                 break
-    ana = [s for s in segs if s[3] == pcbnew.F_Cu and netclass.get(s[4]) == 'Analogica']
-    dig = [s for s in segs if s[3] == pcbnew.F_Cu and (netclass.get(s[4]) in DIGITAL_CLASSES or s[4] in DIGITAL_NETS)]
+    # J en todas las capas (pares en la misma capa): DC_MON/DC_MON2 van por B.Cu e In2 junto a I2C
+    ana = [s for s in segs if netclass.get(s[4]) == 'Analogica']
+    dig = [s for s in segs if (netclass.get(s[4]) in DIGITAL_CLASSES or s[4] in DIGITAL_NETS)]
     for s in ana:
         for d in dig:
+            if d[3] != s[3]:
+                continue
             a, c, e, f = s[1], s[2], d[1], d[2]
             if seg_seg_dist(a, c, e, f) > 1.0 + (s[5] + d[5]) / 2:
                 continue
