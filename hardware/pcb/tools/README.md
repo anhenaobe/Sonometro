@@ -94,6 +94,8 @@ de cada bloque están en `../PLAN_RUTEO.md` (§7–§17); las reglas y sus fuent
 | `ruteo/sugerir_vias.py`, `ruteo/exportar_capas.py`, `ruteo/oraculo/` | Ayudas: correr vías a ≥ 0.35 mm, imágenes de capas, Freerouting como oráculo de factibilidad en copias. |
 | `calculos.py` | Genera `../CALCULOS.md` con medidas de la placa y datos de datasheet con página. |
 | `fabricacion.py` | Genera `../fabricacion/` desde un commit sin cambios: Gerber, taladros, BOM, CPL corregido, comprobación del pin 1, tenting, montaje. |
+| `stock_bom.py` | Revisa `bom.csv` contra `target.json` y contra el catálogo de JLC del día (código, MPN, basic/extended, stock para 5 placas) → `../fabricacion/stock_bom.md`. |
+| `revisar_gerber.py` | Revisa los Gerber con gerbonara (biblioteca existente; correr con un Python que la tenga): capas, borde, agujeros sobre pads, máscara sobre vías, serigrafía → `../fabricacion/revision_gerber.md` y vistas SVG. |
 
 **Orden después de cambiar cualquier bloque** (KiCad cerrado):
 
