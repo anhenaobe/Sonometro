@@ -5,9 +5,9 @@ y señales lentas, B.Cu señales y GND. Topología de las redes críticas tomada
 - AGND (pin 2) y DGND (pin 5) unidos debajo del integrado, con una vía GND al plano (SLES177B; REGLAS.md §3).
 - Desacoplos con su vía GND junto al pad (>= 0.35 mm, vías taponadas). Aprobado tras el bloque 4: C17 (100 nF de VCC)
   junto al pin 3; C11<->C12 y C15<->C16 intercambiados para que los 100 nF queden más cerca (colocar_bloque4.json).
-- 3V3 y 5V_A llegan desde In2.Cu por vías en el bloque 8, en lugares reservados: 5V_A en el quiebre (163.35, 133.3) y en
-  (158.3, 137.325) junto a C18.1; 3V3 en (167.1, 129.606) junto a R49.1 y (167.2, 131.369) junto a C20.1, y uno más
-  para el grupo de U4.4/C11/C12/Y1 a elegir en el bloque 8.
+- 3V3 y 5V_A llegan desde In2.Cu por vías que pone el bloque 8 (b8_alimentacion.py tiene las posiciones finales):
+  5V_A en el quiebre (163.35, 133.3) y sobre C18.1 (159.35, 136.2); 3V3 junto a R49.1 (166.15, 129.61), junto a
+  C20.1 (166.95, 131.72) y junto a C13.1 (165.98, 138.52) para el grupo de U4.4/C11/C12/Y1.
 - MD1 y FMT (straps estáticos, clase Default) pasan por In2.Cu: en F.Cu quedan encerrados por VINL y VINR.
 - R19 subido 0.1 mm (ajuste autorizado) para que DOUT pase a >= 0.5 mm de AC_LEFT/VINL (regla reloj-analógica).
 - Y1-OUT entra a R21.1 por la derecha pasando entre los pads de R21 (0.85 mm libres): el pad GND de Y1 cierra el

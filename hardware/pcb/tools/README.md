@@ -14,7 +14,7 @@ La entrega para dibujar en Altium es **`hardware/pcb/guia_conexiones_altium.pdf`
 | `design.py` | Netlist objetivo. Toma todo lo de Altium tal cual (referencias, valores, MPN y LCSC), agrega desde los docs la alimentación y el canal 2, y aplica los cambios C1–C12 con su justificación. Salida: `target.json` (125 componentes, 68 redes con nombre) y `changes.json`. |
 | `buildlib.py` | Crea `lib/Sonometro.*`: los símbolos PCM1808, LMR36015, oscilador YXC, NUCLEO-L432KC y BNC; el footprint RNX0012A (land pattern de TI SNVSB49D), el zócalo NUCLEO-32 (UM1956) y los footprints del oscilador y del BNC (de `vendor_fp.pretty/`, convertidos desde EasyEDA/JLC). |
 | `gen_sch_wired.py` | Genera `pcb.kicad_sch` en una hoja A3. Dentro de cada bloque todo va con cables visibles y uniones; entre bloques se usan etiquetas globales, y los rieles van con símbolos de alimentación. Antes de escribir, un autochequeo geométrico aborta si un cable toca otra red o si queda un pin suelto. |
-| `gen_pcb.py`, `fix_pro.py` | Generan `pcb.kicad_pcb` (90×64 mm, 2 capas, sin agujeros, sin rutear) y las reglas JLCPCB del `.kicad_pro` (0.15 mm de separación; clase *Potencia* con pistas de 0.5 mm). Los bucks siguen el layout de TI (SNVSB49D fig. 12-2). |
+| `gen_pcb.py`, `fix_pro.py` | Generaron el `pcb.kicad_pcb` inicial (90×64 mm, 2 capas, sin rutear; hoy la placa es de 4 capas y **no se vuelve a correr `gen_pcb.py`**, que borraría el ruteo) y las reglas JLCPCB del `.kicad_pro` (0.15 mm de separación; clase *Potencia* con pistas de 0.5 mm). Los bucks siguen el layout de TI (SNVSB49D fig. 12-2). |
 | `verify.py` | Compara pin por pin una netlist de KiCad contra `target.json`. Las redes internas sin etiqueta llevan el nombre automático de KiCad (`Net-(...)`); ahí se compara solo qué pines contienen. |
 | `verify_altium.py` | Compara **tu dibujo en Altium** (`.SchDoc`) contra `target.json`, por pines y no por nombres de red. Uso: `python verify_altium.py <carpeta_con_los_SchDoc>`. |
 | `dump_placement.py`, `make_guide.py` | Exportan el placement (con el Python de KiCad) y generan `guia/guia_conexiones.tex`. Compilar con `tectonic guia/guia_conexiones.tex`. |
@@ -67,4 +67,43 @@ Lo dibujado en Altium conserva su referencia de Altium.
 - Footprint RNX0012A (U6/U7) comparado con el de JLC/EasyEDA (C1850339): los 12 pads tienen el
   mismo tamaño y separación. El de JLC está girado 90° y su origen está 0.14 mm corrido; hay que
   revisar la rotación en la vista previa del CPL de JLC.
-- Ruteo: **no probado todavía** (Freerouting no se pudo ejecutar en la sesión; usar `probar_ruteo.sh`).
+- Ruteo: ver la sección siguiente.
+
+## Ruteo (4 capas) y fabricación — estado al 2026-11-16
+
+La placa está ruteada completa y verificada: DRC 0 con todos los chequeos activos, paridad 0, ERC 0,
+`revisar_pistas` 0 hallazgos, 0 conexiones sin rutear y 0 pistas de In2/B.Cu bajo nodos protegidos. Las decisiones
+de cada bloque están en `../PLAN_RUTEO.md` (§7–§17); las reglas y sus fuentes, en `../REGLAS.md`; los cálculos, en
+`../CALCULOS.md`; el pedido a JLC, en `../fabricacion/LEEME.md`.
+
+| Archivo | Qué hace |
+|---|---|
+| `config_reglas.py` | Escribe las clases de red y `pcb.kicad_dru` (mínimos de JLC, vías taponadas a ≥ 0.35 mm de los pads, reloj y SW lejos de lo analógico). Ningún chequeo del DRC queda en "ignorar". |
+| `ruteo/bloques/*.py` | Un archivo por bloque con las polilíneas a mano (`PISTAS`, `VIAS`, `ZONAS`) y la explicación de cada decisión. |
+| `ruteo/polilineas.py` | Aplica un bloque (`python polilineas.py <pcb> <bloque>`): valida 45°, largo ≥ 0.1 mm y giros antes de tocar la placa, y reemplaza solo el grupo `ruteo:<bloque>`. |
+| `eco.py` | Movimientos de piezas: `alinear` (≤ 0.1 mm, autorizados) y `colocar` (aprobados por el dueño); los JSON quedan en `ruteo/`. |
+| `ruteo/serigrafia.py` | Ubica los designadores a 1.0 mm sin pisar pads, vías, cuerpos ni máscara abierta; omite los que no caben (van en `montaje.pdf`). |
+| `ruteo/cosido.py` | Propone las vías de cosido GND (`cosido.json`, que usa `bloques/b9_gnd.py`), evitando toda la serigrafía y con separación en las 4 capas. |
+| `ruteo/teardrops.py` | Activa los teardrops en todos los pads y vías; `kicad-cli pcb drc --refill-zones --save-board` los genera. |
+| `ruteo/verificar_bloque.py` | DRC con paridad (relleno y guardado), ERC, `revisar_pistas.py` e imágenes de las capas, en `out/verif_<bloque>/`. |
+| `ruteo/revisar_pistas.py` | Chequeos que el DRC no hace (A–M): entrada a pads por el centro y por el eje, stubs, política de capas, plano GND bajo lo crítico, paralelo analógico–digital, vía GND junto a cada pad GND, desacoplos pegados y serigrafía sobre vías. |
+| `ruteo/cruces_capas.py` | Cobre de F.Cu encima de cada pista de In2/B.Cu; marca nodos protegidos (SUM, filtro del DAC, cadena de 1 MΩ, realimentación). |
+| `ruteo/conexion_solida.py` | Comprueba que CIN, CHF, COUT y PGND de cada buck quedan en la misma isla del relleno GND, sin alivios. |
+| `ruteo/medir.py` | Mide lazos y caminos (lazo VIN–CHF–PGND, nodo FB). |
+| `ruteo/geom_serigrafia.py` | Distancia al trazo real de la serigrafía (lo usan `cosido.py` y `revisar_pistas.py`). |
+| `ruteo/sugerir_vias.py`, `ruteo/exportar_capas.py`, `ruteo/oraculo/` | Ayudas: correr vías a ≥ 0.35 mm, imágenes de capas, Freerouting como oráculo de factibilidad en copias. |
+| `calculos.py` | Genera `../CALCULOS.md` con medidas de la placa y datos de datasheet con página. |
+| `fabricacion.py` | Genera `../fabricacion/` desde un commit sin cambios: Gerber, taladros, BOM, CPL corregido, comprobación del pin 1, tenting, montaje. |
+
+**Orden después de cambiar cualquier bloque** (KiCad cerrado):
+
+```bash
+K="C:/Program Files/KiCad/10.0/bin/python.exe"; P=hardware/pcb/pcb.kicad_pcb; R=hardware/pcb/tools/ruteo
+"$K" $R/polilineas.py $P <bloque>
+"$K" $R/polilineas.py $P b9_gnd --solo-borrar      # el cosido se rehace al final
+"$K" $R/serigrafia.py --aplicar $P
+"$K" $R/cosido.py $P $R/cosido.json && "$K" $R/polilineas.py $P b9_gnd
+"$K" $R/teardrops.py $P
+python $R/verificar_bloque.py <nombre>             # DRC, ERC, revisar_pistas, imágenes
+"$K" $R/cruces_capas.py $P && "$K" $R/conexion_solida.py $P
+```

@@ -17,8 +17,8 @@ Topología:
 - U3B+: U3.5 -> C4.1 -> R12.2 ; U2.VOUT -> R12.1. U3A+: pines 3, 6 y 7 bajo el cuerpo.
 - 5V_A: U3.8 -> C7.2 (directo en F.Cu). Vía a In2.Cu reservada para el bloque 8 en (152.28, 120.9), junto a C7.2.
 - 3V3_DAC: U2.3 -> C5.1 -> C6.1 -> R9.1. 3V3 (R9.2, R10.2, R11.2) llega desde In2.Cu en el bloque 8.
-- I2C (bloque 7): salidas reservadas a la derecha de U2: SCL U2.5 -> vía en (148.6, 129.5); SDA U2.4 -> vía en
-  (148.0, 130.45). DC_MON sale de R15.1 por la izquierda (bloque 7).
+- I2C y DC_MON los rutea el bloque 7 (b7_digital.py): SCL de U2.5 a una vía en (148.6, 129.5); SDA de U2.4 a R11.1
+  en F.Cu y de ahí a la vía (151.2, 133.02); DC_MON sale de R15.1 por la izquierda.
 - Vías GND a >= 0.35 mm de todo pad (JLC tapona las vías en 4 capas) y <= 1.0 mm del pad GND.
 """
 F = 'F.Cu'

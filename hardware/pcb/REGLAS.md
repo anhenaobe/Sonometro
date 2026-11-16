@@ -1,4 +1,7 @@
-# Reglas de layout — Sonómetro IEPE Rev B (2 capas, 90 × 64 mm, JLCPCB)
+# Reglas de layout — Sonómetro IEPE Rev B (4 capas desde el bloque 4, 90 × 64 mm, JLCPCB)
+
+> Las secciones escritas para 2 capas (B.Cu como plano) quedaron como historia; la política de 4 capas
+> está en §9 y en PLAN_RUTEO.md §10–§17.
 
 Resumen de las guías que aplican a esta placa y de cómo quedan cargadas en KiCad.
 
