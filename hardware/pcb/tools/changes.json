@@ -77,7 +77,7 @@
  {
   "id": "C16",
   "title": "Condensador de realimentación CF = 10 pF C0G en los sumadores (C56, C57)",
-  "detail": "En paralelo con R7+R8 (CH1) y R42+R43 (CH2). Sin CF el margen de fase era de 3-6° (riesgo de oscilación); con 10 pF queda ~70° y el ancho de banda de la señal en 166 kHz."
+  "detail": "En paralelo con R7+R8 (CH1) y R42+R43 (CH2). Sin CF el margen de fase era de 3-8° (3.4° con el TLV9062 y 7.8° con el TLV9152, tools/analisis_opamp.py; riesgo de oscilación); con 10 pF queda ~70° y el ancho de banda de la señal en 166 kHz."
  },
  {
   "id": "C17",
