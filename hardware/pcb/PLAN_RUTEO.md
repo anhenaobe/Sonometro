@@ -217,7 +217,7 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
 **Prueba del bus de 24 V (solo en copia, para validar los puentes):**
 - El bus es una franja de zona 24V_PROT en F.Cu (y = 116.9–117.75, x = 121.3–158.3), con dientes de pista que van
   recto desde el centro de cada CIN.
-- Resultado: DRC 0. Une los pines 2 y 10 de U6 y U7. Los 6 vías de los puentes quedan a ≥ 0.45 mm de la franja, y la
+- Resultado: DRC 0. Une los pines 2 y 10 de U6 y U7. Las 6 vías de los puentes quedan a ≥ 0.45 mm de la franja, y la
   franja termina a la izquierda del sensado de 5V (x = 161.275).
 - **Una unión en T sobre pista desnuda la marca el DRC nativo** (`track_angle`, 90°). Tres ramas no pueden quedar
   todas a ≥ 135° entre sí, así que en toda la placa las ramificaciones van en un pad o en una zona, nunca en pista.
