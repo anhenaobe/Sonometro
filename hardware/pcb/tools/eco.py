@@ -8,6 +8,7 @@ Funciones:
 Uso como script (Python de KiCad), sobre la placa dada:
   python eco.py <pcb> sync | tsot | serigrafia | j1j7 | fiduciales | todo   (todo = sync + j1j7 + fiduciales)
 """
+import math
 import os
 import sys
 
@@ -106,9 +107,137 @@ def sync(b):
     return n
 
 
+def _netlist(xml_path):
+    import xml.etree.ElementTree as ET
+    root = ET.parse(xml_path).getroot()
+    comps, padnet = {}, {}
+    for c in root.iter('comp'):
+        comps[c.get('ref')] = dict(value=c.findtext('value'), fp=c.findtext('footprint'),
+                                   tstamp=c.findtext('tstamps').split()[0],
+                                   fields={f.get('name'): (f.text or '') for f in c.iter('field')})
+    for n in root.iter('net'):
+        name = n.get('name')
+        if name.startswith(('unconnected-(', 'Net-(')):      # KiCad escapa la '/' de los nombres de pin
+            name = name.replace('/', '{slash}')
+        for nd in n.iter('node'):
+            padnet[(nd.get('ref'), nd.get('pin'))] = name
+    return comps, padnet
+
+
+def _bbox_mm(bb):
+    return (pcbnew.ToMM(bb.GetLeft()), pcbnew.ToMM(bb.GetTop()), pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom()))
+
+
+def buscar_lugar(b, fp, objetivos, radio=5.0, paso=0.25, margen=0.05):
+    """Posición libre (sin solapar courtyards, dentro de la placa) más cerca de los puntos objetivo (mm)."""
+    otros = []
+    for f in b.GetFootprints():
+        if f is fp:
+            continue
+        cy = f.GetCourtyard(pcbnew.F_CrtYd)
+        if cy.OutlineCount():
+            otros.append(_bbox_mm(cy.BBox()))
+    edge = _bbox_mm(b.GetBoardEdgesBoundingBox())
+    cx = sum(p[0] for p in objetivos) / len(objetivos)
+    cy0 = sum(p[1] for p in objetivos) / len(objetivos)
+    mejor = None
+    n = int(radio / paso)
+    for rot in (0, 90):
+        fp.SetOrientationDegrees(rot)
+        for i in range(-n, n + 1):
+            for j in range(-n, n + 1):
+                x, y = cx + i * paso, cy0 + j * paso
+                fp.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(x), pcbnew.FromMM(y)))
+                fp.BuildCourtyardCaches()
+                r = _bbox_mm(fp.GetCourtyard(pcbnew.F_CrtYd).BBox())
+                if r[0] < edge[0] + 0.5 or r[2] > edge[2] - 0.5 or r[1] < edge[1] + 0.5 or r[3] > edge[3] - 0.5:
+                    continue
+                if any(r[0] < o[2] + margen and o[0] < r[2] + margen and r[1] < o[3] + margen and o[1] < r[3] + margen
+                       for o in otros):
+                    continue
+                pads = {p.GetNumber(): (pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y))
+                        for p in fp.Pads()}
+                costo = sum(math.dist(pads[k], q) for k, q in objetivos_por_pad(objetivos, pads))
+                if mejor is None or costo < mejor[0]:
+                    mejor = (costo, x, y, rot)
+    return mejor
+
+
+def objetivos_por_pad(objetivos, pads):
+    """objetivos = [(x, y), (x, y)] en el orden de los pads '1', '2'."""
+    return list(zip(sorted(pads), objetivos))
+
+
+def sync_netlist(b, xml_path, nuevos):
+    """Valor, campos y red de cada pad desde la netlist del esquemático; agrega las piezas que faltan.
+    nuevos = {ref: [(x, y) objetivo del pad 1, (x, y) del pad 2]} para ubicarlas junto a sus pines."""
+    comps, padnet = _netlist(xml_path)
+    nets = {str(k): v for k, v in b.GetNetsByName().items()}
+
+    def net(name):
+        if name not in nets:
+            ni = pcbnew.NETINFO_ITEM(b, name)
+            b.Add(ni)
+            nets[name] = ni
+        return nets[name]
+    have = {fp.GetReference(): fp for fp in b.GetFootprints()}
+    added = []
+    for ref, c in comps.items():
+        fp = have.get(ref)
+        if fp is None:
+            lib, name = c['fp'].split(':')
+            fp = _load(PROJ_LIB if lib == 'Sonometro' else os.path.join(KLIB, lib + '.pretty'), name)
+            fp.SetFPID(pcbnew.LIB_ID(lib, name))
+            fp.SetParent(b)
+            fp.SetReference(ref)
+            fp.SetPath(pcbnew.KIID_PATH('/' + c['tstamp']))
+            fp.SetSheetname('/')
+            fp.SetSheetfile('pcb.kicad_sch')
+            b.Add(fp)
+            added.append(ref)
+        fp.SetValue(c['value'])
+        for fname, val in c['fields'].items():
+            if fname in ('Footprint', 'Reference', 'Value'):
+                continue
+            fp.SetField(fname, val)
+            f = fp.GetField(fname)
+            if f is not None:
+                f.SetVisible(False)
+                f.SetLayer(pcbnew.F_Fab)
+        for pad in fp.Pads():
+            n = padnet.get((ref, pad.GetNumber()))
+            if n and pad.GetNetname() != n:
+                pad.SetNet(net(n))
+    for ref in added:
+        if ref in nuevos:
+            fp = b.FindFootprintByReference(ref)
+            mejor = buscar_lugar(b, fp, nuevos[ref])
+            if mejor is None:
+                raise SystemExit(f'no hay lugar libre para {ref}')
+            fp.SetOrientationDegrees(mejor[3])
+            fp.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(mejor[1]), pcbnew.FromMM(mejor[2])))
+            print(f'  {ref} ubicado en ({mejor[1]:.2f}, {mejor[2]:.2f}) giro {mejor[3]}')
+    return added
+
+
+def mover_bucks(b):
+    """Punto de control (aprobado): CHF C29/C39 suben 0.3 mm; CBOOT C35/C45 a la izquierda del integrado, girados."""
+    for ref, (x, y, rot) in {'C29': (126.15, 107.7, 90), 'C39': (147.75, 107.7, 90),
+                             'C35': (126.4, 111.2, 90), 'C45': (148.0, 111.2, 90)}.items():
+        fp = b.FindFootprintByReference(ref)
+        fp.SetOrientationDegrees(rot)
+        fp.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(x), pcbnew.FromMM(y)))
+
+
 def main():
     path, what = sys.argv[1], sys.argv[2]
     b = pcbnew.LoadBoard(path)
+    if what == 'cp2':                              # cambios del punto de control (bucks, CF, piezas)
+        mover_bucks(b)
+        pads = lambda r, n: (pcbnew.ToMM(b.FindFootprintByReference(r).FindPadByNumber(n).GetPosition().x),  # noqa
+                             pcbnew.ToMM(b.FindFootprintByReference(r).FindPadByNumber(n).GetPosition().y))
+        nuevos = {'C56': [pads('U3', '2'), pads('U3', '1')], 'C57': [pads('U9', '2'), pads('U9', '1')]}
+        print('agregados:', sync_netlist(b, sys.argv[3], nuevos))
     if what in ('sync', 'todo'):
         print('footprints actualizados:', sync(b))
     if what == 'tsot':

@@ -73,5 +73,15 @@
   "id": "C15",
   "title": "Serigrafía a 0.15 mm de los pads (0402, puntos de prueba, Y1)",
   "detail": "Copias locales de R/C_0402 y del punto de prueba con la serigrafía recortada o agrandada a 0.15 mm de los pads (mínimo de JLCPCB); en Y1 se quitó el punto de pin 1 que caía sobre el pad (queda la escuadra exterior). Los pads no cambian."
+ },
+ {
+  "id": "C16",
+  "title": "Condensador de realimentación CF = 10 pF C0G en los sumadores (C56, C57)",
+  "detail": "En paralelo con R7+R8 (CH1) y R42+R43 (CH2). Sin CF el margen de fase era de 3-6° (riesgo de oscilación); con 10 pF queda ~70° y el ancho de banda de la señal en 166 kHz."
+ },
+ {
+  "id": "C17",
+  "title": "Piezas con stock en JLCPCB y pasivos a basic",
+  "detail": "U3/U9 TLV9152IDDFR (TLV9062IDDFR sin stock; mismo pinout DDF). CIN PSA C153031 y COUT TDK C694469 (mismo valor, tensión y tamaño; capacitancia efectiva verificada). C36/C46 YAGEO X7R 50 V. Resistencias y 10 nF/10 µF a basic (tolerancia igual o mejor, misma tensión y dieléctrico). Códigos LCSC agregados a las piezas que no tenían."
  }
 ]

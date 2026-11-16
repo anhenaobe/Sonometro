@@ -366,6 +366,10 @@ def afe_block(dx, dy, m, ch2):
     rest = 'REST_SV' if ch2 else 'REST_OUT'
     W(rest, f'{g("R8")}.1', (dx + 10.16, dy + 10.16), (dx + 10.16, dy))
     W(rest, f'{uop}.1', (dx + 27.94, dy))
+    # C16: CF = 10 pF C0G en paralelo con R7+R8 (sin él el sumador queda con 3-6° de margen de fase)
+    W('SUM', (dx - 10.16, dy + 10.16), (dx - 10.16, dy + 15.24), (dx - 7.62, dy + 15.24))
+    hor(g('C56'), (dx - 7.62, dy + 15.24), '1')
+    W(rest, (dx, dy + 15.24), (dx + 10.16, dy + 15.24), (dx + 10.16, dy + 10.16))
     gl(rest, (dx + 27.94, dy), 'right', 'output')
     place('TP4' if ch2 else 'TP2', dx + 22.86, dy)      # oscilloscope test point on REST
 
@@ -576,7 +580,7 @@ EX, EY = 262.89, 161.29
 blk('AFE CH2 + DAC (MCP4725 @0x61): espejo del CH1', afe_block, EX, EY,
     {'U2': 'U10', 'U3': 'U9', 'R12': 'R37', 'R13': 'R38', 'R14': 'R39', 'R16': 'R40', 'R18': 'R41', 'R7': 'R42',
      'R8': 'R43', 'R15': 'R44', 'R17': 'R45', 'R9': 'R46', 'C4': 'C51', 'C5': 'C52', 'C6': 'C53', 'C7': 'C54',
-     'C8': 'C55'}, True)
+     'C8': 'C55', 'C56': 'C57'}, True)
 GX, GY = 365.76, 138.43
 blk('NUCLEO-L432KC (enchufada)', nucleo_block, GX, GY)
 FX, FY = 73.66, 240.03

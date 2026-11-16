@@ -312,6 +312,55 @@ change('C15', 'Serigrafía a 0.15 mm de los pads (0402, puntos de prueba, Y1)',
        '(mínimo de JLCPCB); en Y1 se quitó el punto de pin 1 que caía sobre el pad (queda la escuadra exterior). '
        'Los pads no cambian.')
 
+# C16 (aprobado): CF del sumador. Sin él, 1 MΩ de entrada y 99.8 kΩ de realimentación con la capacidad del nodo SUM
+# dejan 3-6° de margen de fase (tools/analisis_opamp.py); con 10 pF C0G queda ~70° y 166 kHz de ancho de banda.
+add('C56', 'Device:C', '10pF', 'Capacitor_SMD:C_0603_1608Metric', {'1': 'SUM', '2': 'REST_OUT'}, 'CL10C100JB8NNNC',
+    'C1634', 'CF del sumador CH1: 10 pF C0G 50 V en paralelo con R7+R8', 'cambio C16')
+add('C57', 'Device:C', '10pF', 'Capacitor_SMD:C_0603_1608Metric', {'1': 'SUM_SV', '2': 'REST_SV'}, 'CL10C100JB8NNNC',
+    'C1634', 'CF del sumador CH2: 10 pF C0G 50 V en paralelo con R42+R43', 'cambio C16')
+change('C16', 'Condensador de realimentación CF = 10 pF C0G en los sumadores (C56, C57)',
+       'En paralelo con R7+R8 (CH1) y R42+R43 (CH2). Sin CF el margen de fase era de 3-6° (riesgo de oscilación); con '
+       '10 pF queda ~70° y el ancho de banda de la señal en 166 kHz.')
+
+# C17 (aprobado): piezas con stock en JLCPCB y pasivos a basic (mismo valor y encapsulado, tolerancia igual o mejor,
+# tensión igual o mayor, mismo dieléctrico; ver fabricacion/auditoria_piezas.md). Ningún footprint cambia.
+C17 = {
+    ('U3', 'U9'): ('TLV9152IDDFR', 'C2861011', 'TLV9152IDDFR'),
+    ('C27', 'C28', 'C37', 'C38'): ('FS55X475K101EGG', 'C153031', None),
+    ('C31', 'C32', 'C33', 'C34', 'C41', 'C42', 'C43', 'C44'): ('C3225X7R1C156MT000N', 'C694469', None),
+    ('C36', 'C46'): ('CC0805KKX7R9BB225', 'C125847', None),
+    ('C29', 'C30', 'C39', 'C40'): ('C0805C224K1RACTU', 'C2167405', None),          # el original (100 V) con su LCSC
+    ('R33',): ('0603WAF100JT5E', 'C22859', None),
+    ('R2', 'R3'): ('0603WAF1500T5E', 'C22808', None),
+    ('R10', 'R11'): ('0603WAF4701T5E', 'C23162', None),
+    ('R1', 'R36'): ('0402WGF100JTCE', 'C25077', None),
+    ('C10', 'C19'): ('CL05B103KB5NNNC', 'C15195', None),
+    ('R9', 'R19', 'R20', 'R21', 'R22', 'R23', 'R24', 'R35', 'R46'): ('0603WAF1000T5E', 'C22775', None),
+    ('R4', 'R5', 'R12', 'R15', 'R17', 'R37', 'R44', 'R45', 'R49', 'R50', 'R51'): ('0603WAF1002T5E', 'C25804', None),
+    ('R6',): ('0603WAF1001T5E', 'C21190', None),
+    ('R7', 'R8', 'R42', 'R43'): ('0603WAF4992T5E', 'C23184', None),
+    ('R29', 'R31'): ('0603WAF1003T5E', 'C25803', None),
+    ('R34',): ('0603WAF1502T5E', 'C22809', None),
+    ('C5', 'C9', 'C11', 'C14', 'C15', 'C18', 'C47', 'C52'): ('CL10A106KP8NNNC', 'C19702', None),
+    # mismo MPN del diseño, con el código LCSC encontrado
+    ('U1', 'U8'): ('LT3092ETS8#TRPBF', 'C462641', None),
+    ('U2', 'U10'): ('MCP4725A0T-E/CH', 'C144198', None),
+    ('U4',): ('PCM1808PWR', 'C55513', None),
+    ('L1',): ('XAL4030-682MEC', 'C3040663', None),
+    ('L2',): ('XAL4040-103MEC', 'C5144883', None),
+    ('R30',): ('RC0603FR-0743K2L', 'C137720', None),
+    ('R32',): ('RC0603FR-0724K9L', 'C137761', None),
+}
+for refs, (mpn, lcsc, value) in C17.items():
+    for r in refs:
+        parts[r]['mpn'], parts[r]['lcsc'] = mpn, lcsc
+        if value:
+            parts[r]['value'] = value
+change('C17', 'Piezas con stock en JLCPCB y pasivos a basic',
+       'U3/U9 TLV9152IDDFR (TLV9062IDDFR sin stock; mismo pinout DDF). CIN PSA C153031 y COUT TDK C694469 (mismo valor, '
+       'tensión y tamaño; capacitancia efectiva verificada). C36/C46 YAGEO X7R 50 V. Resistencias y 10 nF/10 µF a basic '
+       '(tolerancia igual o mejor, misma tensión y dieléctrico). Códigos LCSC agregados a las piezas que no tenían.')
+
 # ------------------------------------------------------------------- sanity
 for ref, p in parts.items():
     for num, net in p['pins'].items():
