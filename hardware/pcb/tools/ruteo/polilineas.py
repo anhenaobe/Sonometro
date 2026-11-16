@@ -6,7 +6,7 @@ grupo tenía, así se puede corregir un bloque sin tocar los demás ni el resto 
 Formato de un bloque (módulo Python en tools/ruteo/bloques/<nombre>.py) con estas listas:
   PISTAS = [ (red, ancho_mm, 'F.Cu'|'B.Cu', [(x, y), (x, y), ...]), ... ]     coordenadas KiCad en mm
   VIAS   = [ (red, (x, y), diametro_mm, taladro_mm), ... ]
-  ZONAS  = [ dict(red=..., capa='F.Cu', prioridad=2, puntos=[(x, y), ...], conexion='solida'|'alivio',
+  ZONAS  = [ dict(red=..., capa='F.Cu', prioridad=2, puntos=[(x, y), ...], conexion='solida'|'alivio'|'alivio_tht',
                   separacion=0.2, ancho_min=0.2), ... ]
 Antes de escribir se valida: cada segmento múltiplo de 45°, largo >= 0.1 mm, giro entre segmentos de 0° o 45°.
 Uso (Python de KiCad): python polilineas.py <pcb> <bloque>   (KiCad cerrado)
@@ -103,8 +103,8 @@ def aplicar(b, nombre, mod):
         zone.SetAssignedPriority(z.get('prioridad', 0))
         zone.SetLocalClearance(pcbnew.FromMM(z.get('separacion', 0.2)))
         zone.SetMinThickness(pcbnew.FromMM(z.get('ancho_min', 0.2)))
-        zone.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL if z.get('conexion', 'solida') == 'solida'
-                              else pcbnew.ZONE_CONNECTION_THERMAL)
+        zone.SetPadConnection({'solida': pcbnew.ZONE_CONNECTION_FULL, 'alivio': pcbnew.ZONE_CONNECTION_THERMAL,
+                               'alivio_tht': pcbnew.ZONE_CONNECTION_THT_THERMAL}[z.get('conexion', 'solida')])
         zone.SetThermalReliefGap(pcbnew.FromMM(z.get('alivio_gap', 0.3)))
         zone.SetThermalReliefSpokeWidth(pcbnew.FromMM(z.get('alivio_rayo', 0.4)))
         zone.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)

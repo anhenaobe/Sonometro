@@ -173,14 +173,28 @@ Fuentes [doc]: <https://jlcpcb.com/capabilities/pcb-assembly-capabilities>, <htt
   | Clase | Ancho | Separación | Vía | Redes |
   |---|---|---|---|---|
   | Default | 0.2 | 0.2 | 0.3/0.6 | I2C, MD/FMT, BOOT/FB/VCC de los bucks |
-  | Potencia | 0.5 | 0.2 | 0.4/0.8 | 24V_*, 3V3, 5V, 5V_A, 3V3_DAC*, IEPE_SUP*, GND |
-  | Conmutado | 0.5 | 0.2 | 0.4/0.8 | SW_3, SW_5 |
+  | Potencia | 0.25 | 0.2 | 0.3/0.6 | 24V_*, 3V3, 5V, 5V_A, 3V3_DAC*, IEPE_SUP*, GND |
+  | Conmutado | 0.25 | 0.2 | 0.3/0.6 | SW_3, SW_5 |
+
+  Potencia y Conmutado se cambiaron tras el bloque 1, a pedido del dueño. Antes eran 0.5 mm y vía 0.4/0.8.
+  - Ahora tienen los valores reales del ruteo: 0.25 mm es la salida de un pin de 0.25 mm.
+  - Los tramos más anchos (SW a L 0.6, VIN/PGND 0.4–0.5, troncos 0.5) salen de CALCULOS.md.
+  - El mínimo lo hace cumplir la regla `ancho_minimo_potencia`.
   | Analogica | 0.2 | 0.3 | 0.3/0.6 | IEPE*, REST*, DC_MON*, SUM/divisores, DAC_F, AC/ADC_IN, VREF, SET/OUT de los LT3092 |
   | Reloj | 0.2 | 0.3 | 0.3/0.6 | SAI_*, BCK/LRCK/DOUT/SCKI del PCM1808, salida de Y1 |
 
 - **`pcb.kicad_dru`** (cada regla probada por separado contra una regla de control, para que ninguna falle en
   silencio): `solo_45`, `segmento_minimo`, `borde`, `anillo_pth`, `agujero_pth_a_cobre`, `pad_a_pad`,
-  `sw_lejos_de_analogica`, `reloj_lejos_de_analogica`.
+  `ancho_minimo_potencia`, `sw_lejos_de_analogica`, `reloj_lejos_de_analogica`.
+  - Prueba de control de `ancho_minimo_potencia`: en la placa del bloque 1, con el sensado de FB todavía a 0.2 mm,
+    marcó exactamente esos 9 segmentos.
+- **Plano GND de B.Cu** (`tools/ruteo/bloques/gnd_bcu.py`): existe desde el bloque 1 y se rellena en cada
+  verificación (`kicad-cli pcb drc --refill-zones --save-board`). Conexión sólida en SMD y vías; alivio térmico
+  solo en THT.
+- **Vías tapadas con máscara (tenting)** en las dos caras: está en la configuración de la placa y ninguna vía la
+  anula. Comprobado en los Gerber de máscara contra una copia de control sin tenting: la copia tiene 32 aperturas
+  más, todas en coordenadas de vía, y la placa real no tiene ninguna. La expansión de máscara de los pads es 0, así
+  que una vía a 0.10 mm de un pad queda con 0.10 mm de máscara entre la apertura y el anillo.
 - **Severidades en error:** silk_overlap, silk_over_copper, silk_edge_clearance, text_height, text_thickness,
   track_dangling, via_dangling, track_angle, track_segment_length, courtyards_overlap, lib_footprint_mismatch,
   footprint_symbol_mismatch, isolated_copper.

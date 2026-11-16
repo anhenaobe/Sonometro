@@ -42,6 +42,11 @@
   (condition "A.Layer == 'F.SilkS' && B.Layer == 'Edge.Cuts'")
   (constraint silk_clearance (min 0.3mm)))
 
+# Ancho mínimo de las redes de potencia y conmutadas (= ancho de su clase; los anchos mayores salen de CALCULOS.md).
+(rule "ancho_minimo_potencia"
+  (condition "A.Type == 'Track' && (A.hasNetclass('Potencia') || A.hasNetclass('Conmutado'))")
+  (constraint track_width (min 0.25mm)))
+
 # Nodos conmutados de los bucks lejos de lo analógico.
 (rule "sw_lejos_de_analogica"
   (condition "A.hasNetclass('Conmutado') && B.hasNetclass('Analogica')")

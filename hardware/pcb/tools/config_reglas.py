@@ -38,10 +38,12 @@ JLC = {
 NETCLASSES = [
     # nombre, ancho, separación, vía (diám, taladro), patrones
     ('Default', 0.2, 0.2, (0.6, 0.3), []),
-    ('Potencia', 0.5, 0.2, (0.8, 0.4),
+    # Potencia/Conmutado: valores reales del ruteo (aprobado tras el bloque 1). 0.25 mm es el ancho mínimo (salida de
+    # un pin de 0.25 mm); los tramos se ensanchan según CALCULOS.md. Vía 0.6/0.3. El mínimo lo hace cumplir el .kicad_dru.
+    ('Potencia', 0.25, 0.2, (0.6, 0.3),
      ['24V_IN', '24V_PROT', '3V3', '5V', '5V_A', 'GND', '*IEPE_SUP', '*IEPE_SUP_SV', '*3V3_DAC', '*3V3_DAC_SV',
       'Net-(D1-A)']),
-    ('Conmutado', 0.5, 0.2, (0.8, 0.4), ['*SW_3', '*SW_5']),
+    ('Conmutado', 0.25, 0.2, (0.6, 0.3), ['*SW_3', '*SW_5']),
     ('Analogica', 0.2, 0.3, (0.6, 0.3),
      ['IEPE', 'IEPE_SV', 'REST_OUT', 'REST_SV', 'DC_MON', 'DC_MON2', '*SUM*', '*IEPE_DIV*', '*FB_MID*',
       '*DAC_F*', '*DAC_RAW*', '*VSHIFT*', '*AC_LEFT', '*AC_RIGHT', '*ADC_IN*', '*PCM_VREF', '*SET_*', '*OUT_I',
@@ -101,6 +103,11 @@ DRU_TEXT = '''(version 1)
 (rule "serigrafia_a_borde"
   (condition "A.Layer == 'F.SilkS' && B.Layer == 'Edge.Cuts'")
   (constraint silk_clearance (min 0.3mm)))
+
+# Ancho mínimo de las redes de potencia y conmutadas (= ancho de su clase; los anchos mayores salen de CALCULOS.md).
+(rule "ancho_minimo_potencia"
+  (condition "A.Type == 'Track' && (A.hasNetclass('Potencia') || A.hasNetclass('Conmutado'))")
+  (constraint track_width (min 0.25mm)))
 
 # Nodos conmutados de los bucks lejos de lo analógico.
 (rule "sw_lejos_de_analogica"

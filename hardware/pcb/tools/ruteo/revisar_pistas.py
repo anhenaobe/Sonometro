@@ -43,6 +43,10 @@ DIGITAL_CLASSES = {'Reloj'}
 DIGITAL_NETS = {'I2C_SCL', 'I2C_SDA'}
 VIA_GND_MAX = 1.0                                # mm, borde del pad a borde de la vía (chequeo K)
 DESACOPLO_MAX = 1.0                              # mm, borde a borde condensador-pin (chequeo L)
+ACEPTADOS = {                                    # (chequeo, pieza): motivo; aceptados por el dueño, se listan aparte
+    ('L', 'C36'): 'aceptado tras el bloque 1 (VCC 0.3 mm, vía GND pegada y retorno corto a AGND)',
+    ('L', 'C46'): 'aceptado tras el bloque 1 (VCC 0.3 mm, vía GND pegada y retorno corto a AGND)',
+}
 DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
     'C39': ('U7', '2'), 'C40': ('U7', '10'), 'C46': ('U7', '5'),
@@ -343,7 +347,12 @@ def main():
         cp = [p for p in cf.Pads() if p.GetNetname() == up.GetNetname()]
         g = min(pad_gap(p, up) for p in cp) if cp else 99
         linea = f'{cref} -> {uref}.{pin} ({up.GetNetname()}): {g:.2f} mm borde a borde'
-        (INFO['L_desacoplo_pegado'] if g <= DESACOPLO_MAX else F['L_desacoplo_lejos_del_pin']).append(linea)
+        if g <= DESACOPLO_MAX:
+            INFO['L_desacoplo_pegado'].append(linea)
+        elif ('L', cref) in ACEPTADOS:
+            INFO['L_aceptado_por_el_dueño'].append(linea + ': ' + ACEPTADOS[('L', cref)])
+        else:
+            F['L_desacoplo_lejos_del_pin'].append(linea)
     total = sum(len(v) for v in F.values())
     print(f'pistas: {len(tracks)}  vías: {len(vias)}  hallazgos: {total}')
     print(f'  (piezas sin ninguna pista todavía, chequeo K pendiente: {len(pendientes)})')
