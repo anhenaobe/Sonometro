@@ -65,6 +65,9 @@ for it in A:
     w(f"| {', '.join(it['refs'])} | {it['value']} | {it['mpn']} | {f.get('lcsc', '**no encontrado**')} | "
       f"{it['lcsc_source'] or '—'} | {f.get('type', '—')} | {f.get('stock', '—')} | "
       f"{'sí' if it['mpn_match'] else ('no (ver nota)' if it['mpn_match'] is False else '—')} |")
+w('\nStock confirmado en la API de LCSC (wmsc.lcsc.com, 15/11/2026) para las piezas en riesgo: TLV9062IDDFR 0, '
+  'C5750X7R2A475K230KA 0, C3225X7R1C156M250AB 0, RTT031500FTP 0, SCR0603F4K7 0, LMR36015FBRNXR 27. La cifra de '
+  '3989 TLV9062 que dio una búsqueda web anterior era un resultado viejo.\n')
 w('\nNota: U4 figura como PCM1808PW en el diseño y C55513 es PCM1808PW**R** (la misma pieza en carrete).\n')
 w(f'Piezas *extended* distintas hoy (sin contar *preferred*): **{len(ext)}**. En Economic, JLC cobra una carga '
   'de alimentador por cada una (≈ USD 3.07 según su página de precios).\n')

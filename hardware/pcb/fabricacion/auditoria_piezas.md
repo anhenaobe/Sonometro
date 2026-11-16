@@ -44,6 +44,9 @@ Generado por `tools/informe_auditoria.py` con la API pública del buscador de pi
 | R47 | 180R | 0603WAF1800T5E | C22828 | diseño | extended (preferred) | 2195153 | sí |
 | R48 | 150R | 0603WAF1500T5E | C22808 | diseño | basic | 1181381 | sí |
 
+Stock confirmado en la API de LCSC (wmsc.lcsc.com, 15/11/2026) para las piezas en riesgo: TLV9062IDDFR 0, C5750X7R2A475K230KA 0, C3225X7R1C156M250AB 0, RTT031500FTP 0, SCR0603F4K7 0, LMR36015FBRNXR 27. La cifra de 3989 TLV9062 que dio una búsqueda web anterior era un resultado viejo.
+
+
 Nota: U4 figura como PCM1808PW en el diseño y C55513 es PCM1808PW**R** (la misma pieza en carrete).
 
 Piezas *extended* distintas hoy (sin contar *preferred*): **30**. En Economic, JLC cobra una carga de alimentador por cada una (≈ USD 3.07 según su página de precios).
