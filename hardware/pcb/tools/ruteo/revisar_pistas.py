@@ -19,7 +19,8 @@ Chequeos (pedido del dueño + REGLAS.md):
   J  analógica paralela a digital/reloj a menos de 1 mm por más de 2 mm
   K  vía GND a <= 1.0 mm (borde a borde) del pad GND de cada condensador de desacoplo y de cada pin GND SMD de los
      integrados; solo en piezas que ya tienen alguna pista (las demás se cuentan aparte como pendientes)
-  L  condensador de desacoplo pegado a su pin: <= 1.0 mm borde a borde entre su pad y el pin (tabla DESACOPLO)
+  L  condensador de desacoplo pegado a su pin: <= 1.0 mm borde a borde entre su pad y el pin (tabla DESACOPLO); para los
+     del MCP4725, el límite de su datasheet (DESACOPLO_LIMITE, aprobado por el dueño)
 Uso (Python de KiCad):  python revisar_pistas.py [pcb] [--json salida.json]
 Sale con código 1 si hay hallazgos.
 """
@@ -54,11 +55,25 @@ ACEPTADOS = {                                    # (chequeo, pieza): motivo; ace
     ('L', 'C3'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
     ('L', 'C49'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
     ('L', 'C50'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
-    ('L', 'C11'): 'aceptado tras el bloque 4 (10 µF de VDD; el 100 nF C12 quedó más cerca)',
+    ('L', 'C11'): 'aceptado tras el bloque 4, confirmado tras el bloque 5 (10 µF de VDD; el 100 nF C12 quedó más cerca)',
     ('L', 'C12'): 'aceptado tras el bloque 4 (100 nF de VDD acercado; bajo el pin 4 no hay lugar)',
-    ('L', 'C15'): 'aceptado tras el bloque 4 (10 µF de VREF; el 100 nF C16 quedó más cerca)',
+    ('L', 'C15'): 'aceptado tras el bloque 4, confirmado tras el bloque 5 (10 µF de VREF; el 100 nF C16 quedó más cerca)',
     ('L', 'C16'): 'aceptado tras el bloque 4 (100 nF de VREF acercado)',
-    ('L', 'C18'): 'aceptado tras el bloque 4 (10 µF de VCC; el 100 nF C17 quedó junto al pin)',
+    ('L', 'C18'): 'aceptado tras el bloque 4, confirmado tras el bloque 5 (10 µF de VCC; el 100 nF C17 quedó junto al pin)',
+}
+# chequeo C aceptado por el dueño tras el bloque 5, pad y punto exacto de llegada: el enlace SUM entre el CF y la
+# resistencia de entrada no puede entrar por el eje con los quiebres fuera de los pads (C56/C57 a 1.52 mm en x y
+# 1.76 mm en y del pad de R18/R41, con el otro pad del CF al lado); queda el enlace más corto (2.2 mm)
+ACEPTADOS_C = {
+    ('C56.1', (145.415, 124.815)): 'nodo SUM CH1, enlace CF -> R18 (aceptado tras el bloque 5)',
+    ('R18.1', (146.9375, 123.2925)): 'nodo SUM CH1, enlace CF -> R18 (aceptado tras el bloque 5)',
+    ('C57.1', (145.415, 147.315)): 'nodo SUM CH2, enlace CF -> R41 (aceptado tras el bloque 5)',
+    ('R41.1', (146.9375, 145.7925)): 'nodo SUM CH2, enlace CF -> R41 (aceptado tras el bloque 5)',
+}
+# límite del chequeo L tomado del datasheet del integrado, en lugar de DESACOPLO_MAX (aprobado tras el bloque 5)
+DESACOPLO_LIMITE = {
+    'C5': (4.0, 'MCP4725 DS22039D §8.3: <= 4 mm'), 'C6': (4.0, 'MCP4725 DS22039D §8.3: <= 4 mm'),
+    'C52': (4.0, 'MCP4725 DS22039D §8.3: <= 4 mm'), 'C53': (4.0, 'MCP4725 DS22039D §8.3: <= 4 mm'),
 }
 DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),
@@ -72,6 +87,8 @@ DESACOPLO = {                                    # condensador: (integrado, pin)
     'C13': ('Y1', '1'),                          # oscilador
     'C7': ('U3', '8'),                           # V+ del TLV9152 CH1 (bloque 5)
     'C5': ('U2', '3'), 'C6': ('U2', '3'),        # VDD del MCP4725 CH1 (también su referencia)
+    'C54': ('U9', '8'),                          # V+ del TLV9152 CH2
+    'C52': ('U10', '3'), 'C53': ('U10', '3'),    # VDD del MCP4725 CH2
 }
 # Redes que el dueño pidió tratar como alimentación (no como señal crítica) en la regla de cruces H:
 # IEPE_FEED e IEPE_FEED_SV son el riel DC de 24 V antes del filtro RC de cada fuente.
@@ -242,9 +259,10 @@ def main():
                     ruteados.add(pdx.GetParentFootprint().GetReference())
                     cpos = pt(pdx.GetPosition())
                     if not near(cpos, p, 0.01):
-                        F['C_pad_fuera_de_centro'].append(
-                            f'{net} pad {pdx.GetParentFootprint().GetReference()}.{pdx.GetNumber()} llega a {p}, '
-                            f'centro {cpos}')
+                        nombre = f'{pdx.GetParentFootprint().GetReference()}.{pdx.GetNumber()}'
+                        acep = [m for (k, q0), m in ACEPTADOS_C.items() if k == nombre and near(q0, p, 0.001)]
+                        (INFO['C_aceptado_por_el_dueño'] if acep else F['C_pad_fuera_de_centro']).append(
+                            f'{net} pad {nombre} llega a {p}, centro {cpos}' + (f': {acep[0]}' if acep else ''))
                     else:
                         rel = (ang_of(p, q) - pdx.GetOrientation().AsDegrees()) % 90
                         if min(rel, 90 - rel) > 0.01:
@@ -382,8 +400,11 @@ def main():
         cp = [p for p in cf.Pads() if p.GetNetname() == up.GetNetname()]
         g = min(pad_gap(p, up) for p in cp) if cp else 99
         linea = f'{cref} -> {uref}.{pin} ({up.GetNetname()}): {g:.2f} mm borde a borde'
+        lim, fuente = DESACOPLO_LIMITE.get(cref, (DESACOPLO_MAX, None))
         if g <= DESACOPLO_MAX:
             INFO['L_desacoplo_pegado'].append(linea)
+        elif fuente and g <= lim:
+            INFO['L_limite_del_datasheet'].append(linea + ': ' + fuente)
         elif ('L', cref) in ACEPTADOS:
             INFO['L_aceptado_por_el_dueño'].append(linea + ': ' + ACEPTADOS[('L', cref)])
         else:

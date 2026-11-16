@@ -445,3 +445,41 @@ Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públi
     | C16 (100 nF) | U4.1 (VREF) | 1.52 mm |
 
     C13 → Y1.1 queda a 0.52 mm.
+
+### 11.1 Cambios después del bloque 4 (aprobados)
+- **Vías taponadas:** JLC tapona las vías en 4 capas, y una vía a menos de 0.35 mm de un pad no se puede tapar. Regla
+  `via_tapada_lejos_de_pad` en el `.kicad_dru`; 43 vías corridas en los bloques 1, 3 y 4 (`tools/ruteo/sugerir_vias.py`
+  y a mano):
+  - COUT y CIN de los bucks: vía bajo el cuerpo del condensador;
+  - C29/C39 (220 nF VIN–PGND): usan la vía PGND del pin 1, a 0.475 mm;
+  - C19 (10 nF, filtro de VINR): sin vía propia, no hay lugar legal; lo une el relleno GND de F.Cu (bloque 9);
+  - puentes de sensado de FB de 3V3/5V: 0.05 mm a la derecha; vía del strap FMT en (163.0, 121.2).
+- **Desacoplos del PCM1808:** C17 junto al pin 3 (0.71 mm); C11↔C12 y C15↔C16 intercambiados. C12 (2.12 mm) y C16
+  (1.32 mm) aceptados como hallazgos; C11, C15 y C18 (10 µF) aceptados, confirmado tras el bloque 5.
+
+## 12. Bloque 5 — AFE CH1/CH2 (`b5_afe_ch1.py`, `b5_afe_ch2.py`)
+- **CH1:** todo en F.Cu.
+  - Micro-ajustes autorizados: C56 +0.08 mm; C4, C6 y R9 por debajo de 1 µm (`alineacion_bloque5.json`).
+  - REST_OUT: U3.1 → R8.1 → R15.2 por el hueco entre los pads de R7; R8.1 → por encima de C7 → TP2. No cabe entre U3.8 y
+    C7 sin cortar el desacoplo.
+  - C56.2 vuelve a TP2 entre los pads de R12 y por debajo de R12/C4. Entre R18.1 y los pads de U3 quedan 0.74 mm, sin
+    lugar para la realimentación.
+- **CH2:** con la colocación anterior no se podía rutear limpio.
+  - El nodo R39–R40 rodeaba U10 y encerraba las salidas de SCL (U10.5) y A0 (U10.6).
+  - En el grupo C57/R43, SUM, REST_SV y el nodo R42–R43 se cruzaban: hacían falta 3 entradas a 45°.
+  - El oráculo tampoco lo había resuelto con la regla de entrada por el eje: salía de U9.1, U10.1 y U10.4 a 45°.
+  - Prototipo en una copia → aprobado (`colocar_bloque5b.json`): R38/R39/R40 en columna en x 141.7 (el courtyard de J8
+    llega a x 140.90), C57 en el lugar de C56 de CH1 y R43 vertical como R8. CH2 queda con la geometría de CH1
+    desplazada 22.5 mm en y.
+- **Aprobado por el dueño tras el bloque 5:**
+  - **Nodo SUM:** el enlace CF → resistencia de entrada (C56.1 → R18.1, C57.1 → R41.1) no puede entrar por el eje con los
+    quiebres fuera de los pads (1.52 mm en x, 1.76 mm en y, con el otro pad del CF al lado). Queda el enlace de 2.2 mm
+    con el quiebre dentro del cobre de los pads: excepción al chequeo C (`ACEPTADOS_C` en `revisar_pistas.py`).
+  - **C7:** 0.35 mm más abajo que el original; queda a 0.975 mm de U3.8. C54 (CH2) ya estaba a 0.74 mm.
+  - **Desacoplos del MCP4725** (C5/C6, C52/C53): 1.22–1.48 mm de VDD. Se revisan con el límite del datasheet,
+    ≤ 4 mm (DS22039D §8.3; `DESACOPLO_LIMITE`).
+- **Reservado para otros bloques:**
+  - I2C (bloque 7): vías a la derecha de U2/U10 en SCL (148.6, 129.5/152.0) y SDA (148.0, 130.45/152.95).
+  - 5V_A (bloque 8): vías en (152.28, 120.9) junto a C7.2 y en (153.1125, 146.15) bajo C54.2.
+  - REST_OUT → C9 sale de TP2 y REST_SV → C14 de TP4/R44.2 (bloque 6).
+- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos; 30 conexiones sin rutear.

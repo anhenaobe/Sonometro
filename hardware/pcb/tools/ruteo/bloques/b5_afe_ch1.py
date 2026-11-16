@@ -3,17 +3,19 @@
 Coordenadas KiCad (mm). Todo en F.Cu (redes críticas, política G); In1.Cu es el plano GND.
 Micro-ajustes (autorizados, <= 0.1 mm, alineacion_bloque5.json):
 - C56 +0.08 mm en y: el tramo SUM C56.1 -> R18.1 sale y entra por el eje de los dos pads.
-- C7 +0.1 mm en y: abre el paso de REST_OUT por encima de C7 (0.34 mm al bus de 24 V, 0.36 mm a C7.1).
+- C7: +0.1 mm (autorizado) y luego 0.35 mm en total respecto del original (aprobado tras el bloque 5,
+  colocar_bloque5b.json): queda a 0.975 mm de U3.8 y abre el paso de REST_OUT por encima de C7.
 - C4, C6 y R9: alineación de pads por debajo de 1 µm.
 Topología:
 - Cadena IEPE: R13 -> R14 -> R16 en columna; R16.1 -> R18.2 pasa entre los pads de R17 (DC_MON y GND), centrada.
 - Nodo SUM (U3A-): R18.1 es el punto de unión; llegan U3.2 (derecha), R7.1 (arriba) y C56.1 (abajo). Mínimo.
+  El enlace C56.1 -> R18.1 tiene el quiebre dentro de los pads: excepción aceptada por el dueño tras el bloque 5.
 - REST_OUT: U3.1 -> R8.1 (arriba); R8.1 -> R15.2 por el hueco entre los pads de R7 (centrada, 0.325 mm a cada lado);
   R8.1 -> por encima de C7 -> TP2 desde arriba (no cabe entre U3.8 y C7 sin cortar el desacoplo de U3.8);
   C56.2 -> entre los pads de R12 -> por debajo de R12/C4 -> TP2. Entre U3 y C56/R18 no hay lugar para la
   realimentación (0.74 mm entre R18.1 y los pads de U3). REST_OUT hacia C9 sale de TP2 en el bloque 6.
 - U3B+: U3.5 -> C4.1 -> R12.2 ; U2.VOUT -> R12.1. U3A+: pines 3, 6 y 7 bajo el cuerpo.
-- 5V_A: U3.8 -> C7.2 (directo en F.Cu). Vía a In2.Cu reservada para el bloque 8 en (152.28, 120.65), junto a C7.2.
+- 5V_A: U3.8 -> C7.2 (directo en F.Cu). Vía a In2.Cu reservada para el bloque 8 en (152.28, 120.9), junto a C7.2.
 - 3V3_DAC: U2.3 -> C5.1 -> C6.1 -> R9.1. 3V3 (R9.2, R10.2, R11.2) llega desde In2.Cu en el bloque 8.
 - I2C (bloque 7): salidas reservadas a la derecha de U2: SCL U2.5 -> vía en (148.6, 129.5); SDA U2.4 -> vía en
   (148.0, 130.45). DC_MON sale de R15.1 por la izquierda (bloque 7).
@@ -50,7 +52,7 @@ P = [
     ('Net-(U3A-+)', A, F, [(148.69, 123.825), (151.31, 123.825)]),
     ('Net-(U3A-+)', A, F, [(151.31, 123.175), (151.31, 123.825)]),
     # alimentación local
-    ('5V_A', 0.3, F, [(151.31, 122.525), (151.31, 121.75), (151.1375, 121.5775), (151.1375, 120.65)]),
+    ('5V_A', 0.3, F, [(151.31, 122.525), (151.31, 121.9), (151.1375, 121.7275), (151.1375, 120.9)]),
     ('/3V3_DAC', 0.3, F, [(144.3625, 130.45), (144.3625, 132.425)]),
     ('/3V3_DAC', 0.3, F, [(144.3625, 132.425), (146.3375, 132.425)]),
     ('/3V3_DAC', 0.3, F, [(146.3375, 132.425), (146.3375, 134.1958)]),
@@ -61,13 +63,13 @@ P = [
     ('GND', 0.4, F, [(151.8812, 126.4935), (151.8812, 125.36)]),        # C4.2
     ('GND', 0.4, F, [(144.3625, 133.975), (143.23, 133.975)]),          # C5.2
     ('GND', 0.4, F, [(147.8875, 132.425), (147.8875, 131.29)]),         # C6.2
-    ('GND', 0.4, F, [(151.1375, 119.1), (152.28, 119.1)]),              # C7.1
+    ('GND', 0.4, F, [(151.1375, 119.35), (152.28, 119.35)]),            # C7.1
     ('GND', 0.4, F, [(144.6344, 118.5438), (145.75, 118.5438)]),        # C8.2
     ('GND', 0.4, F, [(143.0844, 124.1562), (143.0844, 125.22)]),        # R17.1
 ]
 PISTAS = [(r, w, l, pts) for r, w, l, pts in P]
 V = 0.6, 0.3
 VIAS = [('GND', p) + V for p in ((148.69, 125.33), (143.05, 129.5), (147.95, 128.55), (151.8812, 125.36),
-                                 (143.23, 133.975), (147.8875, 131.29), (152.28, 119.1), (145.75, 118.5438),
+                                 (143.23, 133.975), (147.8875, 131.29), (152.28, 119.35), (145.75, 118.5438),
                                  (143.0844, 125.22))]
 ZONAS = []
