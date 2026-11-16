@@ -297,28 +297,33 @@ C6 C19 C29 C30 C32 C33 C39 C40 C42 C43 L1 L2 R12 R18 R19 R22 R43 R49.
   completo.
 
 **Alimentación de CH2 (J7.2 → R36):**
-- Queda encerrada:
-  - IEPE baja de CH1 a J2 y sube por el canal entre CH1 y CH2 hasta R13 (por debajo de CH2 lo impide IEPE_SV → J8);
-  - CH2 cierra por la derecha.
-- El puente en B.Cu bajo IEPE_FEED, que el dueño prefería, no alcanza: después de cruzar habría que pasar bajo IEPE.
-- Va por el único camino en F.Cu, el mismo que encontró Freerouting:
+- Queda encerrada. La conclusión es por topología más un prototipo, no un resultado del router:
+  - IEPE tiene que ir de CH1 al AFE (R13). Por debajo de CH2 no puede, porque IEPE_SV va de CH2 a J8 y a R38.
+  - Entonces sube por el canal entre CH1 y CH2 y pasa por encima de CH2.
+  - Prototipo de ese tramo en una copia: DRC limpio. Imagen en `tools/out/bloque3_por_que_bajo_J2.png`.
+  - Así R36 queda encerrado por IEPE (izquierda y arriba) y por CH2 (derecha).
+- El puente en B.Cu bajo IEPE_FEED, que prefería el dueño, deja la pista encima de CH1, todavía fuera de ese
+  encierro. Para llegar a R36 habría que cruzar IEPE, y eso está prohibido.
+- Va por el único camino en F.Cu, el mismo que encontró Freerouting en la prueba solo en F.Cu:
   - baja por el borde izquierdo;
   - cruza en y = 153.5 bajo el bloque del BNC J2, a 1.1 mm de sus pines y 1.2 mm de sus anclajes;
   - sube por el hueco entre J2 y J8 (x = 125.5) hasta R36.1.
   - Son 0.25 mm y unos 63 mm.
-- **Datasheet del KH-BNC75-3511** (Kinghelm, rev. B 2020, LCSC C2837588):
+- **KH-BNC75-3511** (Kinghelm, LCSC C2837588):
+  - **Fotos de producto de LCSC:** el bloque cuadrado que apoya en la placa y la parte roscada son de plástico
+    blanco. Solo el barril es metálico, y queda fuera del borde de la placa.
+  - **Plano (rev. B 2020):** materiales cuerpo de zinc, patas de fijación de hierro y montaje de PBT blanco
+    ("BNC WHITE JACK CONNECTOR"). Acota 0.5 mm entre el bloque y la placa y dibuja apoyos moldeados en la base.
+  - Conclusión: el metal no toca la placa sobre la pista. No se agregó serigrafía bajo el cuerpo (la regla de
+    serigrafía lo prohíbe salvo como aislamiento).
 
-  | Elemento | Material |
-  |---|---|
-  | Cuerpo | zinc |
-  | Patas de fijación | hierro |
-  | Montaje ("fixed mount") | PBT blanco ("BNC WHITE JACK CONNECTOR") |
-
-  - La vista frontal acota 0.5 mm entre el bloque y el plano de la placa.
-  - La vista lateral muestra apoyos moldeados en la base.
-  - Lectura: sobre la placa queda el bloque de plástico, apoyado en sus patas, y el metal no toca la placa.
-  - Confianza media: el plano no rotula qué contorno es cada material.
-  - Por eso no se agregó serigrafía bajo el cuerpo.
+**Aviso temprano para los bloques 5 y 6 (AFE): R13.2 (entrada IEPE de CH1) queda en un bolsillo.**
+- Arriba tiene R12/C4, de la red U3B+, unidos entre sí.
+- Si IEPE entra desde arriba a la izquierda, corta el enlace U2.1 (VOUT del DAC) → R12.1.
+- Abajo están I2C (U2.4/5) y los pull-ups R10/R11.
+- A la derecha está R14.
+- Con la ubicación actual, IEPE no entra a R13.2 en una capa sin cruzar una de esas redes. Probablemente R38 (CH2)
+  tiene el mismo caso. Lo estudio en el bloque 5 y propongo antes de rutear.
 
 **Ruteo:**
 - Ramificación en pads (U1/U8, TP1, TP3, JP1.2, JP2.2, C1.1, R2.1, R2.2...), sin T en pista libre.

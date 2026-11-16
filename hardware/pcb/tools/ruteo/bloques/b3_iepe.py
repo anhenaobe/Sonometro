@@ -4,10 +4,10 @@ Coordenadas KiCad (mm). Decisiones aprobadas tras el bloque 2:
 - R6 movido a (120.70, 139.35) girado 180° (colocar_bloque3.json): con R6 en su lugar original el enlace R5.1–R6.1
   no tenía camino en una capa (Freerouting lo dejó sin rutear tras 800 pasadas; con R6 movido sale completo).
 - Alimentación de CH2 (J7.2 -> R36, IEPE_FEED_SV): queda encerrada por IEPE (CH1 -> J2 y CH1 -> R13) y por CH2, así
-  que el puente en B.Cu bajo IEPE_FEED no alcanza. Va por el único camino en F.Cu: borde izquierdo, y = 153.5 bajo el
+  que el puente en B.Cu bajo IEPE_FEED no alcanza (razonamiento topológico + prototipo de IEPE en copia). Va por el único camino en F.Cu: borde izquierdo, y = 153.5 bajo el
   bloque blanco (PBT) del BNC J2, a 1.1 mm de sus pines y 1.2 mm de sus anclajes, y sube por el hueco entre J2 y J8.
-  El datasheet del KH-BNC75-3511 muestra el bloque de plástico sobre patas moldeadas, con 0.5 mm de separación; el
-  metal no toca la placa.
+  KH-BNC75-3511: las fotos de producto de LCSC muestran el bloque que apoya en la placa (y la parte roscada) de
+  plástico blanco; solo el barril, fuera del borde, es metálico. El plano acota 0.5 mm entre el bloque y la placa.
 - Pasos por debajo de resistencias 0603 (entre pads, 0.85 mm, separación 0.325 mm): N2 por R5 y R4.
 - Corredor libre para IEPE hacia R13 (bloque 6): sale de JP1.2 hacia la derecha y sube por x ≈ 124.3.
 - La ramificación es siempre en pads (U1/U8, TP1, TP3, JP1.2, JP2.2, C1.1, R2.1, R2.2...).
