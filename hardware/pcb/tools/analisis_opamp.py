@@ -16,7 +16,7 @@ RIN = 390e3 + 365e3 + 191e3 + 54.9e3
 RF = 49.9e3 * 2
 OPS = {  # nombre: (GBW Hz, PM a G=+1 (°), CID F, CIC F, fuente)
     'TLV9062': (10e6, 55, 2e-12, 4e-12, 'SBOS839N p.13'),
-    'TLV9152': (4.5e6, 60, 3e-12, 6e-12, 'SBOS986E p.11-12'),
+    'TLV9152': (4.5e6, 60, 3e-12, 1e-12, 'SBOS986E p.11-12 (ZID 100 MΩ || 3 pF, ZICM 6 TΩ || 1 pF)'),
 }
 C_PCB = 1.5e-12
 
@@ -62,7 +62,7 @@ def resumen():
     for name, (gbw, pm, cid, cic, src) in OPS.items():
         csum = cid + cic + C_PCB
         print(f'\n{name} ({src}): GBW {gbw / 1e6:.1f} MHz, PM(G=1) {pm}°, C_SUM = {csum * 1e12:.1f} pF')
-        print(f'  seguidor U3B: cruce ~{gbw / 1e6:.1f} MHz, PM {pm}° (datasheet; carga = entrada + de U3A, ~8 pF)')
+        print(f'  seguidor U3B: cruce ~{gbw / 1e6:.1f} MHz, PM {pm}° (datasheet; carga = entrada + de U3A, ~5 pF: CID 3 + CICM 1 + pista)')
         for cf in (0, 4.7e-12, 10e-12, 22e-12, 47e-12):
             fc, ph = margen(gbw, pm, csum, cf)
             mags = [abs(cl_signal(f, gbw, pm, csum, cf)) for f in [10 ** (k / 50) for k in range(100, 400)]]
@@ -74,5 +74,33 @@ def resumen():
                   f'pico {peak:5.1f} dB, -3 dB en {f3 / 1e3:7.1f} kHz')
 
 
+def transicion():
+    """Región de transición de la entrada del TLV9152 frente a VSHIFT (= modo común de U3A y de U3B).
+
+    SBOS986E §7.3.4 p.26: par P hasta ~(V+) − 2 V, par N desde ~(V+) − 1 V; entre ambos, región de transición
+    típica (V+) − 2 V a (V+) − 1 V con offset, CMRR, PSRR, ruido y THD degradados. La CMRR de la tabla (p.11) se
+    especifica con VCM < (V+) − 2 V. VSHIFT = (REST + k·VB) / (1 + k), k = Rf/Rin, VB = polarización IEPE.
+    """
+    k = RF / RIN
+    vp_min, vp_max = 5.0 * 0.985 - 0.014 * 10, 5.0 * 1.015 - 0.0108 * 10   # 5V ±1.5 % FPWM (SNVSB49D p.8) − R33
+    dac_max = (3.3 * 0.985 - 0.0004 * 100) * 4095 / 4096                    # 3V3 −1.5 % − R9·IDD máx (DS22039D p.3)
+    print()
+    print(f'V+ (5V_A) = {vp_min:.3f}–{vp_max:.3f} V; región de transición típica desde {vp_min - 2:.3f}–'
+          f'{vp_max - 2:.3f} V hasta {vp_min - 1:.3f}–{vp_max - 1:.3f} V; DAC máx ≈ {dac_max:.2f} V; k = {k:.4f}')
+    print('REST objetivo | VB 8 V | VB 10 V | VB 12.5 V (RG-50) | VB 14 V')
+    for rest in (1.5, 2.0, 2.45):
+        celdas = []
+        for vb in (8.0, 10.0, 12.5, 14.0):
+            v = (rest + k * vb) / (1 + k)
+            nota = 'DAC al tope' if v > dac_max else ('en transición' if v >= vp_min - 2 else 'par P')
+            celdas.append(f'{min(v, dac_max):.2f} V ({nota})')
+        print(f'{rest:.2f} V | ' + ' | '.join(celdas))
+    for vb in (8.0, 12.5, 14.0):
+        print(f'  REST máximo para VSHIFT <= 2.70 V con VB = {vb} V: {2.70 * (1 + k) - k * vb:.2f} V')
+
+
 if __name__ == '__main__':
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8')
     resumen()
+    transicion()

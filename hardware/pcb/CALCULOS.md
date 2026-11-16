@@ -150,3 +150,41 @@ No hay pares diferenciales ni USB en la placa. Para los relojes se compara el la
 
 Impedancia de una pista de 0.2 mm en F.Cu sobre 0.21 mm de prepreg hasta In1: Z0 ≈ 67 Ω (fórmula de IPC-2141 [copia]). Todas las líneas son mucho más cortas que Lc, así que no hace falta controlar la impedancia; las resistencias en serie R21–R24 amortiguan los flancos.
 
+## 9. TLV9152 (U3/U9): estabilidad y región de transición de la entrada
+
+Salida de `tools/analisis_opamp.py`. Modelo de dos polos ajustado al GBW (4.5 MHz) y al margen de fase a G = +1 (60°) del datasheet [doc SBOS986E p.12]; capacidades de entrada ZID 100 MΩ ‖ 3 pF y ZICM 6 TΩ ‖ 1 pF [doc p.11]; 1.5 pF de pistas [estimado]. Región de transición típica (V+) − 2 V a (V+) − 1 V [doc §7.3.4 p.26].
+
+```
+Rin = 1000.9 kΩ, Rf = 99.8 kΩ, ganancia IEPE = -0.0997, ganancia VSHIFT = 1.0997, ganancia de ruido = 1.0997
+
+TLV9062 (SBOS839N p.13): GBW 10.0 MHz, PM(G=1) 55°, C_SUM = 7.5 pF
+  seguidor U3B: cruce ~10.0 MHz, PM 55° (datasheet; carga = entrada + de U3A, ~5 pF: CID 3 + CICM 1 + pista)
+  U3A con CF =  0.0 pF: cruce    1445 kHz, margen de fase   3.4°, pico  24.5 dB, -3 dB en  2290.9 kHz
+  U3A con CF =  4.7 pF: cruce    3739 kHz, margen de fase  72.3°, pico   0.0 dB, -3 dB en   363.1 kHz
+  U3A con CF = 10.0 pF: cruce    5352 kHz, margen de fase  68.8°, pico   0.0 dB, -3 dB en   166.0 kHz
+  U3A con CF = 22.0 pF: cruce    6744 kHz, margen de fase  64.6°, pico   0.0 dB, -3 dB en    75.9 kHz
+  U3A con CF = 47.0 pF: cruce    7611 kHz, margen de fase  61.9°, pico   0.0 dB, -3 dB en    34.7 kHz
+
+TLV9152 (SBOS986E p.11-12 (ZID 100 MΩ || 3 pF, ZICM 6 TΩ || 1 pF)): GBW 4.5 MHz, PM(G=1) 60°, C_SUM = 5.5 pF
+  seguidor U3B: cruce ~4.5 MHz, PM 60° (datasheet; carga = entrada + de U3A, ~5 pF: CID 3 + CICM 1 + pista)
+  U3A con CF =  0.0 pF: cruce    1114 kHz, margen de fase   7.8°, pico  17.0 dB, -3 dB en  1819.7 kHz
+  U3A con CF =  4.7 pF: cruce    2027 kHz, margen de fase  70.8°, pico   0.0 dB, -3 dB en   380.2 kHz
+  U3A con CF = 10.0 pF: cruce    2741 kHz, margen de fase  69.7°, pico   0.0 dB, -3 dB en   166.0 kHz
+  U3A con CF = 22.0 pF: cruce    3313 kHz, margen de fase  66.8°, pico   0.0 dB, -3 dB en    75.9 kHz
+  U3A con CF = 47.0 pF: cruce    3649 kHz, margen de fase  64.9°, pico   0.0 dB, -3 dB en    34.7 kHz
+
+V+ (5V_A) = 4.785–4.967 V; región de transición típica desde 2.785–2.967 V hasta 3.785–3.967 V; DAC máx ≈ 3.21 V; k = 0.0997
+REST objetivo | VB 8 V | VB 10 V | VB 12.5 V (RG-50) | VB 14 V
+1.50 V | 2.09 V (par P) | 2.27 V (par P) | 2.50 V (par P) | 2.63 V (par P)
+2.00 V | 2.54 V (par P) | 2.73 V (par P) | 2.95 V (en transición) | 3.09 V (en transición)
+2.45 V | 2.95 V (en transición) | 3.13 V (en transición) | 3.21 V (DAC al tope) | 3.21 V (DAC al tope)
+  REST máximo para VSHIFT <= 2.70 V con VB = 8.0 V: 2.17 V
+  REST máximo para VSHIFT <= 2.70 V con VB = 12.5 V: 1.72 V
+  REST máximo para VSHIFT <= 2.70 V con VB = 14.0 V: 1.57 V
+```
+
+- **U3A/U9A (sumador):** con CF = 10 pF, margen de fase ≈ 70° y sin pico; sin CF quedaría en ≈ 8° (por eso se agregó C56/C57).
+- **U3B/U9B (seguidor de VSHIFT):** su carga es la entrada + del sumador, unos 5 pF; el datasheet admite 1000 pF [doc p.12]. La impedancia de fuente en la entrada + (R12/C4) no entra en el lazo del seguidor.
+- **Región de transición:** las dos entradas de cada amplificador quedan en VSHIFT, un nivel de DC que no se mueve con la señal (configuración inversora más lazo de DC). Aun así, conviene quedar en el par P, que es donde la tabla especifica la CMRR. **Para el firmware: REST_OUT objetivo ≈ 1.5 V** (DC_MON ≈ 0.75 V). Así VSHIFT queda en 2.1–2.6 V para polarizaciones de 8–14 V, por debajo de la región, y la salida conserva margen: 1.5 ± 0.32 V con el RG-50 a 130 dB y 1.5 ± 1.08 V con la excursión máxima del SV 12. Con un objetivo de 2.45 V (mitad del riel), VSHIFT cae dentro de la región o el DAC llega al tope.
+- **Sin verificar:** simulación con el modelo SPICE de TI y medición en banco (escalón del DAC y forma de VSHIFT y REST en el osciloscopio).
+

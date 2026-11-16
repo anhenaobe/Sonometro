@@ -396,6 +396,39 @@ def main():
       'IPC-2141 [copia]). Todas las líneas son mucho más cortas que Lc, así que no hace falta controlar la impedancia; '
       'las resistencias en serie R21–R24 amortiguan los flancos.')
     w('')
+
+    # ---------------- TLV9152 (salida de tools/analisis_opamp.py)
+    import contextlib
+    import io
+    sys.path.insert(0, HERE)
+    import analisis_opamp as ao
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        ao.resumen()
+        ao.transicion()
+    w('## 9. TLV9152 (U3/U9): estabilidad y región de transición de la entrada')
+    w('')
+    w('Salida de `tools/analisis_opamp.py`. Modelo de dos polos ajustado al GBW (4.5 MHz) y al margen de fase a G = +1 '
+      '(60°) del datasheet [doc SBOS986E p.12]; capacidades de entrada ZID 100 MΩ ‖ 3 pF y ZICM 6 TΩ ‖ 1 pF [doc p.11]; '
+      '1.5 pF de pistas [estimado]. Región de transición típica (V+) − 2 V a (V+) − 1 V [doc §7.3.4 p.26].')
+    w('')
+    w('```')
+    w(buf.getvalue().strip())
+    w('```')
+    w('')
+    w('- **U3A/U9A (sumador):** con CF = 10 pF, margen de fase ≈ 70° y sin pico; sin CF quedaría en ≈ 8° (por eso se '
+      'agregó C56/C57).')
+    w('- **U3B/U9B (seguidor de VSHIFT):** su carga es la entrada + del sumador, unos 5 pF; el datasheet admite 1000 pF '
+      '[doc p.12]. La impedancia de fuente en la entrada + (R12/C4) no entra en el lazo del seguidor.')
+    w('- **Región de transición:** las dos entradas de cada amplificador quedan en VSHIFT, un nivel de DC que no se mueve '
+      'con la señal (configuración inversora más lazo de DC). Aun así, conviene quedar en el par P, que es donde la '
+      'tabla especifica la CMRR. **Para el firmware: REST_OUT objetivo ≈ 1.5 V** (DC_MON ≈ 0.75 V). Así VSHIFT queda '
+      'en 2.1–2.6 V para polarizaciones de 8–14 V, por debajo de la región, y la salida conserva margen: 1.5 ± 0.32 V '
+      'con el RG-50 a 130 dB y 1.5 ± 1.08 V con la excursión máxima del SV 12. Con un objetivo de 2.45 V (mitad del '
+      'riel), VSHIFT cae dentro de la región o el DAC llega al tope.')
+    w('- **Sin verificar:** simulación con el modelo SPICE de TI y medición en banco (escalón del DAC y forma de VSHIFT y '
+      'REST en el osciloscopio).')
+    w('')
     open(out, 'w', encoding='utf-8').write('\n'.join(lineas) + '\n')
     print('CALCULOS.md escrito:', out)
 
