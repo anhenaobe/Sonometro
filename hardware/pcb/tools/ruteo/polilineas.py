@@ -140,6 +140,11 @@ def main():
     path, nombre = sys.argv[1], sys.argv[2]
     mod = cargar_bloque(nombre)
     nombre = os.path.splitext(os.path.basename(nombre))[0]
+    errs = []                                     # validar ANTES de borrar nada de la placa
+    for red, w, capa, pts in getattr(mod, 'PISTAS', []):
+        errs += validar(red, pts)
+    if errs:
+        raise SystemExit('el bloque no cumple las reglas de trazado (la placa no se tocó):\n  ' + '\n  '.join(errs))
     if '--solo-borrar' in sys.argv:
         b = pcbnew.LoadBoard(path)
         borrar_grupo(b, nombre)

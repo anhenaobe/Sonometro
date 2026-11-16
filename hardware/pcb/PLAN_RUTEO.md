@@ -403,3 +403,45 @@ en B.Cu):
 | C | Recolocar la mitad derecha |
 
 Precio de 4 capas: sin cotización verificada para esta placa. Las cifras públicas son viejas o de terceros.
+
+### 10.1 Decisiones del dueño
+
+- **Aprobado:** R13, R14 y R16 en la columna (commit `0452393`).
+- **4 capas** (commit `3ccda8e`):
+  - F.Cu: señales;
+  - In1.Cu: GND entero (bloque `gnd_in1`);
+  - In2.Cu: alimentación y señales lentas;
+  - B.Cu: señales y GND.
+- **Política en `revisar_pistas` (G):** In1 sin pistas; las redes críticas solo en F.Cu, salvo DC_MON* e IEPE_FEED*.
+  El chequeo I mide contra In1.
+
+## 11. Bloque 4 — ADC PCM1808 (`tools/ruteo/bloques/b4_adc.py`)
+
+- Topología de las redes críticas tomada del oráculo (etapa 1): todas en F.Cu.
+- **Tierra:** AGND y DGND unidos debajo de U4, con una vía al plano. Cada desacoplo y cada strap a GND tiene su vía.
+- **Straps:** MD1 y FMT bajan a In2.Cu, porque en F.Cu quedan encerrados por VINL y VINR. MD0 pasa por debajo del
+  cuerpo de U4.
+- **Reloj, distancia 0.5 mm reloj–analógica:**
+  - DOUT pasa por debajo de R19 a ≥ 0.5 mm de AC_LEFT/VINL, gracias a que R19 subió 0.1 mm (ajuste autorizado,
+    `alineacion_bloque4.json`).
+  - LRCK pasa entre R49.1 y C20.1.
+  - Y1-OUT entra a R21.1 pasando entre los pads de R21.
+- **3V3 y 5V_A:** quedan las pistas pin → condensador. Las vías a In2 van en el bloque 8, en lugares reservados (ver
+  docstring del bloque).
+- **`polilineas.py`:** ahora valida el bloque antes de borrar nada de la placa. Antes, un bloque inválido dejaba la
+  placa sin el grupo viejo.
+- **Verificación:**
+  - DRC 0 (incluida la regla reloj–analógica), paridad 0, ERC 0;
+  - 90 conexiones sin rutear, ninguna interna del bloque 4 (faltan alimentación y REST_*);
+  - `revisar_pistas`: 6 hallazgos L, para decisión del dueño:
+
+    | Condensador | Pin | Distancia borde a borde |
+    |---|---|---|
+    | C17 (100 nF) | U4.3 (5V_A) | 3.42 mm |
+    | C18 (10 µF) | U4.3 (5V_A) | 5.42 mm |
+    | C11 (10 µF) | U4.4 (3V3) | 2.12 mm |
+    | C12 (100 nF) | U4.4 (3V3) | 3.89 mm |
+    | C15 (10 µF) | U4.1 (VREF) | 1.32 mm |
+    | C16 (100 nF) | U4.1 (VREF) | 1.52 mm |
+
+    C13 → Y1.1 queda a 0.52 mm.
