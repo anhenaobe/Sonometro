@@ -1,0 +1,1919 @@
+{
+ "components": {
+  "U4": {
+   "sheet": "ADC",
+   "lib": "PCM1808PW",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Texas Instruments",
+    "Manufacturer_Part_Number": "PCM1808PW",
+    "RefDes": "RefDes",
+    "Type": "Type",
+    "Comment": "PCM1808PW"
+   },
+   "footprints": [
+    "PW14"
+   ]
+  },
+  "C9": {
+   "sheet": "ADC",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "R20": {
+   "sheet": "ADC",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C10": {
+   "sheet": "ADC",
+   "lib": "Cap_10nF_0402_25V",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Kemet",
+    "Manufacturer_Part_Number": "C0402C103K3REC7411",
+    "Type": null,
+    "RefDes": null,
+    "Comment": "10nF 25V"
+   },
+   "footprints": [
+    "CAPC10555_55N_KEM"
+   ]
+  },
+  "C15": {
+   "sheet": "ADC",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "R19": {
+   "sheet": "ADC",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C19": {
+   "sheet": "ADC",
+   "lib": "Cap_10nF_0402_25V",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Kemet",
+    "Manufacturer_Part_Number": "C0402C103K3REC7411",
+    "Type": null,
+    "RefDes": null,
+    "Comment": "10nF 25V"
+   },
+   "footprints": [
+    "CAPC10555_55N_KEM"
+   ]
+  },
+  "C14": {
+   "sheet": "ADC",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C16": {
+   "sheet": "ADC",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C17": {
+   "sheet": "ADC",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C18": {
+   "sheet": "ADC",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C11": {
+   "sheet": "ADC",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C12": {
+   "sheet": "ADC",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C13": {
+   "sheet": "ADC",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "U3": {
+   "sheet": "Analog_CH1",
+   "lib": "TLV9062IDDFR",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Texas Instruments",
+    "Manufacturer_Part_Number": "TLV9062IDDFR",
+    "RefDes": "RefDes",
+    "Type": "Type",
+    "Comment": "TLV9062IDDFR"
+   },
+   "footprints": [
+    "SOT_62IDDFR_TEX"
+   ]
+  },
+  "U2": {
+   "sheet": "Analog_CH1",
+   "lib": "MCP4725A0T-ECH",
+   "params": {
+    "Copyright": "Copyright (C) 2026 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Microchip",
+    "Manufacturer_Part_Number": "MCP4725A0T-E/CH",
+    "RefDes": "RefDes",
+    "Type": "Type",
+    "Comment": "MCP4725A0T-E/CH"
+   },
+   "footprints": [
+    "SOT-23-6_MC_MCH"
+   ]
+  },
+  "R12": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R13": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_390k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-07390KL_C137735.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-07390KL",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C137735",
+    "ComponentLink1Description": "LCSC",
+    "Value": "390k",
+    "Comment": "390k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R8": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_49k9_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-0749K9L_C114624.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-0749K9L",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C114624",
+    "ComponentLink1Description": "LCSC",
+    "Value": "49k9",
+    "Comment": "49k9 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R15": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R17": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R11": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_4k7_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_VO-SCR0603F4K7_C3016318.html",
+    "Usage": null,
+    "Manufacturer": "VO",
+    "Manufacturer Part Number": "SCR0603F4K7",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C3016318",
+    "ComponentLink1Description": "LCSC",
+    "Value": "4k7",
+    "Comment": "4k7 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R10": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_4k7_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_VO-SCR0603F4K7_C3016318.html",
+    "Usage": null,
+    "Manufacturer": "VO",
+    "Manufacturer Part Number": "SCR0603F4K7",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C3016318",
+    "ComponentLink1Description": "LCSC",
+    "Value": "4k7",
+    "Comment": "4k7 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R9": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R14": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_365k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-07365KL_C185336.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-07365KL",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C185336",
+    "ComponentLink1Description": "LCSC",
+    "Value": "365k",
+    "Comment": "365k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R16": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_191k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-AC0603FR-07191KL_C227635.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "AC0603FR-07191KL",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C227635",
+    "ComponentLink1Description": "LCSC",
+    "Value": "191k",
+    "Comment": "191k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R18": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_54k9_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-0754K9L_C185321.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-0754K9L",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C185321",
+    "ComponentLink1Description": "LCSC",
+    "Value": "54k9",
+    "Comment": "54k9 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R7": {
+   "sheet": "Analog_CH1",
+   "lib": "Res_49k9_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-0749K9L_C114624.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-0749K9L",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C114624",
+    "ComponentLink1Description": "LCSC",
+    "Value": "49k9",
+    "Comment": "49k9 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C4": {
+   "sheet": "Analog_CH1",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C6": {
+   "sheet": "Analog_CH1",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C5": {
+   "sheet": "Analog_CH1",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C7": {
+   "sheet": "Analog_CH1",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C8": {
+   "sheet": "Analog_CH1",
+   "lib": "Cap_10uF_0603_10V",
+   "params": {
+    "Manufacturer": "CCTC",
+    "Manufacturer Part Number": "TCC0603X5R106K100CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C380314",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_CCTC-TCC0603X5R106K100CT_C380314.html",
+    "Value": "10uF",
+    "Comment": "10uF 10V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "Y1": {
+   "sheet": "Clock",
+   "lib": "KC2016Z25.0000C15XXK",
+   "params": {
+    "Availability": "Unavailable",
+    "Price": "None",
+    "Value": "*",
+    "MF": null,
+    "MP": "KC2016Z25.0000C15XXK",
+    "Package": "None",
+    "Comment": "KC2016Z25.0000C15XXK"
+   },
+   "footprints": [
+    "OSC_KC2016Z25.0000C15XXK-4"
+   ]
+  },
+  "R21": {
+   "sheet": "Clock",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R22": {
+   "sheet": "Clock",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R23": {
+   "sheet": "Clock",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R24": {
+   "sheet": "Clock",
+   "lib": "Res_100R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J101-TS_C2907089.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J101 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907089",
+    "ComponentLink1Description": "LCSC",
+    "Value": "100R",
+    "Comment": "100R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C20": {
+   "sheet": "Clock",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "?28": {
+   "sheet": "Interfaces",
+   "lib": "H_Male_6x1_TH_100mil",
+   "params": {
+    "Manufacturer": null,
+    "Manufacturer Part Number": null,
+    "Supplier 1": null,
+    "Supplier Part Number 1": null,
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": null,
+    "Comment": "6x1"
+   },
+   "footprints": [
+    "H_6x1_TH_100mil"
+   ]
+  },
+  "?55": {
+   "sheet": "Interfaces",
+   "lib": "H_Male_6x1_TH_100mil",
+   "params": {
+    "Manufacturer": null,
+    "Manufacturer Part Number": null,
+    "Supplier 1": null,
+    "Supplier Part Number 1": null,
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": null,
+    "Comment": "6x1"
+   },
+   "footprints": [
+    "H_6x1_TH_100mil"
+   ]
+  },
+  "U5": {
+   "sheet": "MCU",
+   "lib": "STM32L432KCU6TR",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "STMicroelectronics",
+    "Manufacturer_Part_Number": "STM32L432KCU6TR",
+    "RefDes": "RefDes",
+    "Type": "Type",
+    "Comment": "STM32L432KCU6TR"
+   },
+   "footprints": [
+    "UFQFPN-32_STM"
+   ]
+  },
+  "R25": {
+   "sheet": "MCU",
+   "lib": "RES 10 OHM 1% 1/16W 0402",
+   "params": {
+    "Copyright": "Copyright (C) 2026 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Vishay",
+    "Manufacturer_Part_Number": "CRCW040210R0FKED",
+    "Type": null,
+    "RefDes": null,
+    "Comment": "CRCW040210R0FKED"
+   },
+   "footprints": [
+    "RES_CRCW_0402"
+   ]
+  },
+  "R26": {
+   "sheet": "MCU",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R27": {
+   "sheet": "MCU",
+   "lib": "Res_49k9_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-0749K9L_C114624.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-0749K9L",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C114624",
+    "ComponentLink1Description": "LCSC",
+    "Value": "49k9",
+    "Comment": "49k9 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R28": {
+   "sheet": "MCU",
+   "lib": "Res_49k9_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_YAGEO-RC0603FR-0749K9L_C114624.html",
+    "Usage": null,
+    "Manufacturer": "YAGEO",
+    "Manufacturer Part Number": "RC0603FR-0749K9L",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C114624",
+    "ComponentLink1Description": "LCSC",
+    "Value": "49k9",
+    "Comment": "49k9 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C23": {
+   "sheet": "MCU",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C24": {
+   "sheet": "MCU",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C25": {
+   "sheet": "MCU",
+   "lib": "Cap_4,7uF_0805_25V",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Samsung",
+    "Manufacturer_Part_Number": "CL21A475KAQNNNE",
+    "Type": null,
+    "RefDes": null,
+    "Comment": "4,7uF"
+   },
+   "footprints": [
+    "CAP_CL21_SAM"
+   ]
+  },
+  "C26": {
+   "sheet": "MCU",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C22": {
+   "sheet": "MCU",
+   "lib": "Cap_1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Samsung Electro-Mechanics",
+    "Manufacturer Part Number": "CL10A105KB8NNNC",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C15849",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Samsung-Electro-Mechanics-CL10A105KB8NNNC_C15849.html",
+    "Value": "1uF",
+    "Comment": "1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C21": {
+   "sheet": "MCU",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "U1": {
+   "sheet": "Sheet_1",
+   "lib": "LT3092ETS8TRPBF",
+   "params": {
+    "Copyright": "Copyright (C) 2025 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Analog Devices Inc",
+    "Manufacturer_Part_Number": "LT3092ETS8#TRPBF",
+    "RefDes": "RefDes",
+    "Type": "Type",
+    "Comment": "LT3092ETS8#TRPBF"
+   },
+   "footprints": [
+    "TSOT-23_TS8_LIT"
+   ]
+  },
+  "R4": {
+   "sheet": "Sheet_1",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R6": {
+   "sheet": "Sheet_1",
+   "lib": "Res_1k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J102-TS_C2907113.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J102 TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2907113",
+    "ComponentLink1Description": "LCSC",
+    "Value": "1k",
+    "Comment": "1k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R3": {
+   "sheet": "Sheet_1",
+   "lib": "Res_150R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_RALEC-RTT031500FTP_C103302.html",
+    "Usage": null,
+    "Manufacturer": "RALEC",
+    "Manufacturer Part Number": "RTT031500FTP",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C103302",
+    "ComponentLink1Description": "LCSC",
+    "Value": "150R",
+    "Comment": "150R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "C1": {
+   "sheet": "Sheet_1",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C2": {
+   "sheet": "Sheet_1",
+   "lib": "Cap_1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Samsung Electro-Mechanics",
+    "Manufacturer Part Number": "CL10A105KB8NNNC",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C15849",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Samsung-Electro-Mechanics-CL10A105KB8NNNC_C15849.html",
+    "Value": "1uF",
+    "Comment": "1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "C3": {
+   "sheet": "Sheet_1",
+   "lib": "Cap_0.1uF_0603_50V",
+   "params": {
+    "Manufacturer": "Walsin Tech Corp",
+    "Manufacturer Part Number": "0603F104Z500CT",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C83060",
+    "Usage": null,
+    "ComponentLink1Description": "LCSC",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Multilayer-Ceramic-Capacitors-MLCC-SMD-SMT_Walsin-Tech-Corp-0603F104Z500CT_C83060.html",
+    "Value": "0.1uF",
+    "Comment": "0.1uF 50V"
+   },
+   "footprints": [
+    "0603_cap"
+   ]
+  },
+  "R5": {
+   "sheet": "Sheet_1",
+   "lib": "Res_10k_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Chip-Resistor-Surface-Mount_FOJAN-FRC0603J103TS_C2930027.html",
+    "Usage": null,
+    "Manufacturer": "FOJAN",
+    "Manufacturer Part Number": "FRC0603J103TS",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C2930027",
+    "ComponentLink1Description": "LCSC",
+    "Value": "10k",
+    "Comment": "10k 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R2": {
+   "sheet": "Sheet_1",
+   "lib": "Res_150R_0603_1/10W",
+   "params": {
+    "ComponentLink1URL": "https://lcsc.com/product-detail/Chip-Resistor-Surface-Mount_RALEC-RTT031500FTP_C103302.html",
+    "Usage": null,
+    "Manufacturer": "RALEC",
+    "Manufacturer Part Number": "RTT031500FTP",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C103302",
+    "ComponentLink1Description": "LCSC",
+    "Value": "150R",
+    "Comment": "150R 1/10W"
+   },
+   "footprints": [
+    "0603_res"
+   ]
+  },
+  "R1": {
+   "sheet": "Sheet_1",
+   "lib": "RES 10 OHM 1% 1/16W 0402",
+   "params": {
+    "Copyright": "Copyright (C) 2026 Ultra Librarian. All rights reserved.",
+    "Manufacturer_Name": "Vishay",
+    "Manufacturer_Part_Number": "CRCW040210R0FKED",
+    "Type": null,
+    "RefDes": null,
+    "Comment": "CRCW040210R0FKED"
+   },
+   "footprints": [
+    "RES_CRCW_0402"
+   ]
+  },
+  "J1": {
+   "sheet": "Sheet_1",
+   "lib": "Con_2x1_TH_5mm",
+   "params": {
+    "Usage": null,
+    "Manufacturer": "JILN",
+    "Manufacturer Part Number": "JL126-50002G01",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C394556",
+    "ComponentLink1Description": "Digi-Key",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Screw-terminal_JILN-JL126-50002G01_C394556.html",
+    "Comment": "Connector 2pos"
+   },
+   "footprints": [
+    "CON_2x1_TH_5MM"
+   ]
+  },
+  "J2": {
+   "sheet": "Sheet_1",
+   "lib": "Con_2x1_TH_5mm",
+   "params": {
+    "Usage": null,
+    "Manufacturer": "JILN",
+    "Manufacturer Part Number": "JL126-50002G01",
+    "Supplier 1": "LCSC",
+    "Supplier Part Number 1": "C394556",
+    "ComponentLink1Description": "Digi-Key",
+    "ComponentLink1URL": "https://www.lcsc.com/product-detail/Screw-terminal_JILN-JL126-50002G01_C394556.html",
+    "Comment": "Connector 2pos"
+   },
+   "footprints": [
+    "CON_2x1_TH_5MM"
+   ]
+  }
+ },
+ "nets": [
+  {
+   "names": [
+    "PCM_VREF"
+   ],
+   "pins": [
+    "C15.1",
+    "C16.1",
+    "U4.1"
+   ]
+  },
+  {
+   "names": [
+    "GND"
+   ],
+   "pins": [
+    "?28.5",
+    "?28.6",
+    "?55.3",
+    "C10.2",
+    "C11.2",
+    "C12.2",
+    "C13.2",
+    "C15.2",
+    "C16.2",
+    "C17.2",
+    "C18.2",
+    "C19.2",
+    "C2.2",
+    "C20.2",
+    "C21.2",
+    "C22.2",
+    "C23.2",
+    "C24.2",
+    "C25.2",
+    "C26.2",
+    "C3.2",
+    "C4.2",
+    "C5.2",
+    "C6.2",
+    "C7.1",
+    "C8.2",
+    "J2.2",
+    "R17.1",
+    "R28.1",
+    "U2.2",
+    "U2.6",
+    "U3.4",
+    "U4.11",
+    "U4.12",
+    "U4.2",
+    "U4.5",
+    "U5.16",
+    "U5.32",
+    "U5.33",
+    "Y1.2"
+   ]
+  },
+  {
+   "names": [
+    "5V_A"
+   ],
+   "pins": [
+    "C17.1",
+    "C18.1",
+    "C7.2",
+    "U3.8",
+    "U4.3"
+   ]
+  },
+  {
+   "names": [
+    "3V3"
+   ],
+   "pins": [
+    "?28.1",
+    "?55.4",
+    "C11.1",
+    "C12.1",
+    "C13.1",
+    "C20.1",
+    "C23.1",
+    "C24.1",
+    "C25.1",
+    "R10.2",
+    "R11.2",
+    "R25.1",
+    "R26.2",
+    "R9.2",
+    "U4.10",
+    "U4.4",
+    "U5.1",
+    "U5.17",
+    "Y1.1",
+    "Y1.4"
+   ]
+  },
+  {
+   "names": [
+    "PCM_MCLK"
+   ],
+   "pins": [
+    "R21.2",
+    "U4.6"
+   ]
+  },
+  {
+   "names": [
+    "PCM_LRCK"
+   ],
+   "pins": [
+    "R23.2",
+    "U4.7"
+   ]
+  },
+  {
+   "names": [
+    "PCM_BCK"
+   ],
+   "pins": [
+    "R22.2",
+    "U4.8"
+   ]
+  },
+  {
+   "names": [
+    "PCM_DOUT"
+   ],
+   "pins": [
+    "R24.2",
+    "U4.9"
+   ]
+  },
+  {
+   "names": [
+    "ADC_INL"
+   ],
+   "pins": [
+    "C10.1",
+    "R19.2",
+    "U4.13"
+   ]
+  },
+  {
+   "names": [
+    "ADC_INR"
+   ],
+   "pins": [
+    "C19.1",
+    "R20.2",
+    "U4.14"
+   ]
+  },
+  {
+   "names": [
+    "REST_OUT"
+   ],
+   "pins": [
+    "C9.1",
+    "R15.2",
+    "R8.1",
+    "U3.1"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "C9.2",
+    "R19.1"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "C14.2",
+    "R20.1"
+   ]
+  },
+  {
+   "names": [
+    "REST_SV"
+   ],
+   "pins": [
+    "C14.1"
+   ]
+  },
+  {
+   "names": [
+    "SUM"
+   ],
+   "pins": [
+    "R18.1",
+    "R7.1",
+    "U3.2"
+   ]
+  },
+  {
+   "names": [
+    "VSHIFT"
+   ],
+   "pins": [
+    "U3.3",
+    "U3.6",
+    "U3.7"
+   ]
+  },
+  {
+   "names": [
+    "DAC_F"
+   ],
+   "pins": [
+    "C4.1",
+    "R12.2",
+    "U3.5"
+   ]
+  },
+  {
+   "names": [
+    "I2C_SCL"
+   ],
+   "pins": [
+    "R10.1",
+    "U2.5",
+    "U5.29"
+   ]
+  },
+  {
+   "names": [
+    "I2C_SDA"
+   ],
+   "pins": [
+    "R11.1",
+    "U2.4",
+    "U5.30"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "C5.1",
+    "C6.1",
+    "R9.1",
+    "U2.3"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R12.1",
+    "U2.1"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R13.1",
+    "R14.2"
+   ]
+  },
+  {
+   "names": [
+    "IEPE"
+   ],
+   "pins": [
+    "C1.2",
+    "J2.1",
+    "R13.2",
+    "R2.1",
+    "R3.1",
+    "R6.2"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R7.2",
+    "R8.2"
+   ]
+  },
+  {
+   "names": [
+    "DC_MON"
+   ],
+   "pins": [
+    "C8.1",
+    "R15.1",
+    "R17.2",
+    "U5.6"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R14.1",
+    "R16.2"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R16.1",
+    "R18.2"
+   ]
+  },
+  {
+   "names": [
+    "MCLK_SOURCE"
+   ],
+   "pins": [
+    "R21.1",
+    "Y1.3"
+   ]
+  },
+  {
+   "names": [
+    "SAI_SCK"
+   ],
+   "pins": [
+    "R22.1",
+    "U5.18"
+   ]
+  },
+  {
+   "names": [
+    "SAI_FS"
+   ],
+   "pins": [
+    "R23.1",
+    "U5.19"
+   ]
+  },
+  {
+   "names": [
+    "SAI_SD"
+   ],
+   "pins": [
+    "R24.1",
+    "U5.20"
+   ]
+  },
+  {
+   "names": [
+    "SWDIO"
+   ],
+   "pins": [
+    "?28.2",
+    "U5.23"
+   ]
+  },
+  {
+   "names": [
+    "SWCLK"
+   ],
+   "pins": [
+    "?28.3",
+    "U5.24"
+   ]
+  },
+  {
+   "names": [
+    "NRST"
+   ],
+   "pins": [
+    "?28.4",
+    "C26.1",
+    "R26.1",
+    "U5.4"
+   ]
+  },
+  {
+   "names": [
+    "UART_TX"
+   ],
+   "pins": [
+    "?55.1",
+    "U5.8"
+   ]
+  },
+  {
+   "names": [
+    "UART_RX"
+   ],
+   "pins": [
+    "?55.2",
+    "U5.25"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "?55.5"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "?55.6"
+   ]
+  },
+  {
+   "names": [
+    "DC_MON2"
+   ],
+   "pins": [
+    "U5.7"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.9"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.10"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.11"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.12"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.13"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.21"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.22"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.14"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.15"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.26"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.27"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.28"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.2"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U5.3"
+   ]
+  },
+  {
+   "names": [
+    "BOOT0"
+   ],
+   "pins": [
+    "R27.2",
+    "U5.31"
+   ]
+  },
+  {
+   "names": [
+    "VDDA"
+   ],
+   "pins": [
+    "C21.1",
+    "C22.1",
+    "R25.2",
+    "U5.5"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "R27.1",
+    "R28.2"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U1.1"
+   ]
+  },
+  {
+   "names": [
+    "OUT_I"
+   ],
+   "pins": [
+    "R2.2",
+    "R3.2",
+    "U1.2",
+    "U1.3",
+    "U1.4"
+   ]
+  },
+  {
+   "names": [
+    "SET_I"
+   ],
+   "pins": [
+    "C1.1",
+    "R4.2",
+    "U1.5"
+   ]
+  },
+  {
+   "names": [],
+   "pins": [
+    "U1.6"
+   ]
+  },
+  {
+   "names": [
+    "IEPE_SUP"
+   ],
+   "pins": [
+    "C2.1",
+    "C3.1",
+    "R1.2",
+    "U1.7",
+    "U1.8"
+   ]
+  },
+  {
+   "names": [
+    "SET_MID"
+   ],
+   "pins": [
+    "R4.1",
+    "R5.2"
+   ]
+  },
+  {
+   "names": [
+    "SET_MID2"
+   ],
+   "pins": [
+    "R5.1",
+    "R6.1"
+   ]
+  },
+  {
+   "names": [
+    "IEPE_FEED"
+   ],
+   "pins": [
+    "J1.2",
+    "R1.1"
+   ]
+  },
+  {
+   "names": [
+    "24V_PROT"
+   ],
+   "pins": [
+    "J1.1"
+   ]
+  }
+ ],
+ "pin_names": {
+  "U4.1": "VREF",
+  "U4.2": "AGND",
+  "U4.3": "VCC",
+  "U4.4": "VDD",
+  "U4.5": "DGND",
+  "U4.6": "SCKI",
+  "U4.7": "LRCK",
+  "U4.8": "BCK",
+  "U4.9": "DOUT",
+  "U4.10": "MD0",
+  "U4.11": "MD1",
+  "U4.12": "FMT",
+  "U4.13": "VINL",
+  "U4.14": "VINR",
+  "C9.1": "1",
+  "C9.2": "2",
+  "R20.1": "1",
+  "R20.2": "2",
+  "C10.1": "1",
+  "C10.2": "2",
+  "C15.1": "1",
+  "C15.2": "2",
+  "R19.1": "1",
+  "R19.2": "2",
+  "C19.1": "1",
+  "C19.2": "2",
+  "C14.1": "1",
+  "C14.2": "2",
+  "C16.1": "1",
+  "C16.2": "2",
+  "C17.1": "1",
+  "C17.2": "2",
+  "C18.1": "1",
+  "C18.2": "2",
+  "C11.1": "1",
+  "C11.2": "2",
+  "C12.1": "1",
+  "C12.2": "2",
+  "C13.1": "1",
+  "C13.2": "2",
+  "U3.1": "OUT1",
+  "U3.2": "IN1-",
+  "U3.3": "IN1+",
+  "U3.4": "V-",
+  "U3.5": "IN2+",
+  "U3.6": "IN2-",
+  "U3.7": "OUT2",
+  "U3.8": "V+",
+  "U2.6": "A0",
+  "U2.5": "SCL",
+  "U2.4": "SDA",
+  "U2.3": "VDD",
+  "U2.2": "VSS",
+  "U2.1": "VOUT",
+  "R12.1": "1",
+  "R12.2": "2",
+  "R13.1": "1",
+  "R13.2": "2",
+  "R8.1": "1",
+  "R8.2": "2",
+  "R15.1": "1",
+  "R15.2": "2",
+  "R17.1": "1",
+  "R17.2": "2",
+  "R11.1": "1",
+  "R11.2": "2",
+  "R10.1": "1",
+  "R10.2": "2",
+  "R9.1": "1",
+  "R9.2": "2",
+  "R14.1": "1",
+  "R14.2": "2",
+  "R16.1": "1",
+  "R16.2": "2",
+  "R18.1": "1",
+  "R18.2": "2",
+  "R7.1": "1",
+  "R7.2": "2",
+  "C4.1": "1",
+  "C4.2": "2",
+  "C6.1": "1",
+  "C6.2": "2",
+  "C5.1": "1",
+  "C5.2": "2",
+  "C7.1": "1",
+  "C7.2": "2",
+  "C8.1": "1",
+  "C8.2": "2",
+  "Y1.1": "INH",
+  "Y1.4": "VCC",
+  "Y1.3": "OUTPUT",
+  "Y1.2": "CASE_GND",
+  "R21.1": "1",
+  "R21.2": "2",
+  "R22.1": "1",
+  "R22.2": "2",
+  "R23.1": "1",
+  "R23.2": "2",
+  "R24.1": "1",
+  "R24.2": "2",
+  "C20.1": "1",
+  "C20.2": "2",
+  "?28.1": "1",
+  "?28.2": "2",
+  "?28.3": "3",
+  "?28.4": "4",
+  "?28.5": "5",
+  "?28.6": "6",
+  "?55.1": "1",
+  "?55.2": "2",
+  "?55.3": "3",
+  "?55.4": "4",
+  "?55.5": "5",
+  "?55.6": "6",
+  "U5.6": "PA0/CK_IN",
+  "U5.7": "PA1",
+  "U5.8": "PA2",
+  "U5.9": "PA3",
+  "U5.10": "PA4",
+  "U5.11": "PA5",
+  "U5.12": "PA6",
+  "U5.13": "PA7",
+  "U5.18": "PA8",
+  "U5.19": "PA9",
+  "U5.20": "PA10",
+  "U5.21": "PA11",
+  "U5.22": "PA12",
+  "U5.23": "PA13",
+  "U5.24": "PA14",
+  "U5.25": "PA15",
+  "U5.14": "PB0",
+  "U5.15": "PB1",
+  "U5.26": "PB3",
+  "U5.27": "PB4",
+  "U5.28": "PB5",
+  "U5.29": "PB6",
+  "U5.30": "PB7",
+  "U5.16": "VSS",
+  "U5.32": "VSS",
+  "U5.2": "PC14-OSC32_IN",
+  "U5.3": "PC15-OSC32_OUT",
+  "U5.31": "PH3/BOOT0",
+  "U5.4": "NRST",
+  "U5.1": "VDD",
+  "U5.17": "VDD",
+  "U5.5": "VDDA/VREF+",
+  "U5.33": "EPAD",
+  "R25.1": "1",
+  "R25.2": "2",
+  "R26.1": "1",
+  "R26.2": "2",
+  "R27.1": "1",
+  "R27.2": "2",
+  "R28.1": "1",
+  "R28.2": "2",
+  "C23.1": "1",
+  "C23.2": "2",
+  "C24.1": "1",
+  "C24.2": "2",
+  "C25.1": "1",
+  "C25.2": "2",
+  "C26.1": "1",
+  "C26.2": "2",
+  "C22.1": "1",
+  "C22.2": "2",
+  "C21.1": "1",
+  "C21.2": "2",
+  "U1.1": "NC",
+  "U1.2": "OUT",
+  "U1.3": "OUT",
+  "U1.4": "OUT",
+  "U1.5": "SET",
+  "U1.6": "NC",
+  "U1.7": "IN",
+  "U1.8": "IN",
+  "R4.1": "1",
+  "R4.2": "2",
+  "R6.1": "1",
+  "R6.2": "2",
+  "R3.1": "1",
+  "R3.2": "2",
+  "C1.1": "1",
+  "C1.2": "2",
+  "C2.1": "1",
+  "C2.2": "2",
+  "C3.1": "1",
+  "C3.2": "2",
+  "R5.1": "1",
+  "R5.2": "2",
+  "R2.1": "1",
+  "R2.2": "2",
+  "R1.1": "1",
+  "R1.2": "2",
+  "J1.1": "1",
+  "J1.2": "2",
+  "J2.1": "1",
+  "J2.2": "2"
+ }
+}

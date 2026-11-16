@@ -1,0 +1,1968 @@
+{
+ "U4": {
+  "sym": "Sonometro:PCM1808PWR",
+  "value": "PCM1808PW",
+  "fp": "Package_SO:TSSOP-14_4.4x5mm_P0.65mm",
+  "pins": {
+   "1": "PCM_VREF",
+   "11": "MD1",
+   "12": "FMT",
+   "2": "GND",
+   "5": "GND",
+   "3": "5V_A",
+   "10": "MD0",
+   "4": "3V3",
+   "6": "PCM_MCLK",
+   "7": "PCM_LRCK",
+   "8": "PCM_BCK",
+   "9": "PCM_DOUT",
+   "13": "ADC_INL",
+   "14": "ADC_INR"
+  },
+  "mpn": "PCM1808PW",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C9": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "REST_OUT",
+   "2": "AC_LEFT"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R20": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "ADC_INR",
+   "1": "AC_RIGHT"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C10": {
+  "sym": "Device:C",
+  "value": "10nF",
+  "fp": "Capacitor_SMD:C_0402_1005Metric",
+  "pins": {
+   "2": "GND",
+   "1": "ADC_INL"
+  },
+  "mpn": "C0402C103K3REC7411",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C15": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "PCM_VREF",
+   "2": "GND"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R19": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "ADC_INL",
+   "1": "AC_LEFT"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C19": {
+  "sym": "Device:C",
+  "value": "10nF",
+  "fp": "Capacitor_SMD:C_0402_1005Metric",
+  "pins": {
+   "2": "GND",
+   "1": "ADC_INR"
+  },
+  "mpn": "C0402C103K3REC7411",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C14": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "AC_RIGHT",
+   "1": "REST_SV"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C16": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "PCM_VREF",
+   "2": "GND"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C17": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "5V_A"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C18": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "5V_A"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C11": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C12": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C13": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium ADC.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U3": {
+  "sym": "Amplifier_Operational:TLV9062",
+  "value": "TLV9062IDDFR",
+  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "pins": {
+   "4": "GND",
+   "8": "5V_A",
+   "1": "REST_OUT",
+   "2": "SUM",
+   "3": "VSHIFT",
+   "6": "VSHIFT",
+   "7": "VSHIFT",
+   "5": "DAC_F"
+  },
+  "mpn": "TLV9062IDDFR",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U2": {
+  "sym": "Analog_DAC:MCP4725xxx-xCH",
+  "value": "MCP4725A0T-E/CH",
+  "fp": "Package_TO_SOT_SMD:SOT-23-6",
+  "pins": {
+   "2": "GND",
+   "6": "GND",
+   "5": "I2C_SCL",
+   "4": "I2C_SDA",
+   "3": "3V3_DAC",
+   "1": "DAC_RAW"
+  },
+  "mpn": "MCP4725A0T-E/CH",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R12": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "DAC_F",
+   "1": "DAC_RAW"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R13": {
+  "sym": "Device:R",
+  "value": "390k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "IEPE_DIV1",
+   "2": "IEPE"
+  },
+  "mpn": "RC0603FR-07390KL",
+  "lcsc": "C137735",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R8": {
+  "sym": "Device:R",
+  "value": "49k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "REST_OUT",
+   "2": "FB_MID"
+  },
+  "mpn": "RC0603FR-0749K9L",
+  "lcsc": "C114624",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R15": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "REST_OUT",
+   "1": "DC_MON"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R17": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "GND",
+   "2": "DC_MON"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R11": {
+  "sym": "Device:R",
+  "value": "4k7",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "3V3",
+   "1": "I2C_SDA"
+  },
+  "mpn": "SCR0603F4K7",
+  "lcsc": "C3016318",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R10": {
+  "sym": "Device:R",
+  "value": "4k7",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "3V3",
+   "1": "I2C_SCL"
+  },
+  "mpn": "SCR0603F4K7",
+  "lcsc": "C3016318",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R9": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "3V3",
+   "1": "3V3_DAC"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R14": {
+  "sym": "Device:R",
+  "value": "365k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "IEPE_DIV1",
+   "1": "IEPE_DIV2"
+  },
+  "mpn": "RC0603FR-07365KL",
+  "lcsc": "C185336",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R16": {
+  "sym": "Device:R",
+  "value": "191k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "IEPE_DIV2",
+   "1": "IEPE_DIV3"
+  },
+  "mpn": "AC0603FR-07191KL",
+  "lcsc": "C227635",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R18": {
+  "sym": "Device:R",
+  "value": "54k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "SUM",
+   "2": "IEPE_DIV3"
+  },
+  "mpn": "RC0603FR-0754K9L",
+  "lcsc": "C185321",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R7": {
+  "sym": "Device:R",
+  "value": "49k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "SUM",
+   "2": "FB_MID"
+  },
+  "mpn": "RC0603FR-0749K9L",
+  "lcsc": "C114624",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C4": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "DAC_F"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C6": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3_DAC"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C5": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3_DAC"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C7": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "GND",
+   "2": "5V_A"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C8": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "DC_MON"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Analog_CH1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "Y1": {
+  "sym": "Sonometro:O322524576MEEA4SC",
+  "value": "24.576MHz",
+  "fp": "Sonometro:Oscillator_YXC_SMD3225-4Pin_3.2x2.5mm",
+  "pins": {
+   "2": "GND",
+   "1": "3V3",
+   "4": "3V3",
+   "3": "MCLK_SOURCE"
+  },
+  "mpn": "O322524576MEEA4SC",
+  "lcsc": "C27869",
+  "desc": "YXC YSO321SR 24.576 MHz 3.3 V +-25 ppm; 1 OE, 2 GND, 3 OUT, 4 VDD",
+  "src": "cambio C3",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R21": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "PCM_MCLK",
+   "1": "MCLK_SOURCE"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium Clock.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R22": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "PCM_BCK",
+   "1": "SAI_SCK"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium Clock.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R23": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "PCM_LRCK",
+   "1": "SAI_FS"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium Clock.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R24": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "PCM_DOUT",
+   "1": "SAI_SD"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "",
+  "src": "Altium Clock.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C20": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Clock.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U1": {
+  "sym": "Reference_Current:LT3092xTS8",
+  "value": "LT3092ETS8#TRPBF",
+  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "pins": {
+   "1": null,
+   "2": "OUT_I",
+   "3": "OUT_I",
+   "4": "OUT_I",
+   "5": "SET_I",
+   "6": null,
+   "7": "IEPE_SUP",
+   "8": "IEPE_SUP"
+  },
+  "mpn": "LT3092ETS8#TRPBF",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R4": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "SET_I",
+   "1": "SET_MID"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R6": {
+  "sym": "Device:R",
+  "value": "1k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "IEPE",
+   "1": "SET_MID2"
+  },
+  "mpn": "FRC0603J102 TS",
+  "lcsc": "C2907113",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R3": {
+  "sym": "Device:R",
+  "value": "150R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "IEPE",
+   "2": "OUT_I"
+  },
+  "mpn": "RTT031500FTP",
+  "lcsc": "C103302",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C1": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "IEPE",
+   "1": "SET_I"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C2": {
+  "sym": "Device:C",
+  "value": "1uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "IEPE_SUP"
+  },
+  "mpn": "CL10A105KB8NNNC",
+  "lcsc": "C15849",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C3": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "IEPE_SUP"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R5": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "SET_MID",
+   "1": "SET_MID2"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R2": {
+  "sym": "Device:R",
+  "value": "150R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "IEPE",
+   "2": "OUT_I"
+  },
+  "mpn": "RTT031500FTP",
+  "lcsc": "C103302",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R1": {
+  "sym": "Device:R",
+  "value": "10R",
+  "fp": "Resistor_SMD:R_0402_1005Metric",
+  "pins": {
+   "2": "IEPE_SUP",
+   "1": "IEPE_FEED"
+  },
+  "mpn": "CRCW040210R0FKED",
+  "lcsc": "",
+  "desc": "",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "J1": {
+  "sym": "Connector_Generic:Conn_01x02",
+  "value": "EN_IEPE_CH1",
+  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "pins": {
+   "2": "IEPE_FEED",
+   "1": "24V_PROT"
+  },
+  "mpn": "JL126-50002G01",
+  "lcsc": "C394556",
+  "desc": "Puente/interruptor de habilitacion IEPE CH1 (24V_PROT -> IEPE_FEED)",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "J2": {
+  "sym": "Sonometro:BNC",
+  "value": "BNC_MIC_CH1",
+  "fp": "Sonometro:BNC_Kinghelm_KH-BNC75-3511_Horizontal",
+  "pins": {
+   "1": "IEPE",
+   "2": "GND",
+   "3": "GND",
+   "4": "GND"
+  },
+  "mpn": "KH-BNC75-3511",
+  "lcsc": "C2837588",
+  "desc": "Microfono CH1 (ROGA RG-50, IEPE): 1 = senal+polarizacion, 2 = GND",
+  "src": "Altium Sheet_1.SchDoc",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "J5": {
+  "sym": "Connector_Generic:Conn_01x02",
+  "value": "24V_IN",
+  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "pins": {
+   "1": "24V_IN",
+   "2": "GND"
+  },
+  "mpn": "JL126-50002G01",
+  "lcsc": "C394556",
+  "desc": "Entrada 18-30 V (doc J501). SIN proteccion de polaridad/TVS",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "U6": {
+  "sym": "Sonometro:LMR36015FBRNXR",
+  "value": "LMR36015FBRNXR",
+  "fp": "Sonometro:Texas_RNX0012A_VQFN-HR-12_2x3mm_P0.5mm",
+  "pins": {
+   "1": "GND",
+   "2": "24V_PROT",
+   "3": "SW_3",
+   "4": "BOOT_3",
+   "5": "VCC_3",
+   "6": "GND",
+   "7": "FB_3",
+   "8": null,
+   "9": "24V_PROT",
+   "10": "24V_PROT",
+   "11": "GND",
+   "12": "SW_3"
+  },
+  "mpn": "LMR36015FBRNXR",
+  "lcsc": "C1850339",
+  "desc": "Buck 1 MHz FPWM -> 3V3",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "L1": {
+  "sym": "Device:L",
+  "value": "6.8uH",
+  "fp": "Inductor_SMD:L_Coilcraft_XAL4030-XXX",
+  "pins": {
+   "1": "SW_3",
+   "2": "3V3"
+  },
+  "mpn": "XAL4030-682MEC",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C27": {
+  "sym": "Device:C",
+  "value": "4.7uF",
+  "fp": "Capacitor_SMD:C_2220_5750Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C5750X7R2A475K230KA",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C28": {
+  "sym": "Device:C",
+  "value": "4.7uF",
+  "fp": "Capacitor_SMD:C_2220_5750Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C5750X7R2A475K230KA",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C29": {
+  "sym": "Device:C",
+  "value": "220nF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C0805C224K1RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C30": {
+  "sym": "Device:C",
+  "value": "220nF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C0805C224K1RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C31": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C32": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C33": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C34": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C35": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "BOOT_3",
+   "2": "SW_3"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C36": {
+  "sym": "Device:C",
+  "value": "2.2uF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "VCC_3",
+   "2": "GND"
+  },
+  "mpn": "C0805C225K5RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R29": {
+  "sym": "Device:R",
+  "value": "100k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "FB_3"
+  },
+  "mpn": "RC0603FR-07100KL",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R30": {
+  "sym": "Device:R",
+  "value": "43.2k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "FB_3",
+   "2": "GND"
+  },
+  "mpn": "RC0603FR-0743K2L",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U7": {
+  "sym": "Sonometro:LMR36015FBRNXR",
+  "value": "LMR36015FBRNXR",
+  "fp": "Sonometro:Texas_RNX0012A_VQFN-HR-12_2x3mm_P0.5mm",
+  "pins": {
+   "1": "GND",
+   "2": "24V_PROT",
+   "3": "SW_5",
+   "4": "BOOT_5",
+   "5": "VCC_5",
+   "6": "GND",
+   "7": "FB_5",
+   "8": null,
+   "9": "24V_PROT",
+   "10": "24V_PROT",
+   "11": "GND",
+   "12": "SW_5"
+  },
+  "mpn": "LMR36015FBRNXR",
+  "lcsc": "C1850339",
+  "desc": "Buck 1 MHz FPWM -> 5V",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "L2": {
+  "sym": "Device:L",
+  "value": "10uH",
+  "fp": "Inductor_SMD:L_Coilcraft_XAL4040-XXX",
+  "pins": {
+   "1": "SW_5",
+   "2": "5V"
+  },
+  "mpn": "XAL4040-103MEC",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C37": {
+  "sym": "Device:C",
+  "value": "4.7uF",
+  "fp": "Capacitor_SMD:C_2220_5750Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C5750X7R2A475K230KA",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C38": {
+  "sym": "Device:C",
+  "value": "4.7uF",
+  "fp": "Capacitor_SMD:C_2220_5750Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C5750X7R2A475K230KA",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C39": {
+  "sym": "Device:C",
+  "value": "220nF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C0805C224K1RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C40": {
+  "sym": "Device:C",
+  "value": "220nF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "C0805C224K1RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "100V",
+  "mount": "JLC"
+ },
+ "C41": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "5V",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C42": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "5V",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C43": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "5V",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C44": {
+  "sym": "Device:C",
+  "value": "15uF",
+  "fp": "Capacitor_SMD:C_1210_3225Metric",
+  "pins": {
+   "1": "5V",
+   "2": "GND"
+  },
+  "mpn": "C3225X7R1C156M250AB",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "16V",
+  "mount": "JLC"
+ },
+ "C45": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "BOOT_5",
+   "2": "SW_5"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C46": {
+  "sym": "Device:C",
+  "value": "2.2uF",
+  "fp": "Capacitor_SMD:C_0805_2012Metric",
+  "pins": {
+   "1": "VCC_5",
+   "2": "GND"
+  },
+  "mpn": "C0805C225K5RACTU",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R31": {
+  "sym": "Device:R",
+  "value": "100k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "5V",
+   "2": "FB_5"
+  },
+  "mpn": "RC0603FR-07100KL",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R32": {
+  "sym": "Device:R",
+  "value": "24.9k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "FB_5",
+   "2": "GND"
+  },
+  "mpn": "RC0603FR-0724K9L",
+  "lcsc": "",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R33": {
+  "sym": "Device:R",
+  "value": "10R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "5V",
+   "2": "5V_A"
+  },
+  "mpn": "CRCW0603010RJNEAHP",
+  "lcsc": "",
+  "desc": "Filtro RC del riel analogico (doc R501)",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C47": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "5V_A",
+   "2": "GND"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "Filtro RC del riel analogico (doc C501), mismo 10uF que usa Altium",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "J7": {
+  "sym": "Connector_Generic:Conn_01x02",
+  "value": "EN_IEPE_CH2",
+  "fp": "TerminalBlock:TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "IEPE_FEED_SV"
+  },
+  "mpn": "JL126-50002G01",
+  "lcsc": "C394556",
+  "desc": "Habilitacion IEPE CH2 (doc J112), mismo conector que J1",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "J8": {
+  "sym": "Sonometro:BNC",
+  "value": "BNC_MIC_CH2",
+  "fp": "Sonometro:BNC_Kinghelm_KH-BNC75-3511_Horizontal",
+  "pins": {
+   "1": "IEPE_SV",
+   "2": "GND",
+   "3": "GND",
+   "4": "GND"
+  },
+  "mpn": "KH-BNC75-3511",
+  "lcsc": "C2837588",
+  "desc": "Microfono CH2 (Svantek SV 12L): 1 = senal+polarizacion, 2 = GND",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "R36": {
+  "sym": "Device:R",
+  "value": "10R",
+  "fp": "Resistor_SMD:R_0402_1005Metric",
+  "pins": {
+   "1": "IEPE_FEED_SV",
+   "2": "IEPE_SUP_SV"
+  },
+  "mpn": "CRCW040210R0FKED",
+  "lcsc": "",
+  "desc": "Espejo de R1",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C49": {
+  "sym": "Device:C",
+  "value": "1uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "IEPE_SUP_SV",
+   "2": "GND"
+  },
+  "mpn": "CL10A105KB8NNNC",
+  "lcsc": "C15849",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C50": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "IEPE_SUP_SV",
+   "2": "GND"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U8": {
+  "sym": "Reference_Current:LT3092xTS8",
+  "value": "LT3092ETS8#TRPBF",
+  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "pins": {
+   "1": null,
+   "2": "OUT_SV",
+   "3": "OUT_SV",
+   "4": "OUT_SV",
+   "5": "SET_SV",
+   "6": null,
+   "7": "IEPE_SUP_SV",
+   "8": "IEPE_SUP_SV"
+  },
+  "mpn": "LT3092ETS8#TRPBF",
+  "lcsc": "",
+  "desc": "Espejo de U1 (canal 2)",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R34": {
+  "sym": "Device:R",
+  "value": "15k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "SET_SV",
+   "2": "IEPE_SV"
+  },
+  "mpn": "RC0603FR-0715KL",
+  "lcsc": "",
+  "desc": "RSET CH2: I = 10uA*15k/100R = 1.5 mA",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C48": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "SET_SV",
+   "2": "IEPE_SV"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R35": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "OUT_SV",
+   "2": "IEPE_SV"
+  },
+  "mpn": "RC0603FR-07100RL",
+  "lcsc": "",
+  "desc": "ROUT CH2 1 %",
+  "src": "connection_matrix.md",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U9": {
+  "sym": "Amplifier_Operational:TLV9062",
+  "value": "TLV9062IDDFR",
+  "fp": "Package_TO_SOT_SMD:TSOT-23-8",
+  "pins": {
+   "4": "GND",
+   "8": "5V_A",
+   "1": "REST_SV",
+   "2": "SUM_SV",
+   "3": "VSHIFT_SV",
+   "6": "VSHIFT_SV",
+   "7": "VSHIFT_SV",
+   "5": "DAC_F_SV"
+  },
+  "mpn": "TLV9062IDDFR",
+  "lcsc": "",
+  "desc": "Espejo de U3 (canal 2)",
+  "src": "mirror of Altium U3",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "U10": {
+  "sym": "Analog_DAC:MCP4725xxx-xCH",
+  "value": "MCP4725A0T-E/CH",
+  "fp": "Package_TO_SOT_SMD:SOT-23-6",
+  "pins": {
+   "2": "GND",
+   "6": "3V3_DAC_SV",
+   "5": "I2C_SCL",
+   "4": "I2C_SDA",
+   "3": "3V3_DAC_SV",
+   "1": "DAC_RAW_SV"
+  },
+  "mpn": "MCP4725A0T-E/CH",
+  "lcsc": "",
+  "desc": "Espejo de U2 (canal 2); A0=1 -> I2C 0x61",
+  "src": "mirror of Altium U2",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R37": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "DAC_F_SV",
+   "1": "DAC_RAW_SV"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "Espejo de R12 (canal 2)",
+  "src": "mirror of Altium R12",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R38": {
+  "sym": "Device:R",
+  "value": "390k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "IEPE_DIV1_SV",
+   "2": "IEPE_SV"
+  },
+  "mpn": "RC0603FR-07390KL",
+  "lcsc": "C137735",
+  "desc": "Espejo de R13 (canal 2)",
+  "src": "mirror of Altium R13",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R39": {
+  "sym": "Device:R",
+  "value": "365k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "IEPE_DIV1_SV",
+   "1": "IEPE_DIV2_SV"
+  },
+  "mpn": "RC0603FR-07365KL",
+  "lcsc": "C185336",
+  "desc": "Espejo de R14 (canal 2)",
+  "src": "mirror of Altium R14",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R40": {
+  "sym": "Device:R",
+  "value": "191k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "IEPE_DIV2_SV",
+   "1": "IEPE_DIV3_SV"
+  },
+  "mpn": "AC0603FR-07191KL",
+  "lcsc": "C227635",
+  "desc": "Espejo de R16 (canal 2)",
+  "src": "mirror of Altium R16",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R41": {
+  "sym": "Device:R",
+  "value": "54k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "SUM_SV",
+   "2": "IEPE_DIV3_SV"
+  },
+  "mpn": "RC0603FR-0754K9L",
+  "lcsc": "C185321",
+  "desc": "Espejo de R18 (canal 2)",
+  "src": "mirror of Altium R18",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R42": {
+  "sym": "Device:R",
+  "value": "49k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "SUM_SV",
+   "2": "FB_MID_SV"
+  },
+  "mpn": "RC0603FR-0749K9L",
+  "lcsc": "C114624",
+  "desc": "Espejo de R7 (canal 2)",
+  "src": "mirror of Altium R7",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R43": {
+  "sym": "Device:R",
+  "value": "49k9",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "REST_SV",
+   "2": "FB_MID_SV"
+  },
+  "mpn": "RC0603FR-0749K9L",
+  "lcsc": "C114624",
+  "desc": "Espejo de R8 (canal 2)",
+  "src": "mirror of Altium R8",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R44": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "REST_SV",
+   "1": "DC_MON2"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "Espejo de R15 (canal 2)",
+  "src": "mirror of Altium R15",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R45": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "GND",
+   "2": "DC_MON2"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "Espejo de R17 (canal 2)",
+  "src": "mirror of Altium R17",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R46": {
+  "sym": "Device:R",
+  "value": "100R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "2": "3V3",
+   "1": "3V3_DAC_SV"
+  },
+  "mpn": "FRC0603J101 TS",
+  "lcsc": "C2907089",
+  "desc": "Espejo de R9 (canal 2)",
+  "src": "mirror of Altium R9",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C51": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "DAC_F_SV"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "Espejo de C4 (canal 2)",
+  "src": "mirror of Altium C4",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C52": {
+  "sym": "Device:C",
+  "value": "10uF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3_DAC_SV"
+  },
+  "mpn": "TCC0603X5R106K100CT",
+  "lcsc": "C380314",
+  "desc": "Espejo de C5 (canal 2)",
+  "src": "mirror of Altium C5",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C53": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "3V3_DAC_SV"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "Espejo de C6 (canal 2)",
+  "src": "mirror of Altium C6",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C54": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "1": "GND",
+   "2": "5V_A"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "Espejo de C7 (canal 2)",
+  "src": "mirror of Altium C7",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "C55": {
+  "sym": "Device:C",
+  "value": "100nF",
+  "fp": "Capacitor_SMD:C_0603_1608Metric",
+  "pins": {
+   "2": "GND",
+   "1": "DC_MON2"
+  },
+  "mpn": "CC0603KRX7R9BB104",
+  "lcsc": "C14663",
+  "desc": "Espejo de C8 (canal 2)",
+  "src": "mirror of Altium C8",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "A1": {
+  "sym": "Sonometro:NUCLEO-L432KC",
+  "value": "NUCLEO-L432KC",
+  "fp": "Sonometro:NUCLEO-32_Socket_2x15_P2.54mm_Row15.24mm",
+  "pins": {
+   "1": "SAI_FS",
+   "2": "SAI_SD",
+   "3": null,
+   "4": "GND",
+   "5": null,
+   "6": null,
+   "7": "I2C_SDA",
+   "8": "I2C_SCL",
+   "9": null,
+   "10": null,
+   "11": null,
+   "12": "SAI_SCK",
+   "13": null,
+   "14": null,
+   "15": null,
+   "16": null,
+   "17": "GND",
+   "18": null,
+   "19": null,
+   "20": null,
+   "21": null,
+   "22": null,
+   "23": null,
+   "24": null,
+   "25": null,
+   "26": "DC_MON2",
+   "27": "DC_MON",
+   "28": null,
+   "29": null,
+   "30": null
+  },
+  "mpn": "KH-2.54FH-1X15P-H8.5 (x2) + NUCLEO-L432KC",
+  "lcsc": "C2932676 (x2)",
+  "desc": "Zocalo 2x 1x15 hembra 2.54 mm a 15.24 mm. Solo GND y senales; NO conectar +3V3, +5V ni VIN. CN4-7/CN4-8 (A5/A4) quedan libres: SB16/SB18 los unen a PB6/PB7 en la NUCLEO.",
+  "src": "cambio C2 (UM1956 tabla 16)",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "D1": {
+  "sym": "Device:D",
+  "value": "SS34",
+  "fp": "Diode_SMD:D_SMA",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "24V_IN"
+  },
+  "mpn": "SS34",
+  "lcsc": "C8678",
+  "desc": "Schottky 40 V 3 A en serie: bloquea la polaridad invertida (cae ~0.4 V)",
+  "src": "cambio C4",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "D2": {
+  "sym": "Device:D_Zener",
+  "value": "SMBJ26A",
+  "fp": "Diode_SMD:D_SMB",
+  "pins": {
+   "1": "24V_PROT",
+   "2": "GND"
+  },
+  "mpn": "SMBJ26A",
+  "lcsc": "C123820",
+  "desc": "TVS unidireccional 26 V (ruptura >=28.9 V): absorbe picos en 24V_PROT",
+  "src": "cambio C4",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R47": {
+  "sym": "Device:R",
+  "value": "180R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "OUT_I",
+   "2": "STEP1"
+  },
+  "mpn": "0603WAF1800T5E",
+  "lcsc": "C22828",
+  "desc": "Con JP1 puesto queda en paralelo con R2||R3: I = 10uA(1+21k/52.9R) = 3.98 mA",
+  "src": "cambio C9",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "JP1": {
+  "sym": "Jumper:Jumper_2_Open",
+  "value": "STEP_CH1",
+  "fp": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+  "pins": {
+   "1": "STEP1",
+   "2": "IEPE"
+  },
+  "mpn": "Header 1x2 2.54 + jumper",
+  "lcsc": "",
+  "desc": "Escalon de corriente CH1",
+  "src": "cambio C9",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "R48": {
+  "sym": "Device:R",
+  "value": "150R",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "OUT_SV",
+   "2": "STEP2"
+  },
+  "mpn": "0603WAF1500T5E",
+  "lcsc": "C22808",
+  "desc": "Con JP2 puesto queda en paralelo con R35: I = 10uA(1+15k/60R) = 2.51 mA",
+  "src": "cambio C9",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "JP2": {
+  "sym": "Jumper:Jumper_2_Open",
+  "value": "STEP_CH2",
+  "fp": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+  "pins": {
+   "1": "STEP2",
+   "2": "IEPE_SV"
+  },
+  "mpn": "Header 1x2 2.54 + jumper",
+  "lcsc": "",
+  "desc": "Escalon de corriente CH2",
+  "src": "cambio C9",
+  "volt": "",
+  "mount": "Manual"
+ },
+ "TP1": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_IEPE",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "IEPE"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP2": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_REST_OUT",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "REST_OUT"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP3": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_IEPE_SV",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "IEPE_SV"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP4": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_REST_SV",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "REST_SV"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP5": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_GND",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "GND"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP6": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_GND",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "GND"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "TP7": {
+  "sym": "Connector:TestPoint",
+  "value": "TP_GND",
+  "fp": "TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm",
+  "pins": {
+   "1": "GND"
+  },
+  "mpn": "",
+  "lcsc": "",
+  "desc": "Punto de prueba (pad con agujero, sin componente)",
+  "src": "cambio C10",
+  "volt": "",
+  "mount": "Ninguno"
+ },
+ "R49": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "3V3",
+   "2": "MD0"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "MD0 = 1; el datasheet pide 10 kohm a VDD/GND",
+  "src": "cambio C11",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R50": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "MD1",
+   "2": "GND"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "MD1 = 0; el datasheet pide 10 kohm a VDD/GND",
+  "src": "cambio C11",
+  "volt": "",
+  "mount": "JLC"
+ },
+ "R51": {
+  "sym": "Device:R",
+  "value": "10k",
+  "fp": "Resistor_SMD:R_0603_1608Metric",
+  "pins": {
+   "1": "FMT",
+   "2": "GND"
+  },
+  "mpn": "FRC0603J103TS",
+  "lcsc": "C2930027",
+  "desc": "FMT = 0 (I2S); el datasheet pide 10 kohm a VDD/GND",
+  "src": "cambio C11",
+  "volt": "",
+  "mount": "JLC"
+ }
+}

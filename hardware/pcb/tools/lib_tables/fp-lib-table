@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Sonometro") (type "KiCad") (uri "${KIPRJMOD}/lib/Sonometro.pretty") (options "") (descr "Footprints propios del sonometro (RNX0012A, KC2016)"))
+)

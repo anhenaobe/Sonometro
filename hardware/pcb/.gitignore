@@ -1,0 +1,16 @@
+# Generados por los scripts de tools/ (se pueden regenerar)
+tools/out/
+tools/ruteo_prueba/
+tools/__pycache__/
+tools/**/__pycache__/
+# KiCad: estado local y bloqueos
+*.lck
+~*
+*-backups/
+pcb.kicad_prl
+fp-info-cache
+# Tectonic/LaTeX intermedios
+tools/guia/*.aux
+tools/guia/*.log
+tools/guia/*.xdv
+.history/
