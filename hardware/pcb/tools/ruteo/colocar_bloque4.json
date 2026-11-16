@@ -1,0 +1,32 @@
+{
+ "C11": [
+  162.158125,
+  136.942437,
+  180.0,
+  "aprobado tras el bloque 4: acercar los 100 nF del PCM1808"
+ ],
+ "C12": [
+  162.353125,
+  135.182437,
+  180.0,
+  "aprobado tras el bloque 4: acercar los 100 nF del PCM1808"
+ ],
+ "C15": [
+  160.0745,
+  129.1125,
+  90.0,
+  "aprobado tras el bloque 4: acercar los 100 nF del PCM1808"
+ ],
+ "C16": [
+  159.3,
+  131.8625,
+  180.0,
+  "aprobado tras el bloque 4: acercar los 100 nF del PCM1808"
+ ],
+ "C17": [
+  161.45,
+  133.6,
+  180,
+  "aprobado tras el bloque 4: acercar los 100 nF del PCM1808"
+ ]
+}

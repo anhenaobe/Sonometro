@@ -54,6 +54,11 @@ ACEPTADOS = {                                    # (chequeo, pieza): motivo; ace
     ('L', 'C3'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
     ('L', 'C49'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
     ('L', 'C50'): 'aceptado tras el bloque 3 (entrada del LT3092, ubicación del equipo)',
+    ('L', 'C11'): 'aceptado tras el bloque 4 (10 µF de VDD; el 100 nF C12 quedó más cerca)',
+    ('L', 'C12'): 'aceptado tras el bloque 4 (100 nF de VDD acercado; bajo el pin 4 no hay lugar)',
+    ('L', 'C15'): 'aceptado tras el bloque 4 (10 µF de VREF; el 100 nF C16 quedó más cerca)',
+    ('L', 'C16'): 'aceptado tras el bloque 4 (100 nF de VREF acercado)',
+    ('L', 'C18'): 'aceptado tras el bloque 4 (10 µF de VCC; el 100 nF C17 quedó junto al pin)',
 }
 DESACOPLO = {                                    # condensador: (integrado, pin) que desacopla; se completa por bloque
     'C29': ('U6', '2'), 'C30': ('U6', '10'), 'C36': ('U6', '5'),

@@ -3,9 +3,11 @@
 Coordenadas KiCad (mm). Placa de 4 capas (decisión del dueño): F.Cu señales, In1.Cu GND entero, In2.Cu alimentación
 y señales lentas, B.Cu señales y GND. Topología de las redes críticas tomada del oráculo (etapa 1, sin vías).
 - AGND (pin 2) y DGND (pin 5) unidos debajo del integrado, con una vía GND al plano (SLES177B; REGLAS.md §3).
-- Desacoplos con su vía GND junto al pad. 3V3 y 5V_A llegan desde In2.Cu por vías en el bloque 8, en lugares ya
-  reservados: 5V_A en (158.3, 133.838) junto a C17.1 y (158.3, 137.325) junto a C18.1; 3V3 en el quiebre (164.0, 133.4),
-  (167.1, 129.606) junto a R49.1 y (167.2, 131.369) junto a C20.1.
+- Desacoplos con su vía GND junto al pad (>= 0.35 mm, vías taponadas). Aprobado tras el bloque 4: C17 (100 nF de VCC)
+  junto al pin 3; C11<->C12 y C15<->C16 intercambiados para que los 100 nF queden más cerca (colocar_bloque4.json).
+- 3V3 y 5V_A llegan desde In2.Cu por vías en el bloque 8, en lugares reservados: 5V_A en el quiebre (163.35, 133.3) y en
+  (158.3, 137.325) junto a C18.1; 3V3 en (167.1, 129.606) junto a R49.1 y (167.2, 131.369) junto a C20.1, y uno más
+  para el grupo de U4.4/C11/C12/Y1 a elegir en el bloque 8.
 - MD1 y FMT (straps estáticos, clase Default) pasan por In2.Cu: en F.Cu quedan encerrados por VINL y VINR.
 - R19 subido 0.1 mm (ajuste autorizado) para que DOUT pase a >= 0.5 mm de AC_LEFT/VINL (regla reloj-analógica).
 - Y1-OUT entra a R21.1 por la derecha pasando entre los pads de R21 (0.85 mm libres): el pad GND de Y1 cierra el
@@ -21,9 +23,9 @@ P = [
     ('GND', 0.3, F, [(162.7, 131.863), (162.7, 130.6), (163.0, 130.3), (163.675, 130.3)]),
     ('GND', 0.3, F, [(163.675, 130.3), (164.35, 130.3), (164.65, 130.6), (164.65, 131.863)]),
     # 5V_A: U4.3 -> C17.1 (+ vía a In2); C18.1 con su vía
-    ('5V_A', 0.3, F, [(163.35, 131.863), (163.35, 132.95), (162.462, 133.838), (159.35, 133.838)]),
+    ('5V_A', 0.3, F, [(163.35, 131.863), (163.35, 133.3), (163.05, 133.6), (162.225, 133.6)]),   # -> C17.1 (movido)
     # 3V3: U4.4 -> (vía a In2) -> C11.1 -> Y1.4 -> Y1.1 -> C12.1 ; Y1.1 -> C13.1
-    ('3V3', 0.3, F, [(164.0, 131.863), (164.0, 133.4), (163.128, 134.272), (163.128, 135.182)]),
+    ('3V3', 0.3, F, [(164.0, 131.863), (164.0, 133.6), (163.128, 134.472), (163.128, 135.182)]),
     ('3V3', 0.3, F, [(163.128, 135.182), (164.7, 135.182)]),
     ('3V3', 0.3, F, [(164.7, 135.182), (164.7, 136.942)]),
     ('3V3', 0.3, F, [(164.7, 136.942), (162.933, 136.942)]),
@@ -64,7 +66,7 @@ P = [
     # vías GND de desacoplos y straps
     ('GND', 0.4, F, [(158.525, 131.863), (157.425, 131.863)]),           # C15.2
     ('GND', 0.4, F, [(160.075, 128.338), (160.075, 127.228)]),          # C16.2
-    ('GND', 0.4, F, [(159.35, 135.387), (158.225, 135.387)]),            # C17.2
+    ('GND', 0.4, F, [(160.675, 133.6), (159.55, 133.6)]),              # C17.2 (movido)
     ('GND', 0.4, F, [(159.35, 138.875), (159.35, 139.975)]),             # C18.2
     ('GND', 0.4, F, [(161.578, 135.182), (160.478, 135.182)]),           # C11.2
     ('GND', 0.4, F, [(161.383, 136.942), (161.383, 138.077)]),          # C12.2
@@ -81,7 +83,7 @@ VIAS = [
     ('GND', (163.675, 130.3)) + V,
     ('Net-(U4-MD1)', (164.0, 128.5)) + V, ('Net-(U4-MD1)', (159.875, 123.713)) + V,
     ('Net-(U4-FMT)', (163.35, 127.6)) + V, ('Net-(U4-FMT)', (163.0, 121.2)) + V,
-] + [('GND', p) + V for p in ((157.425, 131.863), (160.075, 127.228), (158.225, 135.387), (159.35, 139.975),
+] + [('GND', p) + V for p in ((157.425, 131.863), (160.075, 127.228), (159.55, 133.6), (159.35, 139.975),
                               (160.478, 135.182), (161.383, 138.077), (164.829, 141.175), (169.24, 132.919),
                               (162.7, 122.45), (161.0, 121.012), (164.35, 119.512), (166.9, 138.202))]
 ZONAS = []
