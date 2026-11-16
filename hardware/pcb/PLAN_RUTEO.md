@@ -604,3 +604,20 @@ Pistas de 0.4 mm en In2.Cu, para corrientes de 5–20 mA (se justifica en CALCUL
 **Verificación**
 - DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos.
 - Queda 1 conexión sin rutear: C19.2 (GND), que une el relleno de F.Cu del bloque 9.
+
+## 16. Bloque 9 — relleno GND de F.Cu y cosido (`b9_gnd.py`, `tools/ruteo/cosido.py`)
+- **Relleno GND en F.Cu sobre toda la placa:**
+  - Prioridad 0: cede ante las zonas de 5V, 3V3, 24 V y SW del bloque 1.
+  - Conexión sólida a los pads SMD, incluidos CIN, COUT y PGND de los bucks (punto 8 de la revisión del bloque 1).
+  - Alivio térmico solo en los THT (TP de GND, pines GND de los BNC, A1.4/A1.17).
+  - Islas eliminadas; ancho mínimo 0.25 mm.
+  - El relleno une C19.2, que no tenía lugar legal para su vía.
+- **277 vías de cosido GND**, generadas por `cosido.py`:
+  - anillo perimetral cada 5 mm;
+  - grilla de 2.5 mm en el AFE y el ADC, de 5 mm en el resto.
+  - Cada candidato se descarta si no cumple en las cuatro capas:
+    - ≥ 0.35 mm de todo pad y ≥ 0.9 mm de los fiduciales;
+    - separación de clase a pistas y vías de otras redes;
+    - fuera de las zonas de otras redes;
+    - ≥ 0.8 mm del borde.
+- **Verificación:** DRC 0, paridad 0, ERC 0, `revisar_pistas` 0 hallazgos, **0 conexiones sin rutear**.
