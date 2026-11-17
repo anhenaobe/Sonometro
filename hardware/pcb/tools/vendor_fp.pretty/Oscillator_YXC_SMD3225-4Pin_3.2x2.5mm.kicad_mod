@@ -1,0 +1,222 @@
+(footprint "Oscillator_YXC_SMD3225-4Pin_3.2x2.5mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "LCSC C27869 YXC O322524576MEEA4SC 24.576MHz. Footprint EasyEDA/JLC via easyeda2kicad 1.0.1")
+	(property "Reference" "REF**"
+		(at 0 -4.875 0)
+		(layer "F.SilkS")
+		(uuid "581a1225-82dc-44df-8125-b41f8da724d7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "OSC-SMD_4P-L3.2-W2.5-BL"
+		(at 0 4.875 0)
+		(layer "F.Fab")
+		(uuid "7f731653-4add-4a72-a1d4-1a150afbbac9")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "7729933b-e011-4942-9325-963c4ac56dce")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ffd6f6f6-ecd0-4af4-9b9b-c908b551f381")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "LCSC Part" "C27869"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "1f693a20-1746-4d12-ade5-58b7f01fa151")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -2.29 1.4)
+		(end -2.29 1.9)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "2511ac8f-1376-4844-bb0c-45622efe1daa")
+	)
+	(fp_line
+		(start -2.29 1.9)
+		(end -1.78 1.9)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "197de0a5-9d3b-4dd1-84a8-bad93ae1a8f7")
+	)
+	(fp_line
+		(start -2.03 -1.72)
+		(end -2.03 1.68)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "8276c136-6cfc-489c-93ea-831d4817ce6d")
+	)
+	(fp_line
+		(start -2.03 1.68)
+		(end 2.07 1.68)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "9f37bc00-d3cc-4fba-8a39-3cbd469ce9a0")
+	)
+	(fp_line
+		(start 2.07 -1.72)
+		(end -2.03 -1.72)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "0c413f64-d8e0-43d8-8427-14dcf755039e")
+	)
+	(fp_line
+		(start 2.07 1.68)
+		(end 2.07 -1.72)
+		(stroke
+			(width 0.15)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "36e550f3-0914-426a-b156-d3f8fe92db70")
+	)
+	(fp_circle
+		(center -1.6 1.25)
+		(end -1.57 1.25)
+		(stroke
+			(width 0.06)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "6e4dfc0a-302c-44cb-afd0-0f422476530a")
+	)
+	(fp_circle
+		(center -1.09 1.57)
+		(end -0.96 1.57)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(fill no)
+		(layer "Cmts.User")
+		(uuid "22cba017-992a-46f2-bebe-a0f99a71d974")
+	)
+	(fp_line
+		(start -1.6 -1.25)
+		(end 1.6 -1.25)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "805b0d5a-ed2e-4ecf-aefe-cdc783329653")
+	)
+	(fp_line
+		(start -1.6 1.25)
+		(end -1.6 -1.25)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "bc8fa19e-20b0-47b7-a2af-00a49d520a91")
+	)
+	(fp_line
+		(start 1.6 -1.25)
+		(end 1.6 1.25)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "429e1767-e79c-44b6-8573-d97bbc397e26")
+	)
+	(fp_line
+		(start 1.6 1.25)
+		(end -1.6 1.25)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "913e42fa-05dd-44f0-9125-41b7ae2ae440")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "aa9b26a3-af67-438c-a789-236bf6cf4b54")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -1.1 0.88)
+		(size 1.4 1.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "96f54c70-8bb5-48cf-9a03-6ccada30252a")
+	)
+	(pad "2" smd rect
+		(at 1.1 0.88)
+		(size 1.4 1.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "547a52ae-1e69-4bfd-bc8a-89c7776fd67c")
+	)
+	(pad "3" smd rect
+		(at 1.1 -0.88)
+		(size 1.4 1.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "5a3781d3-b359-43b7-a7d3-935b8535e69c")
+	)
+	(pad "4" smd rect
+		(at -1.1 -0.88)
+		(size 1.4 1.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "82bc6079-e178-43c6-976a-c8a11257b96d")
+	)
+	(embedded_fonts no)
+)

@@ -1,0 +1,43 @@
+* modelos.lib - Modelos compartidos por todas las simulaciones (ngspice)
+* -----------------------------------------------------------------------------
+
+* Transistor PNP 2N3906 (modelo SPICE estandar de la biblioteca de LTspice/Motorola)
+.model 2N3906 PNP(IS=1.41f XTI=3 EG=1.11 VAF=18.7 BF=180.7 NE=1.5 ISE=0 IKF=80m
++ XTB=1.5 BR=4.977 NC=2 ISC=0 IKR=0 RC=2.5 CJC=9.728p MJC=.5776 VJC=.75 FC=.5
++ CJE=8.063p MJE=.3677 VJE=.75 TR=33.42n TF=179.3p ITF=.4 VTF=4 XTF=6 RB=10)
+
+* TL431 simplificado (comportamental). Absorbe corriente de K a A cuando
+* V(REF,A) supera 2,495 V (transconductancia ~1 A/V, sin desbordes numericos).
+* Suficiente para analisis DC/AC/transitorio de baja frecuencia; NO modela
+* la dinamica interna ni la estabilidad del TL431 real.
+.subckt TL431B K A REF
+B1 K A I = 0.5*((V(REF,A)-2.495) + sqrt((V(REF,A)-2.495)*(V(REF,A)-2.495) + 1e-8))
+.ends TL431B
+
+* Fuente de corriente constante IEPE: TL431 (REF unido a K) + PNP.
+*   I0 ~ (2,495 V - V_EB) / RE   ->  RE=750 ohm: ~2,5 mA ; RE=470 ohm: ~3,9 mA
+* Nodos: vcc = alimentacion (+24 V), out = colector (nodo IEPE / centro del BNC)
+.subckt FUENTE_I vcc out params: RE=470 RZ=10k
+XU vcc b vcc TL431B
+RZ b 0 {RZ}
+RE vcc e {RE}
+Q1 out b e 2N3906
+.ends FUENTE_I
+
+* Microfono IEPE (modelo de salida): tension DC de polarizacion VBIAS en serie
+* con la resistencia de salida ROUT, mas la senal acustica (nodo sig, que lleva
+* S*p(t) en voltios). Nodo n = conector BNC.
+.subckt MIC n sig params: VBIAS=12.5 ROUT=50
+Rout n a {ROUT}
+Vb a sig {VBIAS}
+.ends MIC
+
+* Amplificador operacional de un polo: ganancia DC 100 dB, GBW = 1 MHz
+* (orden de magnitud del MCP6002 / LM358). Sin limites de alimentacion.
+.subckt OPAMP inp inn out
+Rin inp inn 10meg
+G1 0 n1 inp inn 1m
+R1 n1 0 100meg
+C1 n1 0 159p
+E1 out 0 n1 0 1
+.ends OPAMP

@@ -1,0 +1,87 @@
+[
+ {
+  "id": "C1",
+  "title": "STM32 soldado → NUCLEO-L432KC enchufada",
+  "detail": "Se eliminan U5, C21-C26, R25-R28, J3 (SWD) y J4 (UART). La NUCLEO trae su micro, su ST-LINK y su USB: por ese cable se programa y se envían los datos al PC."
+ },
+ {
+  "id": "C2",
+  "title": "Zócalo para la NUCLEO (A1)",
+  "detail": "D1/PA9 = SAI_FS (CN3-1), D0/PA10 = SAI_SD (CN3-2), D9/PA8 = SAI_SCK (CN3-12), D4/PB7 = I2C_SDA (CN3-7), D5/PB6 = I2C_SCL (CN3-8), A0/PA0 = DC_MON (CN4-12), A1/PA1 = DC_MON2 (CN4-11), GND = CN3-4 y CN4-2. Funciones verificadas en DS11451 (PA8/9/10 = SAI1_SCK/FS/SD_A AF13; PB6/PB7 = I2C1 AF4)."
+ },
+ {
+  "id": "C3",
+  "title": "Oscilador KC2016 25 MHz → YXC 24.576 MHz (C27869)",
+  "detail": "El KC2016 no existe en LCSC. 24.576 MHz = 512 × 48 kHz (PCM1808 maestro 512 fs, SLES177B tabla 2): muestreo estándar de 48 kHz. Mismas funciones de pin; cambia el footprint (3.2 × 2.5 mm)."
+ },
+ {
+  "id": "C4",
+  "title": "Protección de entrada: D1 SS34 + D2 SMBJ26A",
+  "detail": "J5 entra a la red 24V_IN; D1 (serie) bloquea la polaridad invertida y D2 recorta picos. Todo lo demás cuelga de 24V_PROT como antes."
+ },
+ {
+  "id": "C5",
+  "title": "Se elimina J6 (fuente externa del canal 2)",
+  "detail": "Siempre se usa la misma fuente de laboratorio de 24 V: J7 (habilitación CH2) toma 24V_PROT igual que J1. J1/J7 son puentes en serie: ahí se puede poner el amperímetro."
+ },
+ {
+  "id": "C6",
+  "title": "Filtros del lazo de DC: C4/C51 y C8/C55 de 10 µF a 100 nF",
+  "detail": "Filtro del DAC: 10 kΩ × 100 nF = 1 ms (antes 100 ms). Filtro de DC_MON: 5 kΩ × 100 nF = 0.5 ms (antes 50 ms). Así la corrección del DC tarda milisegundos."
+ },
+ {
+  "id": "C7",
+  "title": "Condensadores de 100 nF (×19) a X7R: Yageo CC0603KRX7R9BB104 (C14663, JLC basic)",
+  "detail": "Los 0603F104Z500CT del Altium son Y5V (pierden mucha capacidad con voltaje y temperatura)."
+ },
+ {
+  "id": "C8",
+  "title": "Micrófonos: borneras → BNC a 90° (Kinghelm KH-BNC75-3511, C2837588)",
+  "detail": "Centro = señal + polarización IEPE, carcasa = GND. El SV 12L (TNC) usa un adaptador BNC–TNC. Es un BNC de 75 Ω: a frecuencias de audio la impedancia no importa y acopla con BNC de 50 Ω."
+ },
+ {
+  "id": "C9",
+  "title": "Escalón de corriente para la demo: JP1 + R47 (CH1), JP2 + R48 (CH2)",
+  "detail": "CH1: 2.81 → 3.98 mA. CH2: 1.51 → 2.51 mA. Provoca el cambio de DC que el lazo debe corregir."
+ },
+ {
+  "id": "C10",
+  "title": "Puntos de prueba TP1–TP7",
+  "detail": "IEPE, REST_OUT, IEPE_SV, REST_SV y tres GND, para medir con el osciloscopio sin soldar cables."
+ },
+ {
+  "id": "C11",
+  "title": "MD0/MD1/FMT del PCM1808 por resistencias de 10 kΩ (R49–R51)",
+  "detail": "SLES177B sec. 8.2.2.1: \"should be controlled ... by biasing with a 10 kOhm resistor to VDD or GND\". MD1 = 0, MD0 = 1: maestro 512 fs; FMT = 0: I2S de 24 bits."
+ },
+ {
+  "id": "C12",
+  "title": "Alimentación de la NUCLEO",
+  "detail": "La NUCLEO se alimenta por su USB. Con la placa solo comparte GND y señales; su +3V3/+5V/VIN no se conectan (connection_matrix.md: no poner en paralelo con el buck de 3V3). Orden: USB primero, luego 24 V."
+ },
+ {
+  "id": "C13",
+  "title": "TSOT-23-8 con pads de 0.40 × 1.22 mm (U1, U3, U8, U9)",
+  "detail": "Land pattern de ADI (LTC DWG 05-08-1637): 0.25 mm entre pads en vez de 0.15 mm y puente de máscara de 0.25 mm. Compatible con el de TI para DDF (pads 0.45 × 1.05, filas a 2.6 mm): cubre todo el pie de la pata (ancho máx. 0.38 mm)."
+ },
+ {
+  "id": "C14",
+  "title": "Borneras con serigrafía recortada al borde (J1, J5, J7)",
+  "detail": "Mismo footprint MX126 de KiCad (mismos pads). El contorno de serigrafía queda a ≥ 0.5 mm del borde y la marca de pin 1 pasa al lado derecho del cuerpo; antes quedaba fuera de la placa."
+ },
+ {
+  "id": "C15",
+  "title": "Serigrafía a 0.15 mm de los pads (0402, puntos de prueba, Y1)",
+  "detail": "Copias locales de R/C_0402 y del punto de prueba con la serigrafía recortada o agrandada a 0.15 mm de los pads (mínimo de JLCPCB); en Y1 se quitó el punto de pin 1 que caía sobre el pad (queda la escuadra exterior). Los pads no cambian."
+ },
+ {
+  "id": "C16",
+  "title": "Condensador de realimentación CF = 10 pF C0G en los sumadores (C56, C57)",
+  "detail": "En paralelo con R7+R8 (CH1) y R42+R43 (CH2). Sin CF el margen de fase era de 3-8° (3.4° con el TLV9062 y 7.8° con el TLV9152, tools/analisis_opamp.py; riesgo de oscilación); con 10 pF queda ~70° y el ancho de banda de la señal en 166 kHz."
+ },
+ {
+  "id": "C17",
+  "title": "Piezas con stock en JLCPCB y pasivos a basic",
+  "detail": "U3/U9 TLV9152IDDFR (TLV9062IDDFR sin stock; mismo pinout DDF). CIN PSA C153031 y COUT TDK C694469 (mismo valor, tensión y tamaño; capacitancia efectiva verificada). C36/C46 YAGEO X7R 50 V. Resistencias y 10 nF/10 µF a basic (tolerancia igual o mejor, misma tensión y dieléctrico). Códigos LCSC agregados a las piezas que no tenían."
+ }
+]
