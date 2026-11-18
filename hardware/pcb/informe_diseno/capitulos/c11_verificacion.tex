@@ -1,0 +1,428 @@
+\chapter{Cómo se verificó la placa}\label{cap:verif}
+
+Una placa puede verse perfecta en pantalla y tener una pista a \SI{0.05}{\milli\meter} de otra, un pin sin conectar
+o una resistencia girada al revés en el archivo de montaje. Ninguno de esos errores se ve a simple vista y todos
+cuestan dinero y semanas cuando la placa llega. Por eso, en este proyecto cada paso del ruteo terminó con una ronda de
+verificaciones hechas por herramientas, no ``a ojo''.
+
+En este capítulo vas a ver:
+\begin{itemize}
+  \item qué revisa cada herramienta (DRC, paridad, ERC, \archivo{verify.py}) y por qué una sola no alcanza;
+  \item el chequeo propio \archivo{revisar_pistas.py}, con sus chequeos A a M uno por uno;
+  \item las herramientas de medición y de cruces entre capas;
+  \item cómo se revisaron los Gerber sin escribir un lector propio;
+  \item cómo se corrigió y comprobó el archivo de posiciones (CPL) para el montaje;
+  \item qué hay en la carpeta \archivo{fabricacion/} y qué archivo se sube a JLCPCB;
+  \item la tabla con el estado final verificado.
+\end{itemize}
+
+\begin{idea}[tres preguntas distintas]
+Para que una placa esté bien hay que responder tres preguntas diferentes, y cada herramienta responde una:
+\begin{enumerate}
+  \item \textbf{¿El circuito está bien dibujado?} Pines de salida unidos entre sí, entradas al aire, alimentaciones
+  sin fuente\ldots{} Eso lo revisa el \textbf{ERC} sobre el esquemático.
+  \item \textbf{¿La placa es el mismo circuito que el esquemático?} Una pista que une dos redes que no debían unirse
+  o una pieza que no está en el esquemático. Eso lo revisa la \textbf{paridad}.
+  \item \textbf{¿La placa se puede fabricar y cumple las reglas?} Separaciones, anchos, anillos, bordes. Eso lo revisa
+  el \textbf{DRC}.
+\end{enumerate}
+Y queda una cuarta que ninguna herramienta de KiCad responde: \textbf{¿la placa sigue nuestras reglas de buen
+diseño?} (entrar al pad por el centro, desacoplo pegado al pin, nada crítico sobre una ranura\ldots). Para eso se
+escribió \archivo{revisar_pistas.py}.
+\end{idea}
+
+\section{DRC con paridad}\label{sec:c11-drc}
+
+El DRC (\emph{Design Rule Check}) de KiCad compara la geometría de la placa con las reglas configuradas: las
+restricciones de la placa (los mínimos de JLCPCB), las clases de red (anchos y separaciones de diseño) y las reglas
+especiales de \archivo{pcb.kicad_dru}. Esas reglas se explican en el capítulo~\ref{cap:jlc}.
+
+Se corre por línea de comandos, siempre igual:
+\begin{center}
+\small\ttfamily kicad-cli pcb drc --schematic-parity --severity-all --refill-zones --save-board pcb.kicad\_pcb
+\end{center}
+Cada opción tiene una razón:
+\begin{itemize}
+  \item \texttt{--schematic-parity}: además de la geometría, compara la placa con el esquemático (paridad);
+  \item \texttt{--severity-all}: informa errores \emph{y} advertencias; una advertencia escondida es un error que
+  nadie mira;
+  \item \texttt{--refill-zones}: vuelve a rellenar las zonas de cobre antes de revisar. Sin esto el DRC revisaría el
+  relleno viejo, que puede no coincidir con las pistas nuevas;
+  \item \texttt{--save-board}: guarda ese relleno en la placa. Además es lo que genera los 440 \emph{teardrops}
+  (capítulo~\ref{cap:ruteo}) sin abrir la interfaz gráfica.
+\end{itemize}
+
+\begin{decision}[ningún chequeo en ``ignorar'']
+\textbf{Qué se decidió:} ninguna regla del DRC quedó en ``ignorar'' y ninguna severidad se bajó para que pasara.\par
+\textbf{Alternativas:} dejar las cinco reglas que KiCad trae ignoradas de fábrica, o excluir violaciones puntuales
+(KiCad permite marcarlas como ``excluidas'').\par
+\textbf{Por qué:} una regla ignorada no avisa nunca. \archivo{tools/config_reglas.py} pasó a advertencia las cinco
+que KiCad trae ignoradas: \texttt{footprint\_filters\_mismatch}, \texttt{footprint\_type\_mismatch},
+\texttt{missing\_courtyard}, \texttt{track\_not\_centered\_on\_via} y
+\texttt{tuning\_profile\_track\_geometries}.\par
+\textbf{Fuente:} pedido del dueño; \archivo{PLAN_RUTEO.md} §17.
+\end{decision}
+
+Al activarlas aparecieron 7 avisos de \texttt{footprint\_filters\_mismatch}. El aviso dice que el símbolo del
+esquemático tiene una lista de footprints aceptados y que el footprint que se usó no está en esa lista. Pasaba con
+símbolos genéricos de KiCad (\texttt{Conn\_01x02}, \texttt{Jumper\_2\_Open} y el símbolo del TLV9062) cuyo filtro no
+incluía el footprint real (las borneras, la tira de pines y el TSOT-23-8 de pads de \SI{0.40}{\milli\meter}).
+
+\begin{ojo}[arreglar de fondo, no tapar]
+La salida fácil era excluir los 7 avisos. Se hizo lo contrario: \archivo{tools/buildlib.py} agrega a la
+biblioteca del proyecto copias de esos tres símbolos con el filtro correcto, y \archivo{tools/design.py} apunta J1,
+J5, J7, JP1, JP2, U3 y U9 a esas copias. Un primer intento cambió el filtro de otra forma y produjo un error nuevo en
+el ERC (\texttt{lib\_symbol\_mismatch}); por eso se rehízo así. Al regenerar, el esquemático solo cambió en esos
+\texttt{lib\_id}.
+\end{ojo}
+
+\textbf{Resultado final:} DRC con 0 violaciones (errores y advertencias) y paridad con 0 diferencias, con todas las
+reglas activas.
+
+\section{ERC del esquemático}\label{sec:c11-erc}
+
+El ERC (\emph{Electrical Rule Check}) revisa el esquemático: cada pin tiene un tipo (entrada, salida, pasivo,
+alimentación\ldots) y el ERC avisa de combinaciones raras, como dos salidas unidas o una red de alimentación que nadie
+alimenta. Se corre con \texttt{kicad-cli sch erc --severity-all}. Resultado: \textbf{0} con las severidades del
+proyecto.
+
+KiCad trae 4 chequeos de ERC ignorados de fábrica. Se activaron en una copia para ver qué decían: solo aparecen 3
+avisos \texttt{four\_way\_junction}, que son uniones de un pin con tres cables (en el cátodo de D1 y en los símbolos de
+alimentación \texttt{\#PWR006} y \texttt{\#PWR018}). Eléctricamente son correctas; el aviso existe porque en un
+esquemático impreso un cruce de cuatro cables se confunde con un cruce sin unión. El dueño decidió dejarlos como
+están (capítulo~\ref{cap:banco}).
+
+\section{\texorpdfstring{\archivo{verify.py}}{verify.py}: el esquemático contra el diseño}\label{sec:c11-verify}
+
+El esquemático de KiCad no se dibujó a mano: lo genera \archivo{tools/gen_sch_wired.py} a partir de
+\archivo{tools/design.py}, que es la ``fuente de verdad'' (cada pieza, su valor, su footprint y a qué red va cada
+pin). \archivo{tools/verify.py} cierra el círculo: exporta la lista de redes del esquemático
+(\texttt{kicad-cli sch export netlist}) y la compara con \archivo{tools/target.json}, que sale de
+\archivo{design.py}. Para cada pieza revisa que:
+\begin{itemize}
+  \item exista con el mismo valor y el mismo footprint;
+  \item cada pin esté en una red cuyos miembros son exactamente los esperados, y que el nombre de la red coincida
+  (las redes sin etiqueta pueden tener el nombre automático \texttt{Net-(\ldots)});
+  \item los pines que deben quedar libres estén solos.
+\end{itemize}
+Resultado: \textbf{127 piezas, 68 redes, 0 problemas}. Junto con la paridad, esto garantiza la cadena completa:
+diseño $\to$ esquemático $\to$ placa.
+
+\section{El chequeo propio: \texorpdfstring{\archivo{revisar_pistas.py}}{revisar\_pistas.py}}\label{sec:c11-revisar}
+
+El DRC de KiCad sabe de separaciones y anchos, pero no sabe que un condensador de desacoplo debe estar pegado a su
+pin, o que la entrada de un op-amp no debe pasar sobre un hueco del plano. Esas reglas salen de los datasheets y de las
+notas de aplicación (capítulos~\ref{cap:capas} y~\ref{cap:ruteo}). \archivo{tools/ruteo/revisar_pistas.py} las
+revisa leyendo la placa con la API de KiCad. Sale con código 1 si encuentra algo, así que no se puede ``pasar por
+alto''.
+
+Cada chequeo tiene una letra. Esto es lo que revisa cada uno y por qué:
+
+\begin{description}[style=nextline,leftmargin=1.2em]
+  \item[A. Orientación a 45°]
+  Cada segmento de pista debe ir a un múltiplo de \SI{45}{\degree} (horizontal, vertical o diagonal). Es la regla de
+  estilo del proyecto: las pistas en ángulos libres son difíciles de revisar y de mantener.
+
+  \item[B. Ángulo entre segmentos de al menos 135°]
+  Dos segmentos unidos no pueden formar un ángulo de \SI{90}{\degree} ni agudo. A frecuencias de audio una esquina
+  a \SI{90}{\degree} no daña la señal; es la regla de estilo que pidió el dueño para todo el proyecto. El DRC
+  también lo revisa (\texttt{track\_angle}). El script agrega un caso fino: cuando dos pistas se unen en el centro de
+  un pad o de una vía, calcula la esquina interior entre sus bordes; si cae dentro del cobre del pad, no hay esquina
+  de pista y se lista como ``cumple'' (70 casos en la placa final).
+
+  \item[C. Entrada al pad por el centro y por su eje]
+  La pista debe terminar en el centro del pad y llegar paralela a uno de sus ejes. Si llega torcida, el pad queda
+  cargado de un lado y la pieza puede ``caminar'' al fundirse la soldadura. Hay 8 puntos aceptados por el dueño: los
+  dos extremos del enlace del nodo \net{SUM} en cada canal (capítulo~\ref{cap:banco}).
+
+  \item[D. Segmentos de menos de 0,1 mm]
+  Un segmento tan corto casi siempre es un residuo de una edición y crea un quiebre invisible.
+
+  \item[E. Extremos sueltos y pistas duplicadas]
+  Un \emph{stub} (pista que no lleva a ningún lado) es una antena pequeña y cobre que sobra. Las pistas duplicadas o
+  superpuestas confunden la medición y el DRC.
+
+  \item[F. Vías sin usar]
+  Una vía que conecta menos de dos capas (por pista o por zona) no sirve para nada y ocupa lugar.
+
+  \item[G. Política de capas]
+  Con 4 capas, \capa{In1.Cu} no lleva pistas: es el plano de tierra entero. Las redes críticas (clases Analogica,
+  Reloj y Conmutado) solo van en \capa{F.Cu}, salvo \net{DC_MON}/\net{DC_MON2} (un nivel de DC) y las \net{IEPE_FEED*}
+  (riel de DC). \capa{In2.Cu} y \capa{B.Cu} quedan para alimentación y señales lentas.
+
+  \item[H. Cruces sobre puentes (de la época de 2 capas)]
+  Con 2 capas, la referencia de \capa{F.Cu} era \capa{B.Cu} y este chequeo vigilaba que nada crítico pasara sobre una
+  pista de \capa{B.Cu}. Con 4 capas la referencia es \capa{In1.Cu}, así que este chequeo ya no aplica.
+
+  \item[I. Plano continuo bajo cada pista crítica]
+  Para cada pista crítica de \capa{F.Cu} revisa, punto por punto, que debajo haya cobre del relleno de tierra de
+  \capa{In1.Cu}. Es la regla de la corriente de retorno (capítulo~\ref{cap:capas}). Alrededor de cada agujero que no
+  es de tierra el plano tiene un anillo libre; si la pista termina justo en ese pad o vía, esos puntos se listan como
+  información (436 en la placa final), porque ese anillo existe siempre.
+
+  \item[J. Analógica paralela a digital]
+  Una señal analógica no puede correr paralela a una de reloj o digital a menos de \SI{1}{\milli\meter} por más de
+  \SI{2}{\milli\meter}, en la misma capa. Dos pistas paralelas forman un condensador y un acople inductivo: cuanto más
+  largo el tramo, más ruido pasa. Al principio solo miraba \capa{F.Cu}; después se extendió a todas las capas.
+
+  \item[K. Vía de tierra junto al pad]
+  Cada condensador de desacoplo y cada pin de tierra SMD de un integrado debe tener una vía de tierra a
+  $\le\SI{1.0}{\milli\meter}$ (borde a borde) de su pad. Sin esa vía, la corriente de alta frecuencia tiene que viajar
+  por una pista hasta el plano y el desacoplo pierde efecto. En la placa final cumplen 46 pads.
+
+  \item[L. Desacoplo pegado a su pin]
+  Cada condensador de desacoplo debe quedar a $\le\SI{1.0}{\milli\meter}$ (borde a borde) del pin que desacopla. Hay
+  una tabla (\texttt{DESACOPLO}) que dice qué condensador va con qué pin. Para los del MCP4725 se usa el límite de su
+  datasheet, \SI{4}{\milli\meter} \doc{DS22039D §8.3}. Los que quedaron más lejos y el dueño aceptó se listan aparte
+  con su motivo.
+
+  \item[M. Serigrafía sobre una vía]
+  Las vías van tapadas (\emph{plugged}), así que no tienen apertura en la máscara y el DRC no ve un problema si la
+  serigrafía pasa por encima. Pero la tinta sobre el relieve de una vía tapada se imprime mal. Este chequeo mide la
+  distancia de cada vía al trazo real de la serigrafía (con \archivo{geom_serigrafia.py}), no a su caja envolvente. La
+  primera vez encontró 60 casos; se corrigieron todos.
+\end{description}
+
+\begin{table}[htbp]
+\centering
+\caption{Resultado de \archivo{revisar_pistas.py} sobre la placa final \medido.}\label{tab:c11-revisar}
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Grupo & Cantidad\\\midrule
+\textbf{Hallazgos} (cualquier chequeo) & \textbf{0}\\
+B: uniones con la esquina dentro del pad (cumple) & 70\\
+C: entradas aceptadas por el dueño (nodo SUM) & 8\\
+I: puntos en el anillo libre de su propio pad o vía (información) & 436\\
+K: pads con su vía de tierra a $\le\SI{1}{\milli\meter}$ & 46\\
+L: desacoplos a $\le\SI{1}{\milli\meter}$ & 9\\
+L: desacoplos dentro del límite del datasheet (MCP4725) & 4\\
+L: desacoplos aceptados por el dueño & 11\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{ojo}[cambiar un chequeo también es una decisión]
+Cada vez que se cambió la lógica de un chequeo (por ejemplo, que el anillo libre de un pad propio cuente como
+información en el I, o el límite de \SI{4}{\milli\meter} para el MCP4725 en el L), el cambio se informó al dueño en
+el resumen de ese bloque y queda documentado en \archivo{PLAN_RUTEO.md}. Un chequeo que se afloja en silencio es
+igual que una regla ignorada.
+\end{ojo}
+
+\section{Herramientas de medición}\label{sec:c11-medir}
+
+Además del chequeo de reglas hay tres scripts que miden o comprueban cosas puntuales.
+
+\paragraph{\archivo{cruces_capas.py}.} Para cada pista de \capa{In2.Cu} y \capa{B.Cu} lista qué cobre de
+\capa{F.Cu} tiene encima, visto desde arriba. Hay una lista de nodos protegidos: los dos nodos \net{SUM}, el nodo
+filtrado del DAC, la cadena de \SI{1}{\mega\ohm} y el nodo medio de la realimentación. Son nodos de alta impedancia:
+una pista que pase debajo les inyecta ruido por acople capacitivo. Se considera ``encima'' el cobre a menos de
+(ancho/2 + \SI{0.2}{\milli\meter}) del eje de la pista. Resultado: \textbf{0 cruces bajo nodos protegidos}. Lo que sí
+queda encima de alguna pista interna es IEPE, \net{REST_SV}, SAI e I2C, todas de baja impedancia.
+
+\paragraph{\archivo{conexion_solida.py}.} El datasheet del LMR36015 pide que la tierra de los condensadores de
+entrada, de alta frecuencia y de salida y los pines PGND queden unidos por cobre sólido. Un \emph{alivio térmico}
+(los ``rayitos'' que unen un pad a una zona) añade inductancia justo en el lazo de corriente más rápido de la placa.
+El script comprueba que, en cada buck, los 10 pads de tierra (CIN, CHF, COUT y PGND 1/11) caen enteros en la
+\emph{misma} isla del relleno de \capa{F.Cu}, sin alivios. Resultado: cumple en U6 y U7.
+
+\paragraph{\archivo{medir.py}.} Mide caminos de cobre entre pads (solo por \capa{F.Cu}, para que el plano no cuente
+como atajo), largos de redes y lazos. Se usó para el lazo de potencia de los bucks, que es lo más sensible al
+layout de una fuente conmutada:
+
+\begin{table}[htbp]
+\centering
+\caption{Mediciones de los bucks con \archivo{medir.py} (iguales en U6 y U7) \medido.}\label{tab:c11-medir}
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Medición & Valor\\\midrule
+PGND pin 1 $\to$ C29.2 (CHF \SI{220}{\nano\farad}) por \capa{F.Cu} & \SI{2.61}{\milli\meter}\\
+PGND pin 11 $\to$ C30.2 por \capa{F.Cu} & \SI{2.21}{\milli\meter}\\
+Lazo VIN--CHF--PGND, lado pin 2 & \SI{7.25}{\milli\meter} de perímetro, \SI{3.32}{\milli\meter\squared}\\
+Lazo VIN--CHF--PGND, lado pin 10 & \SI{6.97}{\milli\meter}, \SI{2.69}{\milli\meter\squared}\\
+Nodo FB (cobre total) & \SI{5.49}{\milli\meter}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{La verificación después de cada bloque}\label{sec:c11-bloque}
+
+El ruteo se hizo por bloques (capítulo~\ref{cap:ruteo}). Al final de cada uno se corrió
+el script \path{tools/ruteo/verificar_bloque.py}, que hace siempre lo mismo y en el mismo orden:
+\begin{enumerate}
+  \item DRC con paridad, todas las severidades, rellenando y guardando las zonas;
+  \item ERC del esquemático;
+  \item \archivo{revisar_pistas.py} sobre la placa real;
+  \item imágenes de cada capa, para mirarlas.
+\end{enumerate}
+Solo si todo daba lo esperado se hacía commit y se pasaba al bloque siguiente. Las conexiones sin rutear bajaron de
+bloque en bloque (209 al terminar el bloque 1, 0 al terminar el bloque 9). Lo que no daba igual se corregía, o se
+presentaba al dueño como decisión antes de seguir.
+
+\begin{idea}[por qué verificar en cada bloque y no al final]
+Si un error del bloque 2 se descubre en el bloque 8, hay que deshacer seis bloques de trabajo apoyados encima. Revisar
+en cada parada mantiene los errores pequeños y baratos.
+\end{idea}
+
+\section{Revisión de los Gerber}\label{sec:c11-gerber}
+
+KiCad no es lo que fabrica la placa: JLCPCB fabrica a partir de los \textbf{Gerber} (un archivo por capa) y de los
+archivos de taladro \textbf{Excellon}. Un error al exportar (una capa que falta, unidades mal puestas, un taladro
+corrido) no aparece en el DRC de KiCad. Por eso se revisaron los archivos exportados con
+\textbf{gerbonara}, una biblioteca de Python que ya existe y lee Gerber. No se escribió un lector propio: un lector
+hecho en casa podría tener el mismo error que el exportador y ``confirmarlo''. Se instaló en un entorno aparte con
+permiso del dueño. El script es \archivo{tools/revisar_gerber.py} y su informe \archivo{fabricacion/revision_gerber.md}.
+
+\begin{table}[htbp]
+\centering
+\caption{Resultado de la revisión de los Gerber con gerbonara.}\label{tab:c11-gerber}
+\small
+\begin{tabular}{@{}L{0.34\linewidth}L{0.58\linewidth}@{}}
+\toprule
+Comprobación & Resultado\\\midrule
+Capas reconocidas & 4 de cobre (F, In1, In2, B), máscaras, serigrafías, pastas, borde y taladro PTH\\
+Borde & 4 segmentos, caja de \SI{90.00}{} $\times$ \SI{64.00}{\milli\meter}, contorno cerrado\\
+Agujeros & 329 de \SI{0.3}{\milli\meter} (vías), 45 de \SI{1.0}{\milli\meter}, 6 de \SI{1.3}{\milli\meter} y 4 de \SI{2.2}{\milli\meter}; todos PTH\\
+Cada PTH sobre un pad en \capa{F.Cu} y \capa{B.Cu} & todos; anillo mínimo \SI{0.150}{\milli\meter}\\
+Máscara sobre las vías & 0 aperturas sobre las 329 vías, en las dos caras\\
+Serigrafía sobre aperturas de máscara & 0 trazos en las dos caras\\
+NPTH & el archivo está vacío (la placa no tiene agujeros sin metalizar); se envía igual\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{ojo}[un falso positivo que hubo que entender]
+La primera vez, la revisión de serigrafía contó cientos de objetos dentro de las aperturas de máscara. No eran
+serigrafía: con la opción \texttt{--subtract-soldermask}, KiCad agrega al Gerber de serigrafía unas figuras de
+``polaridad clara'' que \emph{borran} la tinta donde hay pads. Se corrigió el script para saltar esos objetos
+(348 arriba y 55 abajo) y quedaron 0 trazos reales.
+\end{ojo}
+
+\paragraph{Vías tapadas (tenting).} Las vías deben quedar cubiertas, sin apertura en la máscara. Para comprobar que
+el método de verificación funciona, se exportó una copia de control con todas las vías destapadas:
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Cara & Aperturas (placa real) & en vías & Aperturas (copia sin tapar) & en vías\\\midrule
+\capa{F.Mask} & 348 & \textbf{0} & 677 & 329\\
+\capa{B.Mask} & 55 & \textbf{0} & 384 & 329\\
+\bottomrule
+\end{tabular}
+\end{center}
+La copia de control encuentra las 329 vías; la placa real no tiene ninguna destapada. Sin la copia de control, un
+``0'' podría significar simplemente que el método no ve nada.
+
+\section{El archivo de posiciones (CPL) y el pin 1}\label{sec:c11-cpl}
+
+Para el montaje JLCPCB necesita saber dónde va cada pieza y con qué giro. Eso es el \textbf{CPL}
+(\emph{Component Placement List}): designador, posición X e Y, cara y rotación. El problema es que el footprint de
+KiCad y el footprint que usa JLC para la misma pieza pueden tener el origen en otro punto o estar dibujados girados.
+Si se manda la rotación de KiCad tal cual, la máquina puede poner un integrado girado \SI{90}{\degree}.
+
+\begin{calculo}[corrección de rotación y posición]
+\archivo{tools/auditoria_footprints.py} baja el footprint de EasyEDA (el que usa JLC) de cada código LCSC, empareja
+los pads por número y busca el giro $d \in \{0, 90, 180, 270\}$ y la traslación $t$ que mejor llevan los pads de KiCad
+($p$) sobre los de JLC ($q$):
+\begin{equation}
+q \approx R(d)\,p + t.
+\end{equation}
+Con eso, \archivo{tools/fabricacion.py} escribe el CPL con
+\begin{equation}
+\theta_\text{JLC} = \theta_\text{KiCad} - d,\qquad P_\text{JLC} = P_\text{KiCad} - R(\theta_\text{JLC})\,t.
+\end{equation}
+Ejemplo: U6 (LMR36015, encapsulado RNX) está a \SI{0}{\degree} en KiCad, pero su footprint de JLC está girado
+$d = \SI{90}{\degree}$ y corrido $t = (-0{,}14;\ 0)\,\si{\milli\meter}$. En el CPL va a
+\SI{270}{\degree} (es decir, $0 - 90$) con la posición corregida.
+\end{calculo}
+
+Para comprobar la cuenta, \archivo{fabricacion/rotaciones.md} coloca el footprint de JLC con la posición y rotación
+del CPL y mide la distancia entre su pad 1 y el pad 1 de la placa. En todas las piezas da \textbf{como mucho
+\SI{0.21}{\milli\meter}} (los diodos D1 y D2; en los integrados, \SIrange{0}{0.10}{\milli\meter}).
+
+\begin{ojo}[la última palabra la tiene la vista previa de JLC]
+La cuenta compara contra el footprint de EasyEDA de cada pieza, pero la colocación real la decide la biblioteca de
+montaje de JLC. Por eso, antes de pagar, hay que mirar en la vista previa del pedido: el pin 1 de U1--U10, el cátodo
+de D1/D2 del lado de la franja, el pin 1 de Y1 y el centrado de U6/U7 (capítulo~\ref{cap:banco}).
+\end{ojo}
+
+\section{Stock de las piezas}\label{sec:c11-stock}
+
+\archivo{tools/stock_bom.py} consulta la API pública de piezas de JLCPCB (solo envía el código LCSC) y para cada
+línea del BOM comprueba que el código coincide con el aprobado en \archivo{target.json}, que el número de parte del
+fabricante coincide y que hay stock para 5 placas. El 2026-11-16 dio \textbf{35 de 36 líneas bien}. La excepción fue
+L2 (XAL4040-103MEC, C5144883) con solo 4 unidades: por eso el dueño decidió ensamblar como máximo 4 placas. El stock
+cambia a diario, así que hay que repetir la consulta antes de pedir.
+
+\section{La carpeta de fabricación}\label{sec:c11-fab}
+
+\archivo{tools/fabricacion.py} genera todo lo que se manda a JLCPCB, desde la placa ya verificada, y anota el commit
+del que salió (los archivos actuales salieron del commit 970905d; la placa no cambió después). Contenido de
+\archivo{hardware/pcb/fabricacion/}:
+
+\begin{longtable}{@{}L{0.33\linewidth}L{0.60\linewidth}@{}}
+\caption{Contenido de la carpeta \archivo{fabricacion/}.}\label{tab:c11-fab}\\
+\toprule
+Archivo & Para qué sirve\\\midrule\endfirsthead
+\toprule
+Archivo & Para qué sirve\\\midrule\endhead
+\archivo{sonometro_revB_gerber.zip} & \textbf{Lo que se sube para fabricar la PCB}: 14 archivos (4 capas de cobre, máscaras, serigrafías, pastas, borde, taladros PTH y NPTH y el archivo de trabajo)\\
+\archivo{gerber/} & los mismos archivos sin comprimir, más los mapas de taladro en PDF\\
+\archivo{bom.csv} & \textbf{Lista de materiales para el montaje}: Comment, Designator, Footprint, LCSC Part Number. 36 líneas, 112 piezas (solo lo que monta JLC)\\
+\archivo{cpl.csv} & \textbf{Posiciones para el montaje}: Designator, Mid X, Mid Y, Layer, Rotation, con la corrección de la sección~\ref{sec:c11-cpl}\\
+\archivo{rotaciones.md} & la corrección pieza por pieza y la comprobación del pin 1\\
+\archivo{soldar_a_mano.md} & las 8 piezas que no monta JLC (zócalos de la NUCLEO, borneras, BNC, tiras de pines)\\
+\archivo{montaje.pdf} & la capa F.Fab con todos los designadores, incluidos los 21 que no caben en la serigrafía\\
+\archivo{stock_bom.md} & la consulta de stock del día\\
+\archivo{revision_gerber.md} y las vistas SVG & la revisión con gerbonara\\
+\archivo{auditoria_piezas.md} & la auditoría de piezas y footprints (capítulo~\ref{cap:piezas})\\
+\archivo{LEEME.md} & parámetros del pedido (4 capas, apilado, 1,6 mm, verde, HASL sin plomo, vías taponadas) y la lista de comprobaciones antes de pagar\\
+\bottomrule
+\end{longtable}
+
+\begin{idea}[qué se sube y dónde]
+En la página de pedido de JLCPCB:
+\begin{enumerate}
+  \item En \emph{PCB} se sube \archivo{sonometro_revB_gerber.zip} y se eligen las opciones de \archivo{LEEME.md}.
+  \item Se activa \emph{PCB Assembly} (Economic, cara superior) y, cuando lo pide, se suben \archivo{bom.csv} y
+  \archivo{cpl.csv}.
+  \item Se revisa la vista previa (pin 1, diodos, Y1, bucks) antes de pagar.
+\end{enumerate}
+\end{idea}
+
+\section{Estado verificado}\label{sec:c11-estado}
+
+\begin{longtable}{@{}L{0.42\linewidth}L{0.24\linewidth}L{0.26\linewidth}@{}}
+\caption{Estado final de las verificaciones (placa del commit 970905d en adelante).}\label{tab:c11-estado}\\
+\toprule
+Verificación & Resultado & Herramienta\\\midrule\endfirsthead
+\toprule
+Verificación & Resultado & Herramienta\\\midrule\endhead
+DRC, todas las reglas activas, ninguna excluida & 0 violaciones & \texttt{kicad-cli pcb drc}\\
+Paridad placa--esquemático & 0 diferencias & \texttt{--schematic-parity}\\
+ERC & 0 & \texttt{kicad-cli sch erc}\\
+Esquemático contra el diseño & 127 piezas, 68 redes, 0 problemas & \archivo{verify.py}\\
+Reglas propias A--M & 0 hallazgos & \archivo{revisar_pistas.py}\\
+Conexiones sin rutear & 0 & DRC\\
+Cruces bajo nodos protegidos & 0 & \archivo{cruces_capas.py}\\
+Tierras de los bucks sin alivios & cumple (U6, U7) & \archivo{conexion_solida.py}\\
+Gerber: capas, borde, taladros, anillo & correcto; anillo mín. \SI{0.15}{\milli\meter} & \archivo{revisar_gerber.py}\\
+Vías tapadas & 0 de 329 destapadas & Gerber de máscara + copia de control\\
+CPL: pin 1 & $\le\SI{0.21}{\milli\meter}$ en todas & \archivo{fabricacion.py}\\
+Stock & 35 de 36 líneas (L2: 4 unidades) & \archivo{stock_bom.py}\\
+\bottomrule
+\end{longtable}
+
+\section*{Resumen}
+\begin{itemize}
+  \item ERC, paridad y DRC responden preguntas distintas; hacen falta las tres, más un chequeo propio para las reglas
+  de buen diseño que KiCad no conoce.
+  \item Ninguna regla se ignoró ni se excluyó; los avisos que aparecieron al activarlas se arreglaron de fondo.
+  \item \archivo{revisar_pistas.py} tiene 13 chequeos (A--M; el H era de la época de 2 capas) y terminó con 0 hallazgos; las excepciones aceptadas
+  quedan listadas aparte con su motivo.
+  \item Los Gerber se revisaron con una biblioteca existente y una copia de control para el tenting.
+  \item El CPL corrige el giro y el corrimiento de cada footprint respecto del de JLC; el pin 1 queda a
+  $\le\SI{0.21}{\milli\meter}$, y se confirma en la vista previa del pedido.
+  \item A JLCPCB se sube el zip de Gerber para la PCB y \archivo{bom.csv} + \archivo{cpl.csv} para el montaje.
+\end{itemize}

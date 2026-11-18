@@ -1,0 +1,199 @@
+\chapter{Excepciones aceptadas y lo que falta medir}\label{cap:banco}
+
+Ningún diseño real cumple el cien por ciento de las reglas que uno se pone. Lo importante es que cada excepción sea
+\emph{consciente}: que se sepa qué regla se rompe, cuánto, por qué no había otra salida y quién la aceptó. Este
+capítulo junta en un solo lugar todas las excepciones de la placa y, después, todo lo que no se puede verificar en el
+computador y queda para el banco de laboratorio.
+
+En este capítulo vas a ver:
+\begin{itemize}
+  \item la diferencia entre una excepción aceptada y una violación escondida;
+  \item la lista completa de excepciones, con la regla, el valor y el motivo;
+  \item las desviaciones del plan que no rompen ninguna regla;
+  \item las comprobaciones en la vista previa de JLCPCB antes de pagar;
+  \item la lista de mediciones de banco, con el valor esperado y cómo medir cada una.
+\end{itemize}
+
+\begin{idea}[excepción no es lo mismo que exclusión]
+KiCad permite marcar una violación del DRC como ``excluida'' para que deje de aparecer. En esta placa \textbf{no se
+excluyó ninguna violación ni se bajó ninguna severidad}: el DRC da 0 con todas las reglas activas
+(capítulo~\ref{cap:verif}). Las excepciones de este capítulo son de otro tipo: casos en que una regla \emph{propia}
+(del chequeo \archivo{revisar_pistas.py} o del plan de ruteo) no se cumple, el dueño lo revisó y lo aceptó. Cada una
+queda escrita en el código del chequeo (tablas \texttt{ACEPTADOS}, \texttt{ACEPTADOS\_C} y
+\texttt{DESACOPLO\_LIMITE}) con su motivo, y el chequeo las lista aparte en cada corrida.
+\end{idea}
+
+\section{Excepciones aceptadas}\label{sec:c12-excepciones}
+
+\begin{longtable}{@{}L{0.22\linewidth}L{0.18\linewidth}L{0.17\linewidth}L{0.35\linewidth}@{}}
+\caption{Lista completa de excepciones aceptadas por el dueño.}\label{tab:c12-excepciones}\\
+\toprule
+\textbf{Qué} & \textbf{Regla} & \textbf{Queda así} \medido & \textbf{Motivo y cuándo}\\\midrule\endfirsthead
+\toprule
+\textbf{Qué} & \textbf{Regla} & \textbf{Queda así} & \textbf{Motivo y cuándo}\\\midrule\endhead
+C36, C46 (VCC del LMR36015, \SI{2.2}{\micro\farad}) & desacoplo a $\le\SI{1.0}{\milli\meter}$ del pin & \SI{3.00}{\milli\meter} &
+La pista de VCC sale del pin con \SI{0.3}{\milli\meter}, la vía de tierra está pegada a C36.2 y el retorno al pin AGND va por \capa{F.Cu}. No hay lugar más cerca sin romper el lazo de potencia. Bloque 1.\\
+C2, C3, C49, C50 (entrada de los LT3092) & $\le\SI{1.0}{\milli\meter}$ & \SI{4.30}{}, \SI{3.32}{}, \SI{4.04}{} y \SI{4.33}{\milli\meter} &
+Se dejaron en la ubicación del equipo. La entrada es el riel de \SI{24}{\volt} protegido, que es DC. Bloque 3.\\
+C12 (\SI{100}{\nano\farad}, \net{3V3} del PCM1808) & $\le\SI{1.0}{\milli\meter}$ & \SI{2.12}{\milli\meter} &
+Se intercambió con C11 para que el \SI{100}{\nano\farad} quede más cerca; bajo el pin 4 no hay más lugar. Bloque 4.\\
+C16 (\SI{100}{\nano\farad}, VREF del PCM1808) & $\le\SI{1.0}{\milli\meter}$ & \SI{1.32}{\milli\meter} &
+Se intercambió con C15 por el mismo motivo. Bloque 4.\\
+C11, C15, C18 (\SI{10}{\micro\farad} del PCM1808) & $\le\SI{1.0}{\milli\meter}$ & \SI{3.89}{}, \SI{1.52}{} y \SI{5.42}{\milli\meter} &
+El \SI{100}{\nano\farad} de cada pin va primero (C12, C16 y C17); el de \SI{10}{\micro\farad} trabaja a frecuencias más bajas y tolera más distancia. Bloque 4, confirmado tras el bloque 5.\\
+C5, C6, C52, C53 (desacoplo de los MCP4725) & se juzgan con $\le\SI{4}{\milli\meter}$ en vez de \SI{1}{\milli\meter} & \SIrange{1.22}{1.48}{\milli\meter} &
+Es el límite del propio datasheet \doc{DS22039D §8.3}. Bloque 5.\\
+Enlace C56.1 $\to$ R18.1 y C57.1 $\to$ R41.1 (nodo \net{SUM}) & entrar al pad por su eje, con el quiebre fuera del pad (chequeo C) & quiebre a \SI{45}{\degree} dentro del cobre de los pads; enlace de \SI{2.2}{\milli\meter} &
+Los pads están desplazados \SI{1.52}{\milli\meter} en x y \SI{1.76}{\milli\meter} en y, con el otro pad del CF al lado. No hay forma geométrica de entrar por el eje; este es el enlace más corto, que es lo que importa en un nodo de alta impedancia. Bloque 5.\\
+Pista de \SI{24}{\volt} de CH2 bajo J2 & nada bajo el cuerpo de un conector & cruza en y = \num{153.5}, a \SI{1.1}{\milli\meter} de los pines &
+Es el único camino en \capa{F.Cu}. El bloque del BNC es de plástico PBT y queda a \SI{0.5}{\milli\meter} de la placa; el metal no la toca (plano rev.~B 2020 y fotos de LCSC). Bloque 3.\\
+\net{IEPE_SV} bajo J8 & ídem & y = \num{153.825}; \SI{1.45}{\milli\meter} a J8.2 &
+El mismo caso que J2. Bloque 6.\\
+C19 (\SI{10}{\nano\farad}, filtro de VINR) & vía de tierra propia junto al pad (chequeo K) & sin vía; lo une el relleno de tierra de \capa{F.Cu} &
+No hay lugar para una vía taponada a $\ge\SI{0.35}{\milli\meter}$ de los pads. Bloque 4.\\
+L1, L2, COUT, R33, C47 & cuerpo a $\ge\SI{2.5}{\milli\meter}$ del borde sin rieles (JLC) & \SIrange{1.30}{1.85}{\milli\meter} &
+Los rieles de montaje los agrega JLC según sus términos. Punto de control 2.\\
+ERC & --- & 4 chequeos ignorados de fábrica &
+Activados en una copia solo muestran 3 \texttt{four\_way\_junction} correctas (D1.K, \#PWR006, \#PWR018). Se dejaron como están.\\
+\bottomrule
+\end{longtable}
+
+\begin{idea}[por qué el desacoplo tolera algo de distancia en esta placa]
+Un condensador de desacoplo entrega la corriente rápida que pide el integrado. Cada milímetro de pista entre el
+condensador y el pin agrega inductancia, y esa inductancia limita qué tan
+rápido puede entregar corriente. Los integrados de esta placa son de audio y de baja velocidad (op-amps de
+\SI{4.5}{\mega\hertz}, un ADC de \SI{48}{\kilo\hertz}, DACs lentos), así que unos milímetros pesan mucho menos que en
+un procesador rápido. Por eso las excepciones se aceptaron en los condensadores ``grandes'' y en entradas de DC,
+mientras que todos los desacoplos que sí importan (los CHF de los bucks, C7, C54, C17, C13) quedaron a menos de
+\SI{1}{\milli\meter}.
+\end{idea}
+
+\section{Desviaciones del plan que no rompen ninguna regla}\label{sec:c12-desviaciones}
+
+Estas no son excepciones a una regla, pero sí cambios respecto de lo que se había planeado. Se informaron al dueño en
+cada bloque:
+
+\begin{itemize}
+  \item \textbf{Pistas de potencia más angostas que el valor por defecto de la clase}: \SIrange{0.25}{0.6}{\milli\meter}
+  en lugar de \SI{0.5}{\milli\meter}, y vías de \num{0.6}/\SI{0.3}{\milli\meter} en lugar de \num{0.8}/\SI{0.4}{\milli\meter}.
+  Las corrientes son de \SIrange{5}{20}{\milli\ampere}, con \SI{0.28}{\ampere} de pico en SW. Cada ancho se justifica
+  con IPC-2221 en el capítulo~\ref{cap:calculos}.
+  \item \textbf{Alimentación en \capa{In2.Cu} a \SI{0.4}{\milli\meter}} en vez de los \SI{0.5}{\milli\meter} previstos.
+  Las caídas calculadas con los largos medidos son \SI{4.47}{\milli\volt} en \net{3V3} y \SI{1.75}{\milli\volt} en
+  \net{5V_A}.
+  \item \textbf{Tres puentes cortos en \capa{B.Cu} bajo el bus de \SI{24}{\volt}}: el tronco de \net{3V3}
+  (\SI{2.2}{\milli\meter}) y los sensados de FB de U6 y U7 (\SI{2.15}{\milli\meter}). Se aprobaron en el bloque 1,
+  cuando la placa era de 2 capas. Con \capa{In1.Cu} como plano entero ya no cortan ningún retorno.
+  \item \textbf{Política de capas con 4 capas}: las redes críticas solo en \capa{F.Cu}, salvo \net{DC_MON*} e
+  \net{IEPE_FEED*}. I2C de CH1, \net{DC_MON} y \net{DC_MON2} van en \capa{B.Cu}; I2C de CH2 y un tramo de
+  \net{DC_MON2} en \capa{In2.Cu}. \archivo{cruces_capas.py} da 0 cruces bajo los nodos protegidos.
+  \item \textbf{Cambios al chequeo propio}: \net{IEPE_FEED} se trata como alimentación (lo pidió el dueño); el anillo
+  libre de un pad THT o vía propia cuenta como información en el chequeo I; el J pasó a mirar todas las capas; se
+  agregó el M (serigrafía sobre vías).
+  \item \textbf{Serigrafía}: a \SI{1.0}{\milli\meter} de alto no caben 21 designadores; quedan en
+  \path{fabricacion/montaje.pdf}. Nunca se omiten marcas de polaridad o de pin 1, conectores ni puntos de prueba.
+  \item \textbf{Ajustes por la serigrafía}: el punto de pin 1 del footprint RNX (U6/U7) pasó a la posición
+  $(\num{-1.75};\ \num{-1.45})\,\si{\milli\meter}$ respecto del centro de la pieza. Las vías de tierra laterales de D2
+  bajaron \SI{0.55}{\milli\meter} y las vías de \net{3V3} de U4 se corrieron.
+\end{itemize}
+
+\section{Antes de pagar: la vista previa de JLCPCB}\label{sec:c12-dfm}
+
+Cuando subes los archivos, JLCPCB muestra una vista previa con las piezas colocadas sobre la placa (su revisión DFM).
+Es la última oportunidad de atrapar un error de rotación, porque la colocación real la decide la biblioteca de montaje
+de JLC, no nuestro cálculo (capítulo~\ref{cap:verif}). Hay que mirar:
+
+\begin{enumerate}
+  \item el pin 1 de U1 a U10 sobre la marca de pin 1 de la placa;
+  \item el cátodo de D1 y D2 del lado de la franja de la serigrafía;
+  \item el pin 1 del oscilador Y1;
+  \item el centrado de U6 y U7 (encapsulado RNX): su footprint de JLC está girado \SI{90}{\degree} y corrido
+  \SI{0.14}{\milli\meter} respecto del de KiCad, así que es el caso más delicado.
+\end{enumerate}
+
+\begin{ojo}[dos cosas del pedido que siguen abiertas]
+\begin{itemize}
+  \item \textbf{Stock}: el 2026-11-16, L2 (XAL4040-103MEC, C5144883) tenía solo 4 unidades. Hay que repetir
+  \archivo{tools/stock_bom.py} el día del pedido.
+  \item \textbf{Cantidad de placas ensambladas con Economic}: la idea es ensamblar 4 de 5. El cotizador pide los
+  Gerber antes de mostrar esa opción, y en su demo Economic aparece deshabilitado (con Standard deja elegir de 2 a 5).
+  Si Economic solo ofrece 2 o 5, se ensamblan 2. \archivo{fabricacion/LEEME.md} todavía dice ``hasta 4 placas''.
+\end{itemize}
+También hay que confirmar en el formulario la serigrafía blanca y las vías taponadas, que la página de capacidades no
+menciona para Economic. Lo demás (4 capas, \SI{1.6}{\milli\meter}, verde, HASL sin plomo) sí aparece en su tabla.
+\end{ojo}
+
+\section{Lo que falta medir en el banco}\label{sec:c12-banco}
+
+Hay cosas que ningún programa puede confirmar: el consumo real de un buck sin carga, la polarización de un micrófono
+del que no hay datasheet o si un op-amp oscila con el cableado real. La lista que sigue está en el orden recomendado:
+primero lo que puede dañar algo, después lo que depende de que lo anterior funcione.
+
+\begin{ojo}[antes de energizar]
+\begin{itemize}
+  \item Con el multímetro en resistencia, comprueba que no haya corto entre \net{24V_PROT}, \net{3V3}, \net{5V} y
+  \net{GND} (los pads de los condensadores de cada riel sirven de punto de medida).
+  \item Fuente de banco a \SI{24}{\volt} con el límite de corriente en \SIrange{30}{50}{\milli\ampere}. Nunca más de
+  \SI{26}{\volt} continuos: es la tensión de trabajo del TVS D2 \copia.
+  \item Orden de encendido: primero el USB de la NUCLEO, después los \SI{24}{\volt} (cambio C12).
+\end{itemize}
+\end{ojo}
+
+\begin{longtable}{@{}L{0.20\linewidth}L{0.30\linewidth}L{0.42\linewidth}@{}}
+\caption{Mediciones de banco pendientes. Los puntos de prueba son: TP1 = \net{IEPE}, TP2 = \net{REST_OUT},
+TP3 = \net{IEPE_SV}, TP4 = \net{REST_SV}, TP5--TP7 = \net{GND}.}\label{tab:c12-banco}\\
+\toprule
+\textbf{Qué} & \textbf{Valor esperado} & \textbf{Cómo medirlo}\\\midrule\endfirsthead
+\toprule
+\textbf{Qué} & \textbf{Valor esperado} & \textbf{Cómo medirlo}\\\midrule\endhead
+Consumo de los bucks sin carga (FPWM) &
+$\le\SI{0.15}{\watt}$ por integrado, unos \SI{6}{\milli\ampere} a \SI{24}{\volt} cada uno; $\le\SI{11}{\degreeCelsius}$ de subida \estimado &
+Amperímetro de la fuente de banco con J1 y J7 abiertos (fuentes IEPE desconectadas). La lectura incluye las cargas de \net{3V3} y \net{5V}, así que es una cota del consumo de los dos bucks juntos. Es el dato menos conocido de la placa (capítulo~\ref{cap:calculos}).\\
+Rieles de salida &
+\net{3V3}: \SI{3.3}{\volt} $\pm\SI{1.5}{\percent}$; \net{5V}: \SI{5.0}{\volt} $\pm\SI{1.5}{\percent}$ \doc{SNVSB49D p.8}; \net{5V_A}: unos \SI{140}{\milli\volt} menos que \net{5V} con la carga máxima &
+Multímetro en DC en los pads de un COUT (C31--C34 para \net{3V3}, C41--C44 para \net{5V}) y en C47 para \net{5V_A}, con la punta negra en TP5--TP7.\\
+Rizado de los rieles &
+componente a $\approx\SI{1}{\mega\hertz}$ (la frecuencia del buck), pequeña en \net{5V_A} por el filtro R33/C47 &
+Osciloscopio en acople AC sobre los mismos pads, con la tierra de la punta lo más corta posible (resorte, no el cable largo con caimán).\\
+Corriente de las fuentes IEPE &
+CH1: \SI{2.81}{\milli\ampere}, y \SI{3.98}{\milli\ampere} con JP1 puesto. CH2: \SI{1.51}{\milli\ampere}, y \SI{2.51}{\milli\ampere} con JP2 &
+Amperímetro en lugar del puente de J1 (CH1) o J7 (CH2): son borneras en serie pensadas para esto. Con un micrófono conectado o una resistencia de prueba de unos pocos k\si{\ohm} en el BNC; sin carga, la fuente se satura.\\
+Polarización de cada micrófono &
+RG-50: \SI{12.5}{\volt} \doc{ROGA RG-50}; SV 12: desconocida (normal entre \SIrange{7}{14}{\volt}). Cerca de \SI{0}{\volt} = corto; cerca de la alimentación = abierto &
+Multímetro en DC en TP1 (CH1) y TP3 (CH2) con el micrófono conectado.\\
+Temperatura del LT3092 en corto &
+\SI{93}{\milli\watt}, unos $+\SI{5.3}{\degreeCelsius}$ ($\theta_{JA}$ \copia) &
+Cortocircuitar el BNC un momento y medir la temperatura de U1/U8 (termómetro infrarrojo o termocupla). Confirma que un corto en el cable no daña nada.\\
+Lazo de DC y TLV9152 &
+\net{REST_OUT} en el objetivo que fije el firmware; se recomienda \SI{1.5}{\volt} (pendiente de aprobación). \net{VSHIFT} $= (\text{REST} + k\,V_B)/(1+k)$, con $k = \num{0.0997}$: debe quedar por debajo de unos \SI{2.7}{\volt} &
+Multímetro en TP2 y TP4; \net{VSHIFT} se calcula con REST y la polarización medida en TP1/TP3 (o se mide con cuidado en el pin 7 de U3/U9).\\
+Estabilidad del sumador y del seguidor &
+sin oscilación, sin sobrepico al dar un escalón &
+Osciloscopio en TP2/TP4. Escalón de corriente con JP1/JP2 y escalón del DAC por firmware. Mira también con la base de tiempo rápida (\si{\micro\second}/div) por si hay una oscilación de alta frecuencia.\\
+Oscilador Y1 &
+\SI{24.576}{\mega\hertz}; consumo $\le\SI{10}{\milli\ampere}$ \estimado &
+Frecuencia con el osciloscopio en la salida (lado de R21). El consumo no se puede aislar: queda dentro del consumo total de \net{3V3}.\\
+Identificación de los micrófonos &
+SV 12 con conector TNC (IEPE), no LEMO de 7 pines; cápsula montada. ROGA: grabado RG-50, no MI17/MI19 &
+Inspección visual antes de conectar. Si el SV 12 tiene LEMO de 7 pines, \textbf{no es IEPE}: no se conecta.\\
+\bottomrule
+\end{longtable}
+
+\begin{ojo}[datos que no se miden pero tampoco están verificados]
+Algunos datos de los cálculos vienen de copias y no del documento original: el cobre del barril de las vías
+(\SI{18}{\micro\meter} \estimado), las fórmulas de IPC-2221 e IPC-2141, la $\theta_{JA}$ del LT3092 y los valores del
+SMBJ26A ($V_\text{RWM}$ = \SI{26}{\volt}, $V_\text{BR}$ mín = \SI{28.9}{\volt}) \copia. Ninguno está cerca de un límite,
+pero conviene contrastarlos con el datasheet cuando se tenga a mano.
+\end{ojo}
+
+\section*{Resumen}
+\begin{itemize}
+  \item No hay violaciones del DRC excluidas: las excepciones son reglas propias que el dueño aceptó, escritas en el
+  código del chequeo con su motivo.
+  \item Las excepciones son casi todas de distancia de desacoplo en piezas lentas o en entradas de DC, dos rutas bajo
+  el plástico de los BNC y el enlace geométricamente imposible del nodo \net{SUM}.
+  \item Antes de pagar: mirar en la vista previa el pin 1, los diodos, Y1 y los bucks, repetir el stock y confirmar la
+  cantidad de placas ensambladas con Economic.
+  \item En el banco, primero la seguridad (cortos, límite de corriente, orden de encendido), después rieles, corrientes
+  IEPE, polarización de los micrófonos, lazo de DC y estabilidad.
+\end{itemize}

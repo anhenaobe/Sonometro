@@ -1,0 +1,146 @@
+\chapter{Glosario}\label{app:glosario}
+
+Los términos que más se repiten en el informe, explicados en pocas palabras. Están agrupados por tema y, dentro de
+cada grupo, en orden alfabético.
+
+\section*{Sensores y señal}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[DC bias (polarización)] Tensión continua sobre la que ``flota'' la señal. En un sensor IEPE es la tensión que
+  aparece en el cable cuando el sensor está en reposo (unos \SIrange{8}{14}{\volt}); la señal acústica es una pequeña
+  variación encima de ella.
+  \item[Ganancia de ruido] Factor por el que un amplificador multiplica su propio ruido y su offset de entrada. En el
+  sumador de esta placa es $1 + R_f/R_\text{in} \approx \num{1.1}$.
+  \item[IEPE] \emph{Integrated Electronics Piezo-Electric}. Sensor con un preamplificador interno que se alimenta con
+  una corriente constante por el mismo coaxial por el que entrega la señal. Necesita una fuente de corriente (aquí,
+  un LT3092 por canal).
+  \item[Lazo de DC] Corrección automática del nivel de continua: el microcontrolador mide \net{DC_MON}, calcula el
+  error y ajusta el DAC, que mueve \net{VSHIFT} hasta que la salida queda en el valor deseado.
+  \item[Sumador inversor] Configuración de op-amp que suma varias entradas con signo cambiado. Aquí resta la
+  polarización del micrófono y deja solo la señal, centrada en un nivel que fija \net{VSHIFT}.
+\end{description}
+
+\section*{Alimentación}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[Buck] Convertidor conmutado que baja la tensión (de \SI{24}{\volt} a \SI{3.3}{\volt} o \SI{5}{\volt}) prendiendo y
+  apagando un transistor muy rápido y filtrando con una bobina y condensadores. Pierde mucha menos energía que un
+  regulador lineal.
+  \item[CCM] \emph{Continuous Conduction Mode}. La corriente de la bobina nunca llega a cero dentro de un ciclo. En FPWM
+  el LMR36015 trabaja siempre así.
+  \item[Ciclo útil ($D$)] Fracción del periodo en que el transistor del buck está encendido. Idealmente
+  $D = V_\text{OUT}/V_\text{IN}$.
+  \item[Desacoplo] Condensador puesto pegado al pin de alimentación de un integrado. Entrega la corriente rápida que el
+  chip pide en cada conmutación, para que no tenga que venir desde lejos por pistas con inductancia.
+  \item[ESR] \emph{Equivalent Series Resistance}. Resistencia parásita en serie de un condensador. Limita cuánto filtra
+  y cuánto se calienta con corriente de rizado.
+  \item[FPWM] \emph{Forced PWM}. Modo en que el buck conmuta siempre a frecuencia fija, aun sin carga. El ruido queda en
+  una frecuencia conocida (\SI{1}{\mega\hertz}, lejos del audio), a cambio de un consumo en vacío mayor.
+  \item[Lazo de potencia (hot loop)] Camino que recorre la corriente pulsante del buck: condensador de entrada,
+  transistor y tierra. Cuanto menor su área, menos radia y menos ruido mete en la placa.
+  \item[Rizado] Variación periódica de una tensión o corriente alrededor de su valor medio. En la bobina del buck es el
+  triángulo de corriente $\Delta I_L$.
+  \item[$t_\text{ON}$ / $t_\text{ON-MIN}$] Tiempo que el transistor del buck está encendido en cada ciclo, y el mínimo
+  que el chip puede hacer. Si se necesitara menos, el buck tendría que saltarse pulsos.
+  \item[TVS] Diodo de supresión de transitorios. No conduce en operación normal y se enciende cuando la tensión pasa su
+  ruptura, absorbiendo el pico. D2 (SMBJ26A) protege la entrada de \SI{24}{\volt}.
+  \item[X7R, X5R, C0G, Y5V] Tipos de dieléctrico cerámico. C0G casi no cambia con la tensión ni con la temperatura
+  (se usa en los \SI{10}{\pico\farad} de CF). X7R y X5R cambian moderadamente. Y5V pierde gran parte de su capacidad con
+  tensión y temperatura; por eso se cambiaron los \SI{100}{\nano\farad} Y5V del diseño original por X7R.
+\end{description}
+
+\section*{Amplificadores y conversión}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[Delta-sigma] Tipo de ADC (como el PCM1808) que muestrea muy rápido con pocos bits y luego filtra digitalmente
+  para obtener muchos bits a la frecuencia final. Da alta resolución en audio.
+  \item[GBW] \emph{Gain-Bandwidth Product}. Producto ganancia por ancho de banda de un op-amp: con ganancia 1, su ancho
+  de banda es más o menos el GBW. El TLV9152 tiene \SI{4.5}{\mega\hertz}.
+  \item[Margen de fase] Cuánta fase le falta al lazo de realimentación para volverse oscilador, medida donde la ganancia
+  de lazo vale 1. Con menos de unos \SI{45}{\degree} aparecen sobrepicos; cerca de \SI{0}{\degree}, oscila.
+  \item[Rail-to-rail] Op-amp cuya entrada (o salida) puede llegar hasta las tensiones de alimentación.
+  \item[Región de transición] En un op-amp con dos pares de entrada (P y N), zona de tensión de modo común en la que
+  conducen los dos. Ahí empeoran el offset, la CMRR y el ruido. En el TLV9152 va típicamente de $V_+ - \SI{2}{\volt}$
+  a $V_+ - \SI{1}{\volt}$.
+\end{description}
+
+\section*{Comunicación digital}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[I2C] Bus de dos hilos (SCL reloj y SDA datos) con resistencias de pull-up. La NUCLEO lo usa para programar los
+  DAC MCP4725 (direcciones \texttt{0x60} y \texttt{0x61}).
+  \item[I2S / SAI] I2S es el formato de audio digital serie: reloj de bit (BCK), reloj de trama (LRCK, izquierda o
+  derecha) y datos (DOUT). SAI es el periférico del STM32 que lo recibe.
+  \item[MCLK / SCKI] Reloj maestro del ADC. Aquí lo da el oscilador Y1 de \SI{24.576}{\mega\hertz}, que es
+  $512 \times \SI{48}{\kilo\hertz}$.
+\end{description}
+
+\section*{La placa: cobre, capas y estructura}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[Alivio térmico] Unión de un pad a una zona de cobre por medio de unos pocos ``rayos'' en vez de cobre sólido.
+  Facilita soldar a mano (el calor no se escapa al plano) pero agrega resistencia e inductancia.
+  \item[Anillo anular] Corona de cobre que rodea el agujero de un pad o de una vía. Si es muy delgado, un taladro algo
+  corrido lo rompe.
+  \item[Apilado (stackup)] Orden y espesor de las capas de cobre y de dieléctrico. Esta placa usa el estándar de JLC para
+  4 capas y \SI{1.6}{\milli\meter} (JLC04161H-7628).
+  \item[Corriente de retorno] La corriente que vuelve a la fuente por tierra. A frecuencias altas viaja justo debajo de
+  la pista de ida, por el plano. Si el plano tiene un corte, la corriente lo rodea y el lazo se agranda.
+  \item[Cosido (stitching)] Muchas vías de tierra repartidas que unen el relleno de tierra de una capa con los planos de
+  las otras, para que todo sea una sola tierra de baja impedancia.
+  \item[Courtyard] Contorno del espacio que ocupa una pieza más un margen. Dos courtyards no deben superponerse.
+  \item[Microstrip] Pista en una capa externa sobre un plano de tierra. Su impedancia depende del ancho, del espesor del
+  dieléctrico y de $\varepsilon_r$.
+  \item[Net class (clase de red)] Grupo de redes con las mismas reglas (ancho, separación, vía). Aquí: Default, Potencia,
+  Conmutado, Analogica y Reloj.
+  \item[Plano] Capa (o gran parte de una) llena de cobre de una sola red, normalmente tierra. \capa{In1.Cu} es el plano
+  de tierra entero de esta placa.
+  \item[Stub] Pedazo de pista que no lleva a ningún lado. Es cobre sobrante que puede actuar como antena.
+  \item[Teardrop] Ensanchamiento en forma de gota donde una pista llega a un pad o a una vía. Refuerza la unión
+  mecánica y tolera mejor un taladro corrido.
+  \item[Vía] Agujero metalizado que une capas. En esta placa: \SI{0.3}{\milli\meter} de taladro y \SI{0.6}{\milli\meter}
+  de pad.
+  \item[Vía taponada (plugged) / tenting] Vía cubierta: \emph{tenting} es taparla con máscara; \emph{plugged} es rellenar
+  el agujero antes. JLC tapona las vías de 4 capas, y por eso no pueden quedar a menos de \SI{0.35}{\milli\meter} de
+  un pad.
+  \item[Zona] Área de cobre que KiCad rellena automáticamente respetando las separaciones. Tiene prioridad: la de mayor
+  prioridad se rellena primero y las demás la rodean.
+\end{description}
+
+\section*{Fabricación y montaje}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[Basic / Extended] Clasificación de piezas de JLCPCB. Las \emph{basic} están siempre cargadas en las máquinas;
+  cada \emph{extended} distinta cobra una tarifa de carga del alimentador.
+  \item[BOM] \emph{Bill of Materials}. Lista de materiales: qué pieza va en cada designador y su código LCSC.
+  \item[CPL] \emph{Component Placement List}. Posición, cara y rotación de cada pieza para la máquina de montaje.
+  \item[DFM] \emph{Design for Manufacturing}. Revisión de que la placa se pueda fabricar y montar; JLC muestra una vista
+  previa DFM antes de pagar.
+  \item[Economic / Standard PCBA] Dos servicios de montaje de JLC. Economic es más barato, solo monta una cara y junta
+  pedidos de varios clientes. Standard monta las dos caras y pide placas de al menos \SI{70}{} $\times$
+  \SI{70}{\milli\meter}.
+  \item[ENIG] Acabado de oro sobre níquel. Muy plano y caro.
+  \item[Excellon] Formato de los archivos de taladro (posición y diámetro de cada agujero).
+  \item[Fiducial] Marca de cobre redonda sin máscara alrededor que la cámara de la máquina de montaje usa para
+  ubicar la placa. Esta tiene tres.
+  \item[Footprint] Dibujo de los pads, la serigrafía y el contorno de una pieza en la placa. Debe coincidir con el
+  encapsulado real y con el que usa el ensamblador.
+  \item[Gerber] Formato estándar de los archivos de fabricación, uno por capa (cobre, máscara, serigrafía, pasta,
+  borde).
+  \item[HASL] Acabado de estaño fundido nivelado con aire caliente. Barato y fácil de soldar; existe con plomo y sin
+  plomo. Esta placa lleva HASL sin plomo.
+  \item[LCSC] Distribuidor de componentes asociado a JLCPCB. El código LCSC (por ejemplo C2861011) identifica la pieza
+  exacta que monta JLC.
+  \item[Máscara de soldadura] Capa de laca (verde en esta placa) que cubre el cobre salvo los pads. Evita puentes de
+  soldadura y protege el cobre.
+  \item[Puente de máscara] Franja de máscara entre dos pads vecinos. Si es más angosta que el mínimo del fabricante,
+  desaparece y la soldadura puede unir los pads.
+  \item[Riel (edge rail)] Franja de material que se agrega al borde de la placa para que la máquina de montaje la sujete.
+  Se corta después. Aquí los agrega JLC.
+  \item[Serigrafía] Capa de tinta (blanca) con designadores, contornos y marcas de polaridad. Nunca debe quedar sobre
+  un pad.
+\end{description}
+
+\section*{Verificación}
+\begin{description}[style=sameline,leftmargin=1.5em,labelindent=0pt]
+  \item[DRC] \emph{Design Rule Check}. Revisión automática de la geometría de la placa contra las reglas (separaciones,
+  anchos, anillos, bordes).
+  \item[ERC] \emph{Electrical Rule Check}. Revisión del esquemático según el tipo de cada pin (salidas unidas, entradas
+  al aire, alimentaciones sin fuente).
+  \item[Paridad] Comparación entre la placa y el esquemático: mismas piezas, mismos footprints y mismas conexiones.
+  \item[Ratsnest] Líneas rectas que KiCad dibuja entre pads que deben unirse y todavía no tienen pista.
+\end{description}

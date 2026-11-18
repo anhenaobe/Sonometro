@@ -1,0 +1,1104 @@
+% Capítulo 3: el canal analógico (fuente IEPE, sumador, DAC y lazo de DC)
+\chapter[El canal analógico]{El canal analógico: fuente IEPE, sumador y lazo de DC}\label{cap:analog}
+
+Este es el corazón del sonómetro. Todo lo demás de la placa (fuentes conmutadas, ADC, NUCLEO) existe para que este
+canal funcione bien. Aquí el micrófono se alimenta, su señal se separa de la tensión de polarización y queda lista
+para que el ADC la digitalice.
+
+En este capítulo vas a ver:
+\begin{itemize}
+  \item qué tiene que hacer el canal y cómo está dividido en bloques;
+  \item cómo funciona la fuente de corriente IEPE con el LT3092 y de dónde salen los \SI{2.81}{\milli\ampere} y
+        \SI{1.51}{\milli\ampere} de cada canal (y el escalón de los puentes JP1/JP2);
+  \item el sumador inversor que resta la polarización del micrófono: la ecuación deducida paso a paso y por qué la
+        ganancia es \num{0.1};
+  \item cómo el DAC MCP4725, su filtro y el seguidor generan la referencia \net{VSHIFT}, y cómo el lazo de DC del
+        firmware la ajusta;
+  \item por qué el sumador necesitaba un condensador de realimentación (CF = \SI{10}{\pico\farad}) para no oscilar;
+  \item qué cambió al pasar del TLV9062 al TLV9152 y las dos comprobaciones que hubo que hacer;
+  \item cómo el canal 2 copia al canal 1, y cómo se alimenta y desacopla todo esto.
+\end{itemize}
+
+Un detalle importante antes de empezar: \textbf{la topología de este canal no la inventamos durante el ruteo}. La
+fuente IEPE, el sumador, el DAC y el seguidor del canal 1 vienen tal cual del proyecto Altium del equipo
+(\archivo{Sonometro_2CH}); el canal 2 es una copia pieza por pieza (\archivo{tools/design.py}, tablas
+\texttt{MIRROR} y \texttt{NETMAP}). Lo que se agregó o cambió en la Rev B (el condensador CF, el TLV9152, los filtros
+del lazo, el escalón de corriente) se dice explícitamente en cada sección. Las conexiones de todas las figuras se
+comprobaron contra \archivo{tools/target.json}, que es la lista de piezas y redes de la placa.
+
+% =====================================================================================================
+\section{Qué tiene que hacer el canal}\label{sec:c03-objetivo}
+
+Un micrófono IEPE (\emph{Integrated Electronics Piezo-Electric}) tiene un preamplificador adentro y usa un solo cable
+coaxial para dos cosas a la vez: por ese cable recibe una \textbf{corriente constante} que lo alimenta y por ese mismo
+cable devuelve la \textbf{señal}. La tensión que ves en el centro del BNC es
+\begin{equation}
+  v_{\mathrm{IEPE}}(t) = V_B + S\cdot p(t),
+  \label{eq:c03-iepe}
+\end{equation}
+donde $V_B$ es la tensión de polarización (la fija el propio micrófono, típicamente entre \SIrange{8}{14}{\volt}),
+$S$ es la sensibilidad (por ejemplo \SI{50}{\milli\volt\per\pascal} en el RG-50 \doc{ROGA RG-50}) y $p(t)$ es la
+presión sonora en pascales.
+
+\begin{idea}[el problema en una frase]
+La señal útil ($S\cdot p$) son unos milivoltios montados sobre unos \SI{12}{\volt} de DC. El ADC (PCM1808) solo acepta
+\SI{3}{\volt} pico a pico centrados en su propia referencia \doc{SLES177B p.6}. Hay que quitar los \SI{12}{\volt},
+achicar la señal para que quepa el peor caso y entregarla a un nivel de DC conocido.
+\end{idea}
+
+La figura~\ref{fig:c03-bloques} muestra cómo se reparte ese trabajo. Cada bloque tiene su sección en este capítulo.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  blq/.style={draw,rounded corners=2pt,align=center,font=\small,minimum height=11mm,inner sep=4pt,fill=white},
+  sen/.style={-{Stealth[length=2.2mm]},thick},
+  lbl/.style={font=\scriptsize\ttfamily,fill=white,inner sep=1pt}]
+  \node[blq,fill=cobre!8] (fuente) at (0,0) {Fuente de corriente\\LT3092 (U1)};
+  \node[blq,fill=azulidea!6] (mic) at (0,-2.4) {Micrófono IEPE\\(J2, BNC)};
+  \node[blq,fill=verdeplaca!8] (sum) at (5.2,-1.2) {Sumador inversor\\U3A\\$\scriptstyle 1{,}1\,V_{\mathrm{SHIFT}}-0{,}1\,v_{\mathrm{IEPE}}$};
+  \node[blq] (adc) at (10.2,-1.2) {C9 $\to$ PCM1808\\(ADC, cap.~\ref{cap:digital})};
+  \node[blq] (mon) at (10.2,-4.0) {Divisor $\div 2$\\R15/R17, C8};
+  \node[blq] (nuc) at (10.2,-6.4) {NUCLEO\\ADC PA0 + firmware};
+  \node[blq] (dac) at (5.2,-6.4) {DAC MCP4725\\U2, I\textsuperscript{2}C 0x60};
+  \node[blq] (rc) at (1.4,-6.4) {Filtro RC\\R12/C4, \SI{1}{\milli\second}};
+  \node[blq] (seg) at (1.4,-4.2) {Seguidor\\U3B};
+  \draw[sen] (fuente) -- node[lbl,left] {IEPE} (mic);
+  \draw[sen] (0,-1.2) -- node[lbl,above] {IEPE (R13…R18, \SI{1}{\mega\ohm})} (sum.west);
+  \draw[sen] (sum) -- node[lbl,above] {REST\_OUT} (adc);
+  \draw[sen] (8.0,-1.2) |- (mon.west);
+  \draw[sen] (mon) -- node[lbl,right] {DC\_MON} (nuc);
+  \draw[sen] (nuc) -- node[lbl,above] {I2C} (dac);
+  \draw[sen] (dac) -- node[lbl,above] {DAC\_RAW} (rc);
+  \draw[sen] (rc) -- node[lbl,right] {DAC\_F} (seg);
+  \draw[sen] (seg.north) |- node[lbl,pos=0.78,below] {VSHIFT} ([yshift=-3mm]sum.west);
+  \node[font=\scriptsize,color=grisnota,align=left] at (5.4,-3.9) {lazo de DC:\\el firmware mueve VSHIFT\\hasta que REST\_OUT\\queda en su objetivo};
+\end{tikzpicture}
+\caption{Bloques del canal analógico del canal 1 con los nombres reales de las redes. El canal 2 es idéntico (U8,
+U9, U10, con sufijo \texttt{\_SV} o \texttt{2} en las redes).}
+\label{fig:c03-bloques}
+\end{figure}
+
+En palabras:
+\begin{enumerate}
+  \item La \textbf{fuente de corriente} empuja una corriente fija hacia el nodo \net{IEPE}. El micrófono la consume y
+        fija ahí su tensión $V_B + S\,p(t)$.
+  \item El \textbf{sumador inversor} U3A toma \net{IEPE} a través de \SI{1}{\mega\ohm} y le resta la referencia
+        \net{VSHIFT}. Su salida \net{REST_OUT} es la señal atenuada diez veces, sobre un nivel de DC bajo y conocido.
+  \item \net{REST_OUT} va al ADC por el condensador C9. Además, un divisor entre 2 la lleva al ADC de la NUCLEO como
+        \net{DC_MON}, para que el firmware sepa cuál es el nivel de DC.
+  \item El firmware calcula cuánto hay que mover \net{VSHIFT} y se lo manda al DAC por I\textsuperscript{2}C. El DAC,
+        filtrado y copiado por el seguidor U3B, cierra el lazo.
+\end{enumerate}
+
+% =====================================================================================================
+\section{La fuente de corriente IEPE con el LT3092}\label{sec:c03-fuente}
+
+\subsection{Por qué el micrófono necesita una fuente de corriente}
+
+\begin{idea}[fuente de voltaje frente a fuente de corriente]
+Una fuente de voltaje mantiene fija la \emph{tensión} y deja que la corriente sea la que pida la carga. Una fuente de
+corriente hace lo contrario: mantiene fija la \emph{corriente} y deja que la tensión sea la que imponga la carga. En
+IEPE la tensión del cable \emph{es} la señal, así que la alimentación no puede imponerla: tiene que ser una fuente de
+corriente, y el micrófono decide la tensión. Si pusieras una fuente de voltaje directo al micrófono, fijarías el nodo
+y no habría señal (y probablemente lo dañarías: la regla de PCB es no aplicar nunca tensión sin limitar la corriente).
+\end{idea}
+
+Una fuente de corriente ideal tiene impedancia de salida infinita. Una real tiene una impedancia alta pero finita, y
+eso importa: la señal del micrófono ve en paralelo esa impedancia, así que cuanto más alta, menos carga a la señal.
+La fuente tampoco tiene que ser muy exacta en su valor (\SI{2.8}{\milli\ampere} o \SI{2.9}{\milli\ampere} da igual):
+lo que importa es que sea \emph{estable}, que tenga poco ruido y que le alcance la tensión (\emph{compliance}). Esto lo
+dice TI en su diseño de referencia TIDA-010249 \copia[AGENTS.md §4].
+
+\subsection{Cómo funciona el LT3092}
+
+El LT3092 (U1 en el canal 1, U8 en el canal 2) es una fuente de corriente programable con dos resistencias. Por dentro
+tiene dos cosas \copia[ADI LT3092 Rev D]:
+\begin{itemize}
+  \item una fuente de corriente de precisión de \SI{10}{\micro\ampere} que sale por el pin \textsf{SET};
+  \item un amplificador que obliga a que el pin \textsf{OUT} quede a la misma tensión que el pin \textsf{SET}.
+\end{itemize}
+
+Mira la figura~\ref{fig:c03-fuente}. Los \SI{10}{\micro\ampere} del pin SET pasan por $R_{\mathrm{SET}}$ y llegan al
+nodo \net{IEPE}. Eso crea una caída $\SI{10}{\micro\ampere}\cdot R_{\mathrm{SET}}$ entre \net{SET_I} y \net{IEPE}.
+Como el amplificador copia esa tensión en OUT, sobre $R_{\mathrm{OUT}}$ (entre \net{OUT_I} y \net{IEPE}) aparece
+\emph{la misma caída}. Entonces por $R_{\mathrm{OUT}}$ circula
+\begin{equation*}
+  I_{R_{\mathrm{OUT}}} = \frac{\SI{10}{\micro\ampere}\cdot R_{\mathrm{SET}}}{R_{\mathrm{OUT}}}.
+\end{equation*}
+Las dos corrientes, la de SET y la de OUT, terminan en el nodo \net{IEPE}, así que la corriente total que recibe el
+micrófono (más el poquito que se lleva el AFE, sección~\ref{sec:c03-carga}) es
+\begin{equation}
+  I_{\mathrm{IEPE}} = \SI{10}{\micro\ampere}\left(1 + \frac{R_{\mathrm{SET}}}{R_{\mathrm{OUT}}}\right).
+  \label{eq:c03-lt3092}
+\end{equation}
+
+\begin{ojo}[el «+1» de la fórmula]
+Es común ver la fórmula como $I = \SI{10}{\micro\ampere}\cdot R_{\mathrm{SET}}/R_{\mathrm{OUT}}$, sin el 1. La
+diferencia son los \SI{10}{\micro\ampere} del propio pin SET, que también llegan a la carga. Con
+$R_{\mathrm{SET}}/R_{\mathrm{OUT}} = 280$ el error de olvidarlo es de \SI{0.4}{\percent}: casi nada, pero las cuentas
+de este capítulo lo incluyen para que coincidan con las notas del esquemático.
+\end{ojo}
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.74,transform shape,font=\small]
+  % entrada y filtro
+  \draw (0,4) node[left]{\net{24V_PROT}} to[nos,l=J1,o-] (2,4)
+        to[R,l=R1,a=\SI{10}{\ohm}] (4.2,4) coordinate (sup);
+  \draw (sup) node[above right]{\scriptsize\net{IEPE_SUP}};
+  \draw (2,4) node[below,font=\scriptsize]{\net{IEPE_FEED}};
+  \draw (4.2,4) to[short,*-] (4.2,3.6) to[C,l_={C2 \SI{1}{\micro\farad}}] (4.2,1.6) node[ground]{};
+  \draw (4.2,4) -- (6.2,4) to[short,*-] (6.2,3.6) to[C,l_={C3 \SI{100}{\nano\farad}}] (6.2,1.6) node[ground]{};
+  % LT3092
+  \draw[thick] (8.0,2.6) rectangle (10.0,5.0);
+  \node[align=center,font=\small] at (9.0,3.8) {U1\\LT3092};
+  \draw (6.2,4) -- (8.0,4) node[right,font=\scriptsize]{IN};
+  \draw (10.0,4.6) node[left,font=\scriptsize]{OUT} -- (11.0,4.6) coordinate (out);
+  \draw (10.0,3.0) node[left,font=\scriptsize]{SET} -- (11.0,3.0) coordinate (set);
+  \draw (out) node[above left,font=\scriptsize]{\net{OUT_I}};
+  \draw (set) node[below left,font=\scriptsize]{\net{SET_I}};
+  % ROUT = R2 || R3 y escalón
+  \draw (out) to[R,l=R2,a=\SI{150}{\ohm},*-] (14.4,4.6) coordinate (iepe);
+  \draw (out) -- (11.0,6.0) to[R,l=R3,a=\SI{150}{\ohm},*-] (14.4,6.0) -- (iepe);
+  \draw (11.0,6.0) -- (11.0,7.4) to[R,l=R47,a=\SI{180}{\ohm}] (12.7,7.4) to[nos,l=JP1] (14.4,7.4) -- (14.4,6.0);
+  \node[font=\scriptsize,color=grisnota,anchor=west] at (11.0,8.3) {escalón (red \net{STEP1} entre R47 y JP1)};
+  % RSET y C1
+  \draw (set) to[R,l=$R_{\mathrm{SET}}$,a={R4+R5+R6 = \SI{21}{\kilo\ohm}},*-] (14.4,3.0) -- (iepe);
+  \draw (set) -- (11.0,1.4) to[C,l_={C1 \SI{100}{\nano\farad}}] (14.4,1.4) -- (14.4,3.0);
+  % nodo IEPE, TP1, AFE y micrófono
+  \draw (iepe) to[short,*-] (16.8,4.6) coordinate (bnc);
+  \draw (iepe) node[below right,font=\scriptsize]{\net{IEPE}};
+  \draw (15.2,4.6) to[short,*-o] (15.2,5.6) node[above,font=\scriptsize]{TP1};
+  \draw (bnc) to[V,l_={$V_B+S\,p(t)$}] (16.8,1.6) node[ground]{};
+  \node[font=\scriptsize,anchor=west] at (17.3,3.1) {micrófono (J2)};
+  \draw[-{Stealth[length=2mm]},thick,color=verdeplaca] (16.8,4.6) -- (18.0,4.6) node[right,font=\scriptsize,align=left]{a R13\\(AFE)};
+\end{circuitikz}
+\caption{Fuente IEPE del canal 1. $R_{\mathrm{OUT}} = \mathrm{R2}\parallel\mathrm{R3} = \SI{75}{\ohm}$;
+$R_{\mathrm{SET}}$ son tres resistencias en serie (\net{SET_I}–R4–\net{SET_MID}–R5–\net{SET_MID2}–R6–\net{IEPE}).
+Con el puente JP1 puesto, R47 queda en paralelo con $R_{\mathrm{OUT}}$. El micrófono se dibuja con su modelo de la
+ecuación~\eqref{eq:c03-iepe}.}
+\label{fig:c03-fuente}
+\end{figure}
+
+\subsection{Cálculo de la corriente de cada canal}
+
+Los valores salen de \archivo{tools/target.json}. En el canal 1, $R_{\mathrm{SET}}$ está hecha con tres resistencias en
+serie y $R_{\mathrm{OUT}}$ con dos en paralelo (así viene del Altium del equipo). En el canal 2 cada una es una sola
+pieza.
+
+\begin{calculo}[corriente del canal 1 (RG-50)]
+\begin{align*}
+  R_{\mathrm{SET}} &= R_4 + R_5 + R_6 = \SI{10}{\kilo\ohm} + \SI{10}{\kilo\ohm} + \SI{1}{\kilo\ohm} = \SI{21}{\kilo\ohm}\\
+  R_{\mathrm{OUT}} &= R_2 \parallel R_3 = \frac{150\cdot 150}{150+150}\,\si{\ohm} = \SI{75}{\ohm}\\
+  I_{\mathrm{CH1}} &= \SI{10}{\micro\ampere}\left(1 + \frac{21000}{75}\right) = \SI{10}{\micro\ampere}\cdot 281
+                    = \boxed{\SI{2.81}{\milli\ampere}}
+\end{align*}
+Con el puente JP1 puesto, R47 (\SI{180}{\ohm}) queda en paralelo con los \SI{75}{\ohm}:
+\begin{align*}
+  R_{\mathrm{OUT}}' &= \frac{75\cdot 180}{75+180}\,\si{\ohm} = \SI{52.94}{\ohm}\\
+  I_{\mathrm{CH1}}' &= \SI{10}{\micro\ampere}\left(1 + \frac{21000}{52.94}\right) = \SI{10}{\micro\ampere}\cdot 397.7
+                     = \boxed{\SI{3.98}{\milli\ampere}}
+\end{align*}
+\end{calculo}
+
+\begin{calculo}[corriente del canal 2 (SV 12)]
+En el canal 2, $R_{\mathrm{SET}}$ = R34 = \SI{15}{\kilo\ohm} (entre \net{SET_SV} e \net{IEPE_SV}) y
+$R_{\mathrm{OUT}}$ = R35 = \SI{100}{\ohm} (entre \net{OUT_SV} e \net{IEPE_SV}):
+\begin{align*}
+  I_{\mathrm{CH2}} &= \SI{10}{\micro\ampere}\left(1 + \frac{15000}{100}\right) = \SI{10}{\micro\ampere}\cdot 151
+                    = \boxed{\SI{1.51}{\milli\ampere}}
+\end{align*}
+Con JP2 puesto, R48 (\SI{150}{\ohm}) queda en paralelo con R35:
+\begin{align*}
+  R_{\mathrm{OUT}}' &= \frac{100\cdot 150}{100+150}\,\si{\ohm} = \SI{60}{\ohm}, \qquad
+  I_{\mathrm{CH2}}' = \SI{10}{\micro\ampere}\left(1 + \frac{15000}{60}\right) = \boxed{\SI{2.51}{\milli\ampere}}
+\end{align*}
+\end{calculo}
+
+Estas cuentas coinciden con las notas del esquemático (\archivo{tools/gen_sch_wired.py}) y con la tabla de entradas
+de \archivo{CALCULOS.md}. La tolerancia de las resistencias es del \SI{1}{\percent} (son de la serie
+\texttt{0603WAF…} y \texttt{RC0603FR…}); la de la corriente interna de \SI{10}{\micro\ampere} del LT3092 no está en los
+textos de datasheet que se leyeron para este informe, así que el valor exacto de cada placa se mide con un
+amperímetro en J1 o J7 \medir.
+
+\subsection{Por qué esas corrientes}
+
+\begin{decision}[la corriente de cada micrófono]
+\textbf{Qué se decidió.} Canal 1 (ROGA RG-50): \SI{2.81}{\milli\ampere}. Canal 2 (Svantek SV 12): \SI{1.51}{\milli\ampere}.
+Un puente en cada canal sube la corriente a \SI{3.98}{\milli\ampere} y \SI{2.51}{\milli\ampere}.
+
+\textbf{Alternativas.} Una sola corriente para los dos (por ejemplo \SI{2.5}{\milli\ampere}, que documentan los dos
+fabricantes); una corriente ajustable con potenciómetro.
+
+\textbf{Por qué.}
+\begin{itemize}
+  \item El RG-50 acepta \SIrange{2}{20}{\milli\ampere} según su ficha actual, o \SIrange{2}{6}{\milli\ampere} según la
+        versión vieja \doc{ROGA RG-50}. \SI{2.81}{\milli\ampere} y \SI{3.98}{\milli\ampere} caben en los dos rangos.
+  \item El SV 12 se usa con \SI{1.5}{\milli\ampere} en el SVAN~977 y con \SI{2.5}{\milli\ampere} en el SVAN~958A
+        \doc{Svantek}. Los dos puntos del canal 2 (\SI{1.51}{\milli\ampere} y \SI{2.51}{\milli\ampere}) son
+        justamente esos dos valores documentados.
+  \item El escalón (cambio C9 de la Rev B) sirve para la demostración: al cambiar la corriente cambia un poco el nivel
+        de DC del nodo \net{IEPE}, y se puede ver en el osciloscopio cómo el lazo de DC (sección~\ref{sec:c03-lazo}) lo
+        corrige. Se hizo con un puente de pines y no con un potenciómetro porque un puente da dos valores conocidos y
+        repetibles.
+\end{itemize}
+
+\textbf{Fuente.} AGENTS.md §3 (fichas de ROGA y Svantek), \archivo{tools/design.py} (cambio C9).
+\end{decision}
+
+\subsection{La corriente que de verdad llega al micrófono}\label{sec:c03-carga}
+
+El nodo \net{IEPE} no solo alimenta al micrófono: también ve la entrada del AFE, que es una cadena de
+\SI{1.0009}{\mega\ohm} hasta el nodo \net{SUM}, que está a la tensión \net{VSHIFT} (el sumador es un inversor, su
+entrada inversora es una tierra virtual a \net{VSHIFT}). Con el RG-50 ($V_B = \SI{12.5}{\volt}$) y
+$V_{\mathrm{SHIFT}} \approx \SI{2.5}{\volt}$:
+\begin{equation*}
+  I_{\mathrm{AFE}} = \frac{V_B - V_{\mathrm{SHIFT}}}{R_{\mathrm{in}}} = \frac{\SI{12.5}{\volt}-\SI{2.5}{\volt}}{\SI{1.0009}{\mega\ohm}}
+  \approx \SI{10}{\micro\ampere}.
+\end{equation*}
+Es decir, el micrófono recibe unos \SI{2.80}{\milli\ampere} en vez de \SI{2.81}{\milli\ampere}. Es el mismo número que
+anota \archivo{docs/connection_matrix.md} (``\SI{2.810}{\milli\ampere} source; $\sim$\SI{2.800}{\milli\ampere}
+sensor''). Esta es una de las razones de que la entrada del AFE sea de \SI{1}{\mega\ohm}: casi no le roba corriente
+al micrófono.
+
+\subsection{El resto de piezas de la fuente}
+
+\begin{itemize}
+  \item \textbf{J1 (bornera de 2 polos).} Está en serie entre \net{24V_PROT} y \net{IEPE_FEED}: con un puente de cable
+        el canal funciona; quitándolo se apaga; y en su lugar se puede poner el amperímetro para medir la corriente.
+        En el canal 2 es J7.
+  \item \textbf{R1 (\SI{10}{\ohm}) con C2 (\SI{1}{\micro\farad}) y C3 (\SI{100}{\nano\farad}).} Forman un filtro RC en
+        la entrada del LT3092 (red \net{IEPE_SUP}). Su corte es
+        $f_c = 1/(2\pi\cdot\SI{10}{\ohm}\cdot\SI{1.1}{\micro\farad}) \approx \SI{14.5}{\kilo\hertz}$. El datasheet pide
+        un bypass de entrada de \SIrange{0.1}{1}{\micro\farad} \copia[REGLAS.md §3]. El LT3092 no necesita
+        condensadores para ser estable.
+  \item \textbf{C1 (\SI{100}{\nano\farad}) en paralelo con $R_{\mathrm{SET}}$.} Filtra el ruido de la referencia de
+        \SI{10}{\micro\ampere}. Una simulación previa del repositorio con el modelo de ADI
+        (\archivo{docs/simulacion-lt3092.md}, marcada como provisional) dio \SI{3.99}{\micro\volt} rms de ruido en el
+        nodo IEPE sin condensador y \SI{0.46}{\micro\volt} rms con \SI{100}{\nano\farad}, entre \SI{20}{\hertz} y
+        \SI{20}{\kilo\hertz} \estimado. El piso de ruido del micrófono en esa simulación era
+        \SI{40.8}{\micro\volt} rms, así que con C1 la fuente aporta alrededor del \SI{1}{\percent}.
+  \item \textbf{TP1.} Punto de prueba en \net{IEPE} para el osciloscopio (cambio C10). En el canal 2 es TP3.
+  \item \textbf{J2 (BNC a \SI{90}{\degree}).} Centro = \net{IEPE}, carcasa = GND (cambio C8). El SV 12 tiene conector
+        TNC y se conecta a J8 con un adaptador BNC–TNC.
+\end{itemize}
+
+\subsection{¿Alcanzan los 24 V? (compliance)}
+
+La fuente de corriente solo funciona si tiene tensión suficiente entre su entrada y el micrófono. Si el micrófono
+sube su tensión (en un pico de sonido fuerte) por encima de lo que la fuente puede dar, la corriente se cae y la señal
+se recorta.
+
+\begin{calculo}[margen de tensión con el RG-50]
+\begin{itemize}
+  \item Tensión que llega: \SI{24}{\volt} menos la caída del diodo D1, unos \SI{23.5}{\volt} (\archivo{CALCULOS.md}).
+  \item Caída de la fuente: unos \SI{1.42}{\volt} (\SI{1.22}{\volt} del integrado y \SI{0.2}{\volt} en
+        $R_{\mathrm{OUT}}$) según la simulación previa del repositorio \estimado. A eso se suman unos milivoltios en R1.
+  \item Tensión máxima disponible en el nodo IEPE: $\approx \SI{23.5}{\volt} - \SI{1.42}{\volt} \approx \SI{22}{\volt}$.
+  \item Lo que pide el RG-50 en el peor caso: $V_B + v_{\mathrm{pico}} = \SI{12.5}{\volt} + \SI{3.2}{\volt}
+        = \SI{15.7}{\volt}$ (\SI{130}{\decibel} pico con \SI{50}{\milli\volt\per\pascal}, AGENTS.md §3.2).
+  \item Margen: unos \SI{6}{\volt}.
+\end{itemize}
+\end{calculo}
+
+\begin{ojo}[el SV 12 todavía no está verificado]
+Para el SV 12 Svantek publica una excursión de al menos \SI{10.8}{\volt} pico con \SIrange{28}{30}{\volt} de
+alimentación, pero no publica su tensión de polarización. Con unos \SI{22}{\volt} disponibles, el SV 12 aprovecharía
+toda su excursión solo si su polarización es menor que unos \SI{11}{\volt}. Hay que medir la polarización del SV 12 a
+\SI{2.5}{\milli\ampere} \medir. Para el uso normal del sonómetro (niveles muy por debajo del máximo del micrófono) esto
+no es un problema.
+\end{ojo}
+
+La disipación del LT3092 en el peor caso (micrófono en cortocircuito: toda la tensión cae en el integrado) es
+$\SI{3.98}{\milli\ampere}\times\SI{23.3}{\volt} = \SI{93}{\milli\watt}$, que con $\theta_{JA} = \SI{57}{\degreeCelsius\per\watt}$
+\copia{} sube la temperatura unos \SI{5.3}{\degreeCelsius} (\archivo{CALCULOS.md}, ver
+capítulo~\ref{cap:calculos}).
+
+% =====================================================================================================
+\section{El sumador inversor: restar la polarización}\label{sec:c03-sumador}
+
+\subsection{Dos maneras de quitar el DC}
+
+Hay dos caminos clásicos para quedarte solo con $S\cdot p(t)$:
+\begin{enumerate}
+  \item \textbf{Acoplamiento por condensador.} Un condensador en serie bloquea el DC y deja pasar la señal; luego la
+        recentras en la mitad del rango del ADC con un divisor. Es lo que hacía la propuesta v1 del grupo.
+  \item \textbf{Acoplamiento en DC con resta de una referencia.} Un amplificador resta una tensión conocida y la
+        señal pasa sin condensadores.
+\end{enumerate}
+
+El profesor criticó la v1 por dos cosas (AGENTS.md §10): el condensador de acoplamiento introduce desfase a baja
+frecuencia, y el nivel de DC a mitad de escala ``no tenía una referencia definida''. Su sugerencia fue un
+amplificador que reste (diferencial) para rechazar ruido.
+
+El circuito del equipo, que es el que se ruteó, usa el segundo camino: \textbf{el sumador U3A resta la referencia
+\net{VSHIFT} en DC}. Esa referencia la fija un DAC, el firmware sabe exactamente cuánto vale y además se mide
+(\net{DC_MON}). Así el nivel de DC queda definido y controlado.
+
+\begin{ojo}[sí queda un condensador, pero muy abajo en frecuencia]
+Entre \net{REST_OUT} y el ADC está C9 (\SI{10}{\micro\farad}), porque el PCM1808 polariza su propia entrada a
+$0{,}5\,V_{CC}$ y tiene una entrada de \SI{60}{\kilo\ohm} \doc{SLES177B p.6}. El corte de ese acoplamiento es
+$1/(2\pi\cdot\SI{10}{\micro\farad}\cdot\SI{60}{\kilo\ohm}) \approx \SI{0.27}{\hertz}$, y el propio PCM1808 tiene un
+filtro pasa altos digital de \SI{0.91}{\hertz} \doc{SLES177B p.1}. Los dos están dos décadas por debajo de
+\SI{20}{\hertz}. El detalle del ADC está en el capítulo~\ref{cap:digital}.
+\end{ojo}
+
+\subsection{El circuito}
+
+La figura~\ref{fig:c03-afe} es el AFE completo del canal 1. Fíjate en los nombres de las redes, porque son los que
+vas a ver en la placa.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.78,transform shape,font=\small]
+  % cadena de entrada
+  \draw (0,0) node[left]{\net{IEPE}} to[R,l=R13,a=\SI{390}{\kilo\ohm},o-] (2.2,0)
+        to[R,l=R14,a=\SI{365}{\kilo\ohm}] (4.4,0)
+        to[R,l=R16,a=\SI{191}{\kilo\ohm}] (6.6,0)
+        to[R,l=R18,a=\SI{54.9}{\kilo\ohm}] (8.8,0) coordinate (sum);
+  \node[font=\scriptsize,below] at (2.2,-0.6) {\net{IEPE_DIV1}};
+  \node[font=\scriptsize,below] at (4.4,-0.6) {\net{IEPE_DIV2}};
+  \node[font=\scriptsize,below] at (6.6,-0.6) {\net{IEPE_DIV3}};
+  \draw (2.2,0) node[circ]{}; \draw (4.4,0) node[circ]{}; \draw (6.6,0) node[circ]{};
+  % U3A
+  \draw (10.6,-0.48) node[op amp] (A) {\scriptsize U3A};
+  \draw (sum) to[short,*-] (A.-);
+  \draw (sum) node[above left,font=\scriptsize]{\net{SUM}};
+  % realimentación
+  \draw (sum) -- (8.8,2.0) to[R,l=R7,a=\SI{49.9}{\kilo\ohm}] (10.8,2.0) coordinate (fbm)
+        to[R,l=R8,a=\SI{49.9}{\kilo\ohm}] (12.8,2.0) -- (12.8,-0.48);
+  \draw (fbm) node[circ]{} node[above,font=\scriptsize]{\net{FB_MID}};
+  \draw (8.8,2.0) -- (8.8,3.4) to[C,l={C56, \SI{10}{\pico\farad} C0G}] (12.8,3.4) -- (12.8,2.0);
+  \draw (A.out) -- (12.8,-0.48) to[short,*-] (14.6,-0.48) coordinate (rest);
+  \draw (12.8,-0.48) node[below right,font=\scriptsize]{\net{REST_OUT}};
+  % salidas de REST_OUT
+  \draw (13.7,-0.48) to[short,*-o] (13.7,0.6) node[above,font=\scriptsize]{TP2};
+  \draw (rest) to[C,l=C9,a=\SI{10}{\micro\farad}] (16.6,-0.48) node[right,font=\scriptsize,align=left]{\net{AC_LEFT}\\(PCM1808)};
+  \draw (14.6,-0.48) -- (14.6,-1.6) to[R,l_={R15 \SI{10}{\kilo\ohm}}] (14.6,-3.6) coordinate (mon)
+        to[R,l_={R17 \SI{10}{\kilo\ohm}}] (14.6,-5.6) node[ground]{};
+  \draw (mon) to[short,*-] (16.2,-3.6) to[C,l={C8 \SI{100}{\nano\farad}}] (16.2,-5.6) node[ground]{};
+  \draw (16.2,-3.6) -- (17.2,-3.6) node[right,font=\scriptsize,align=left]{\net{DC_MON}\\NUCLEO A0};
+  % + de U3A: VSHIFT desde el seguidor U3B
+  \draw (A.+) -- ++(-0.5,0) coordinate (vsh);
+  \draw (6.2,-3.0) node[op amp,yscale=-1] (B) {};
+  \node[font=\scriptsize] at (B.center) {U3B};
+  \draw (B.out) -| (vsh);
+  \draw (B.out) to[short,*-] ++(0,-1.25) coordinate (bfb) -| (B.-);
+  \node[font=\scriptsize,above] at (8.1,-3.0) {\net{VSHIFT}};
+  % DAC y filtro
+  \draw (B.+) -- (3.6,-2.52) coordinate (dacf);
+  \draw (dacf) node[circ]{} node[above,font=\scriptsize]{\net{DAC_F}};
+  \draw (dacf) -- (3.6,-4.6) to[C,l=C4,a=\SI{100}{\nano\farad}] (3.6,-6.4) node[ground]{};
+  \draw (dacf) to[R,l_=R12,a^=\SI{10}{\kilo\ohm}] (1.0,-2.52) node[left,font=\scriptsize,align=right]{\net{DAC_RAW}\\(U2, MCP4725)};
+\end{circuitikz}
+\caption{AFE del canal 1 con las redes reales. $R_{\mathrm{in}}$ = R13+R14+R16+R18 = \SI{1000.9}{\kilo\ohm};
+$R_f$ = R7+R8 = \SI{99.8}{\kilo\ohm}, en paralelo con C56. U3A y U3B son las dos mitades del mismo TLV9152 (U3),
+alimentado de \net{5V_A} (pin 8) y GND (pin 4), desacoplado con C7. Pines: U3.2 = \net{SUM}, U3.3 = \net{VSHIFT},
+U3.1 = \net{REST_OUT}, U3.5 = \net{DAC_F}, U3.6 = U3.7 = \net{VSHIFT}.}
+\label{fig:c03-afe}
+\end{figure}
+
+Componentes del sumador:
+\begin{itemize}
+  \item \textbf{Resistencia de entrada} $R_{\mathrm{in}}$ = R13 + R14 + R16 + R18
+        = \SI{390}{\kilo\ohm} + \SI{365}{\kilo\ohm} + \SI{191}{\kilo\ohm} + \SI{54.9}{\kilo\ohm} = \SI{1000.9}{\kilo\ohm}.
+  \item \textbf{Resistencia de realimentación} $R_f$ = R7 + R8 = 2 × \SI{49.9}{\kilo\ohm} = \SI{99.8}{\kilo\ohm}.
+  \item \textbf{CF} = C56, \SI{10}{\pico\farad} C0G, en paralelo con $R_f$ (agregado en la Rev B, sección~\ref{sec:c03-cf}).
+  \item \textbf{U3A}: mitad A del TLV9152. Entrada $-$ en \net{SUM}, entrada $+$ en \net{VSHIFT}, salida \net{REST_OUT}.
+\end{itemize}
+
+Que $R_{\mathrm{in}}$ esté partida en cuatro resistencias y $R_f$ en dos viene del diseño del equipo; el repositorio no
+documenta el motivo. Lo que sí importa para el ruteo es que los nodos intermedios (\net{IEPE_DIV1}…\net{IEPE_DIV3},
+\net{SUM}) son de alta impedancia, así que son sensibles a acoples. Por eso se rutearon solo en \capa{F.Cu} y nada
+pasa por debajo de ellos (capítulo~\ref{cap:ruteo}).
+
+\subsection{La ecuación, paso a paso}
+
+Vamos a deducir \net{REST_OUT} con superposición, como en el curso de circuitos. Suponemos el op-amp ideal: ganancia
+infinita, entradas que no consumen corriente, y por eso las dos entradas a la misma tensión. Llamemos
+$k = R_f/R_{\mathrm{in}}$.
+
+\begin{calculo}[superposición en el sumador]
+\textbf{Paso 1: solo \net{IEPE}} (\net{VSHIFT} a 0~V). Es un inversor clásico:
+\begin{equation*}
+  V_{\mathrm{REST}}^{(1)} = -\frac{R_f}{R_{\mathrm{in}}}\,v_{\mathrm{IEPE}} = -k\,v_{\mathrm{IEPE}}.
+\end{equation*}
+\textbf{Paso 2: solo \net{VSHIFT}} (\net{IEPE} a 0~V). Visto desde la entrada $+$ es un no inversor:
+\begin{equation*}
+  V_{\mathrm{REST}}^{(2)} = \left(1 + \frac{R_f}{R_{\mathrm{in}}}\right) V_{\mathrm{SHIFT}} = (1+k)\,V_{\mathrm{SHIFT}}.
+\end{equation*}
+\textbf{Paso 3: se suman}:
+\begin{equation}
+  \boxed{V_{\mathrm{REST}} = (1+k)\,V_{\mathrm{SHIFT}} - k\,v_{\mathrm{IEPE}}
+  = V_{\mathrm{SHIFT}} - k\left(v_{\mathrm{IEPE}} - V_{\mathrm{SHIFT}}\right)}
+  \label{eq:c03-rest}
+\end{equation}
+\textbf{Paso 4: los números}:
+\begin{equation*}
+  k = \frac{\SI{99.8}{\kilo\ohm}}{\SI{1000.9}{\kilo\ohm}} = \num{0.0997}, \qquad 1+k = \num{1.0997}.
+\end{equation*}
+\end{calculo}
+
+Ahora mete la ecuación~\eqref{eq:c03-iepe} en la~\eqref{eq:c03-rest}:
+\begin{equation*}
+  V_{\mathrm{REST}} = \underbrace{(1+k)\,V_{\mathrm{SHIFT}} - k\,V_B}_{\text{nivel de DC}}
+  \;\underbrace{-\;k\,S\,p(t)}_{\text{señal}}.
+\end{equation*}
+Esto dice tres cosas:
+\begin{itemize}
+  \item La \textbf{señal} sale multiplicada por $-k \approx -0{,}1$: atenuada diez veces e invertida (la inversión no
+        importa, el firmware la puede deshacer).
+  \item El \textbf{nivel de DC} depende de $V_{\mathrm{SHIFT}}$ y de $V_B$. Como $V_B$ depende del micrófono, de la
+        corriente y de la temperatura, no se puede fijar de una vez: por eso hay un lazo que ajusta
+        $V_{\mathrm{SHIFT}}$ (sección~\ref{sec:c03-lazo}).
+  \item Para que la salida quede en un objetivo $V_{\mathrm{REST}}^{*}$ hay que poner
+        \begin{equation}
+          V_{\mathrm{SHIFT}} = \frac{V_{\mathrm{REST}}^{*} + k\,V_B}{1+k}.
+          \label{eq:c03-vshift}
+        \end{equation}
+\end{itemize}
+
+\begin{calculo}[ejemplo con el RG-50]
+$V_B = \SI{12.5}{\volt}$ \doc{ROGA RG-50} y un objetivo de \SI{1.5}{\volt} en \net{REST_OUT}:
+\begin{equation*}
+  V_{\mathrm{SHIFT}} = \frac{1{,}5 + 0{,}0997\cdot 12{,}5}{1{,}0997}\,\si{\volt} = \frac{1{,}5 + 1{,}246}{1{,}0997}\,\si{\volt}
+  = \SI{2.50}{\volt}.
+\end{equation*}
+Con \SI{94}{\decibel} SPL (\SI{1}{\pascal} rms, el nivel típico de un calibrador) y \SI{50}{\milli\volt\per\pascal},
+el micrófono da \SI{50}{\milli\volt} rms y en \net{REST_OUT} quedan
+$0{,}0997\times\SI{50}{\milli\volt} \approx \SI{5}{\milli\volt}$ rms sobre \SI{1.5}{\volt}.
+\end{calculo}
+
+\subsection{Por qué la ganancia es 0,1}
+
+\begin{decision}[atenuar diez veces]
+\textbf{Qué se decidió.} $k = R_f/R_{\mathrm{in}} \approx 0{,}1$ (diseño del equipo, conservado en la Rev B).
+
+\textbf{Alternativas.} Ganancia 1 o mayor (como la etapa de G = 11 de la propuesta v1, que el profesor criticó).
+
+\textbf{Por qué.} La ganancia se elige para que \emph{el peor caso quepa} en el ADC:
+\begin{itemize}
+  \item El PCM1808 acepta \SI{3}{\volt} pico a pico a fondo de escala, es decir $\pm\SI{1.5}{\volt}$
+        \doc{SLES177B p.4, p.6}.
+  \item El SV 12 puede excursionar al menos \SI{10.8}{\volt} pico \doc{Svantek}. Por 0,1 quedan
+        \SI{1.08}{\volt} pico: cabe con margen.
+  \item El RG-50 a su máximo de \SI{130}{\decibel} pico da unos \SI{3.2}{\volt} pico; por 0,1 quedan
+        \SI{0.32}{\volt}.
+\end{itemize}
+Con ganancia 1 la excursión del SV 12 recortaría el ADC diez veces antes.
+
+\textbf{Fuente.} AGENTS.md §3, SLES177B, \archivo{tools/analisis_opamp.py} (ganancia $-0{,}0997$).
+\end{decision}
+
+\begin{ojo}[lo que se paga por atenuar]
+Atenuar diez veces también acerca la señal al ruido del ADC. Una estimación gruesa \estimado: el PCM1808 tiene
+\SI{99}{\decibel} de rango dinámico típico \doc{SLES177B p.1}; sobre \SI{3}{\volt} pico a pico
+(\SI{1.06}{\volt} rms) eso es un piso de unos \SI{12}{\micro\volt} rms. Llevado a la entrada del RG-50
+($0{,}0997\times\SI{50}{\milli\volt\per\pascal}$) equivale a unos \SI{2.4}{\milli\pascal}, unos \SI{41}{\decibel} SPL. El
+ruido propio del RG-50 es de unos \SI{27}{\decibel}(A). Para niveles normales de sala y de calibrador (\SI{94}{\decibel})
+sobra, pero el piso del sistema lo pone el ADC y no el micrófono. Son números típicos y con ponderaciones distintas: hay
+que medirlo \medir.
+\end{ojo}
+
+\subsection{Qué pasa si se desconecta el micrófono}
+
+Si el cable se abre, la fuente de corriente ya no tiene a dónde mandar su corriente y el nodo \net{IEPE} sube casi
+hasta la entrada (\
+um{22}–\SI{24}{\volt}). Con la ecuación~\eqref{eq:c03-rest}, \net{REST_OUT} pediría una tensión
+negativa: el op-amp se satura contra GND. Lo bueno es que la cadena de \SI{1}{\mega\ohm} protege la entrada del
+op-amp: aun en el peor caso, la corriente hacia \net{SUM} es de unos $\SI{24}{\volt}/\SI{1}{\mega\ohm} =
+\SI{24}{\micro\ampere}$, muy por debajo de los \SI{10}{\milli\ampere} que el TLV9152 admite en sus entradas como máximo
+absoluto \doc{SBOS986E p.9}. Al reconectar el micrófono, el lazo de DC vuelve a centrar la salida.
+
+% =====================================================================================================
+\section{La referencia VSHIFT: DAC, filtro y seguidor}\label{sec:c03-vshift}
+
+\subsection{El DAC MCP4725}
+
+U2 (canal 1) y U10 (canal 2) son MCP4725: DAC de 12 bits con salida de tensión, interfaz I\textsuperscript{2}C y
+memoria EEPROM \doc{DS22039D p.1}. Su referencia es su propia alimentación ($V_{\mathrm{REF}} = V_{DD}$)
+\doc{DS22039D p.15}, así que
+\begin{equation*}
+  V_{\mathrm{DAC}} = V_{DD}\cdot\frac{\text{código}}{4096}, \qquad
+  1\ \text{LSB} = \frac{\SI{3.3}{\volt}}{4096} \approx \SI{0.81}{\milli\volt}.
+\end{equation*}
+Como \net{REST_OUT} cambia $(1+k)$ veces lo que cambia \net{VSHIFT}, un LSB del DAC mueve la salida unos
+$1{,}1\times\SI{0.81}{\milli\volt} \approx \SI{0.89}{\milli\volt}$. Esa es la resolución con la que el lazo puede
+centrar el DC.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.9,transform shape,font=\small]
+  \draw (0,3) node[left]{\net{3V3}} to[R,l=R9,a=\SI{100}{\ohm},o-] (2.6,3) coordinate (vdd);
+  \draw (vdd) node[above,font=\scriptsize]{\net{3V3_DAC}};
+  \draw (vdd) to[short,*-] (2.6,2.4) to[C,l_={C5 \SI{10}{\micro\farad}}] (2.6,0.4) node[ground]{};
+  \draw (vdd) -- (4.0,3) to[short,*-] (4.0,2.4) to[C,l={C6 \SI{100}{\nano\farad}}] (4.0,0.4) node[ground]{};
+  \draw (4.0,3) -- (6.0,3);
+  \draw[thick] (6.0,0.2) rectangle (8.6,3.6);
+  \node[align=center] at (7.3,1.9) {U2\\MCP4725};
+  \node[font=\scriptsize,right] at (6.0,3.0) {3 VDD};
+  \node[font=\scriptsize,right] at (6.0,0.6) {2 VSS};
+  \draw (6.0,0.6) -- (5.4,0.6) node[ground]{};
+  \node[font=\scriptsize,left] at (8.6,3.0) {VOUT 1};
+  \node[font=\scriptsize,left] at (8.6,2.2) {SDA 4};
+  \node[font=\scriptsize,left] at (8.6,1.4) {SCL 5};
+  \node[font=\scriptsize,left] at (8.6,0.6) {A0 6};
+  \draw (8.6,3.0) -- (9.4,3.0) node[right,font=\scriptsize]{\net{DAC_RAW} $\to$ R12};
+  \draw (8.6,0.6) -- (9.4,0.6) node[ground]{};
+  \node[font=\scriptsize,right] at (9.5,0.65) {(CH2: A0 a \net{3V3_DAC_SV} $\Rightarrow$ 0x61)};
+  \draw (8.6,2.2) -- (12.6,2.2) coordinate (sda);
+  \draw (8.6,1.4) -- (14.0,1.4) coordinate (scl);
+  \draw (sda) to[R,l_=R11,a^=\SI{4.7}{\kilo\ohm},*-] (12.6,4.8) node[above,font=\scriptsize]{\net{3V3}};
+  \draw (scl) to[R,l=R10,a=\SI{4.7}{\kilo\ohm},*-] (14.0,4.8) node[above,font=\scriptsize]{\net{3V3}};
+  \draw (sda) -- (15.4,2.2) node[right,font=\scriptsize]{\net{I2C_SDA}};
+  \draw (scl) -- (15.4,1.4) node[right,font=\scriptsize]{\net{I2C_SCL}};
+\end{circuitikz}
+\caption{DAC del canal 1: alimentación filtrada (R9, C5, C6), dirección por A0 y pull-ups del bus I\textsuperscript{2}C.
+El bus es compartido: U10 (canal 2) cuelga de las mismas \net{I2C_SDA}/\net{I2C_SCL}. En el canal 2 la alimentación es
+R46, C52 y C53.}
+\label{fig:c03-dac}
+\end{figure}
+
+\paragraph{La dirección I\textsuperscript{2}C.} La dirección del MCP4725 es \texttt{1100} + A2 A1 A0. A2 y A1 los graba
+la fábrica (\texttt{00} en la variante A0 que se compró, \net{MCP4725A0T-E/CH}) y A0 lo fija el pin 6
+\doc{DS22039D p.27}. En U2 el pin 6 va a GND: dirección \texttt{1100000} = \textbf{0x60}. En U10 va a
+\net{3V3_DAC_SV}: \texttt{1100001} = \textbf{0x61}. Así los dos DAC comparten el bus sin chocar.
+
+\paragraph{La EEPROM.} El MCP4725 guarda un código en su memoria no volátil y lo carga al encender
+\doc{DS22039D p.1}. Si el firmware guarda ahí el último \net{VSHIFT} bueno, el canal arranca ya cerca de su punto de
+trabajo. (Escribir la EEPROM tarda hasta \SI{50}{\milli\second} \doc{DS22039D p.4}, así que no se hace en cada
+corrección del lazo.)
+
+\paragraph{La alimentación del DAC es su referencia.} Cualquier ruido en $V_{DD}$ aparece en la salida del DAC
+\doc{DS22039D §8.3}, y de ahí pasa a \net{REST_OUT} multiplicado por 1,1. Por eso el DAC no se alimenta directo del
+riel de \SI{3.3}{\volt} del buck, sino a través de R9 (\SI{100}{\ohm}) con C5 (\SI{10}{\micro\farad}) y C6
+(\SI{100}{\nano\farad}):
+\begin{equation*}
+  f_c = \frac{1}{2\pi\cdot\SI{100}{\ohm}\cdot\SI{10.1}{\micro\farad}} \approx \SI{158}{\hertz}.
+\end{equation*}
+El buck conmuta a \SI{1}{\mega\hertz} (capítulo~\ref{cap:alim}); a esa frecuencia el filtro atenúa unas
+$\num{6300}$ veces (más de \SI{70}{\decibel}) en la aproximación de primer orden. El precio es una pequeña caída:
+con \SI{210}{\micro\ampere} típicos de consumo \doc{DS22039D p.3}, R9 baja \SI{21}{\milli\volt}, así que
+\net{3V3_DAC} queda en unos \SI{3.28}{\volt}. No importa: el lazo de DC mide el resultado y corrige.
+
+\subsection{El filtro R12/C4}
+
+La salida del DAC (\net{DAC_RAW}) pasa por R12 (\SI{10}{\kilo\ohm}) y C4 (\SI{100}{\nano\farad}) antes de llegar al
+seguidor (\net{DAC_F}):
+\begin{equation*}
+  \tau = R_{12}\,C_4 = \SI{10}{\kilo\ohm}\cdot\SI{100}{\nano\farad} = \SI{1}{\milli\second}, \qquad
+  f_c = \frac{1}{2\pi\tau} \approx \SI{159}{\hertz}.
+\end{equation*}
+Sirve para dos cosas: suaviza los saltos cuando el DAC cambia de código (el lazo no mete escalones bruscos en la señal)
+y quita ruido de alta frecuencia del DAC.
+
+\begin{decision}[filtros del lazo de \SI{10}{\micro\farad} a \SI{100}{\nano\farad} (cambio C6)]
+\textbf{Qué se decidió.} C4/C51 (filtro del DAC) y C8/C55 (filtro de \net{DC_MON}) pasaron de \SI{10}{\micro\farad} a
+\SI{100}{\nano\farad} X7R.
+
+\textbf{Alternativas.} Dejar los \SI{10}{\micro\farad} del Altium original.
+
+\textbf{Por qué.} Con \SI{10}{\micro\farad} las constantes de tiempo eran \SI{100}{\milli\second} (DAC) y
+\SI{50}{\milli\second} (\net{DC_MON}). La corrección del DC tardaría cientos de milisegundos en asentarse. Con
+\SI{100}{\nano\farad} quedan en \SI{1}{\milli\second} y \SI{0.5}{\milli\second}, y el lazo corrige en milisegundos.
+Además, un \SI{100}{\nano\farad} X7R en 0603 es una pieza \emph{basic} de JLC (C14663).
+
+\textbf{Fuente.} \archivo{tools/changes.json}, cambio C6.
+\end{decision}
+
+\subsection{El seguidor U3B}
+
+La otra mitad del TLV9152 (pines 5, 6 y 7) está conectada como seguidor de tensión: la entrada $+$ (U3.5) recibe
+\net{DAC_F}, y la entrada $-$ (U3.6) está unida a la salida (U3.7). La salida es \net{VSHIFT}, que va solo a la entrada
+$+$ del sumador (U3.3). Puedes comprobarlo en \archivo{tools/target.json}: la red \net{VSHIFT} tiene exactamente tres
+pines, U3.3, U3.6 y U3.7, y ningún condensador.
+
+¿Para qué sirve, si la entrada $+$ de U3A casi no consume corriente? El repositorio no lo explica (viene del diseño del
+equipo). Una ventaja práctica es que \net{VSHIFT} queda a baja impedancia: una punta de osciloscopio, una fuga en la
+placa o la corriente de entrada del sumador no mueven su nivel, cosa que sí podría pasar en el nodo \net{DAC_F}, que
+tiene \SI{10}{\kilo\ohm} de impedancia. Y como el TLV9152 es doble, esa mitad está disponible sin costo.
+
+La estabilidad del seguidor se revisa en la sección~\ref{sec:c03-tlv}.
+
+% =====================================================================================================
+\section{DC\_MON y el lazo de DC}\label{sec:c03-lazo}
+
+\subsection{Medir el nivel de DC}
+
+R15 y R17 (\SI{10}{\kilo\ohm} cada una) dividen \net{REST_OUT} entre 2 y C8 (\SI{100}{\nano\farad}) filtra el
+resultado. La red se llama \net{DC_MON} y llega al pin A0 (PA0) de la NUCLEO (capítulo~\ref{cap:digital}).
+\begin{itemize}
+  \item \textbf{Por qué dividir entre 2.} \net{REST_OUT} puede llegar hasta casi \SI{5}{\volt} (el op-amp va de
+        \net{5V_A}); el ADC del STM32 trabaja de \SIrange{0}{3.3}{\volt}. Dividido, el máximo queda en unos
+        \SI{2.5}{\volt}.
+  \item \textbf{El filtro.} La resistencia equivalente del divisor es $R_{15}\parallel R_{17} = \SI{5}{\kilo\ohm}$; con C8,
+        $\tau = \SI{0.5}{\milli\second}$ y $f_c \approx \SI{318}{\hertz}$. Atenúa la señal de audio pero no la elimina
+        del todo: por eso el firmware promedia muchas muestras para quedarse con el DC.
+  \item \textbf{Precisión.} R15/R17 se cambiaron de \SI{5}{\percent} a \SI{1}{\percent} al pasarlas a piezas
+        \emph{basic} de JLC (C25804), así que la relación del divisor queda al \SI{1}{\percent} o mejor.
+\end{itemize}
+
+\subsection{El lazo en el firmware}
+
+La nota del esquemático (\archivo{tools/gen_sch_wired.py}) dice: \emph{``Lazo de DC (firmware): DC\_MON $\to$ nuevo
+VSHIFT = VSHIFT $-$ error/1.1 $\to$ DAC; quieto al medir''}. Así se entiende:
+
+\begin{calculo}[un paso del lazo]
+\begin{enumerate}
+  \item El firmware mide \net{DC_MON} (promediado) y calcula $V_{\mathrm{REST}} = 2\cdot V_{\mathrm{DC\_MON}}$.
+  \item Calcula el error contra el objetivo: $e = V_{\mathrm{REST}} - V_{\mathrm{REST}}^{*}$.
+  \item De la ecuación~\eqref{eq:c03-rest}, \net{REST_OUT} cambia $(1+k) \approx 1{,}1$ veces lo que cambia
+        \net{VSHIFT}. Para quitar todo el error en un solo paso:
+        \begin{equation*}
+          V_{\mathrm{SHIFT}}^{\text{nuevo}} = V_{\mathrm{SHIFT}} - \frac{e}{1+k} \approx V_{\mathrm{SHIFT}} - \frac{e}{1{,}1}.
+        \end{equation*}
+  \item Convierte a código del DAC ($V/V_{\mathrm{LSB}}$) y lo envía por I\textsuperscript{2}C.
+\end{enumerate}
+Ejemplo: objetivo \SI{1.5}{\volt}, se mide \SI{1.6}{\volt}. Error \SI{0.1}{\volt}. \net{VSHIFT} baja
+$\SI{0.1}{\volt}/1{,}1 = \SI{91}{\milli\volt}$, unos 113 códigos del DAC.
+\end{calculo}
+
+``Quieto al medir'' significa que el lazo \emph{no} se mueve mientras se graba audio: cada cambio de \net{VSHIFT}
+aparece en la señal (multiplicado por 1,1). El lazo corrige entre medidas, o cuando el DC se va demasiado (por
+ejemplo al poner el puente JP1).
+
+\begin{idea}[por qué esto responde a la crítica del profesor]
+En la v1 el nivel de DC salía de un divisor de la alimentación y nadie lo medía. Aquí el nivel de DC es una consigna
+del firmware: se elige, se genera con un DAC y se comprueba con un ADC. Eso es una ``referencia definida''. Y el canal
+no tiene condensadores en el camino de la señal antes del ADC.
+\end{idea}
+
+El objetivo de \net{REST_OUT} no está fijado en el repositorio. La sección~\ref{sec:c03-transicion} explica por qué se
+recomienda \SI{1.5}{\volt} y no la mitad del riel.
+
+% =====================================================================================================
+\section{Estabilidad del sumador: por qué hizo falta CF}\label{sec:c03-cf}
+
+Esta es la parte más ``de control'' del capítulo. Si nunca viste margen de fase en un op-amp, lee primero la caja.
+
+\begin{idea}[margen de fase con un op-amp]
+Un op-amp realimentado es un sistema con lazo cerrado. La ganancia que da la vuelta al lazo es $A\beta$: $A$ es la
+ganancia en lazo abierto del op-amp y $\beta$ la fracción de la salida que vuelve a la entrada inversora. Donde
+$|A\beta| = 1$ (el \emph{cruce}), mira cuánta fase le falta a $A\beta$ para llegar a $-\SI{180}{\degree}$: eso es el
+\textbf{margen de fase}. Con margen de 60–\SI{70}{\degree} el circuito responde limpio. Con pocos grados, la
+respuesta tiene un pico grande y oscila al menor golpe; con 0 oscila solo.
+
+Una forma práctica de verlo en el diagrama de Bode es dibujar $|A|$ y $|1/\beta|$ (la ``ganancia de ruido''). Se
+cruzan donde $|A\beta| = 1$. Si en el cruce $|A|$ baja a \SI{-20}{\decibel}/década y $|1/\beta|$ está plana, el margen
+es bueno. Si $|1/\beta|$ \emph{sube} a $+$\SI{20}{\decibel}/década en el cruce (``pendiente de cierre'' de
+\SI{40}{\decibel}/década), el margen es malo.
+\end{idea}
+
+\subsection{El polo escondido en el nodo SUM}
+
+El nodo \net{SUM} no es ideal: tiene capacidad a tierra. Hay capacidad dentro del op-amp (diferencial y de modo común)
+y capacidad de los pads y la pista. En el modelo de \archivo{tools/analisis_opamp.py}:
+\begin{equation*}
+  C_{\mathrm{SUM}} = \underbrace{\SI{3}{\pico\farad}}_{C_{ID}} + \underbrace{\SI{1}{\pico\farad}}_{C_{ICM}}
+  + \underbrace{\SI{1.5}{\pico\farad}}_{\text{pista}} = \SI{5.5}{\pico\farad}
+\end{equation*}
+($C_{ID}$ y $C_{ICM}$ \doc{SBOS986E p.11}; la pista \estimado).
+
+\SI{5.5}{\pico\farad} parece nada, pero está en un nodo de \SI{1}{\mega\ohm}. La ganancia de ruido es
+\begin{equation*}
+  \frac{1}{\beta} = 1 + \frac{Z_f}{Z_{\mathrm{in}}} = 1 + R_f\left(\frac{1}{R_{\mathrm{in}}} + s\,C_{\mathrm{SUM}}\right)
+  = 1{,}0997 + s\,R_f\,C_{\mathrm{SUM}} \qquad (\text{sin CF}).
+\end{equation*}
+Tiene un cero en
+\begin{equation*}
+  f_z = \frac{1{,}0997}{2\pi\,R_f\,C_{\mathrm{SUM}}} = \frac{1{,}0997}{2\pi\cdot\SI{99.8}{\kilo\ohm}\cdot\SI{5.5}{\pico\farad}}
+  \approx \SI{319}{\kilo\hertz}.
+\end{equation*}
+Por encima de \SI{319}{\kilo\hertz}, $|1/\beta|$ sube a $+$\SI{20}{\decibel}/década. Según el datasheet \doc{SBOS986E p.12}, el
+TLV9152 tiene GBW = \SI{4.5}{\mega\hertz}. Entonces $|A| \approx \mathrm{GBW}/f$, y las dos curvas se
+cruzan donde
+\begin{equation*}
+  \frac{\mathrm{GBW}}{f} = 2\pi f R_f C_{\mathrm{SUM}} \;\Rightarrow\;
+  f = \sqrt{\frac{\mathrm{GBW}}{2\pi R_f C_{\mathrm{SUM}}}} = \sqrt{\frac{\num{4.5e6}}{2\pi\cdot\num{99.8e3}\cdot\num{5.5e-12}}}
+  \approx \SI{1.14}{\mega\hertz}.
+\end{equation*}
+Ahí la pendiente de cierre es \SI{40}{\decibel}/década: margen casi nulo. El script, que además incluye el segundo
+polo del op-amp, da \SI{7.8}{\degree} de margen y un pico de \SI{17}{\decibel} (tabla~\ref{tab:c03-cf}).
+
+\subsection{Cómo lo arregla CF}
+
+Con C56 en paralelo con $R_f$, a alta frecuencia la realimentación es un divisor capacitivo:
+\begin{equation*}
+  \frac{1}{\beta}\Big|_{f\to\infty} \approx \frac{C_{\mathrm{SUM}} + C_F}{C_F} = \frac{5{,}5 + 10}{10} = 1{,}55.
+\end{equation*}
+La curva $|1/\beta|$ deja de subir y se queda plana en 1,55 (\SI{3.8}{\decibel}). Ahora cruza a $|A|$ cuando $|A|$ baja
+a \SI{-20}{\decibel}/década y $|1/\beta|$ está plana: pendiente de cierre \SI{20}{\decibel}/década, margen bueno. El
+cruce queda cerca de $\mathrm{GBW}/1{,}55 \approx \SI{2.9}{\mega\hertz}$ (el script da \SI{2.74}{\mega\hertz}) y el
+margen sube a \SI{69.7}{\degree}. La figura~\ref{fig:c03-bode} muestra las tres curvas.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.92\linewidth, height=7.2cm,
+  xmode=log, ymode=log,
+  xmin=1e3, xmax=1e8, ymin=0.5, ymax=5000,
+  xlabel={Frecuencia (Hz)}, ylabel={Magnitud (V/V)},
+  grid=both, grid style={line width=.1pt, draw=gray!20}, major grid style={line width=.2pt,draw=gray!40},
+  legend pos=north east, legend style={font=\scriptsize,fill=white,fill opacity=0.9,text opacity=1},
+  tick label style={font=\scriptsize}, label style={font=\small}]
+  % |A| = GBW/f (polo dominante; se omite el segundo polo)
+  \addplot[thick,color=black,domain=3:8,samples=60] ({10^x},{4.5e6/(10^x)});
+  \addlegendentry{$|A|$ TLV9152 ($\mathrm{GBW}/f$)}
+  % |1/beta| sin CF
+  \addplot[thick,color=rojoojo,domain=3:8,samples=200]
+    ({10^x},{sqrt(1.0997^2 + (0.0997*2*pi*(10^x)*5.505e-6)^2)});
+  \addlegendentry{$|1/\beta|$ sin CF}
+  % |1/beta| con CF = 10 pF
+  \addplot[thick,color=verdeplaca,domain=3:8,samples=200]
+    ({10^x},{sqrt( (1 + 0.0997*(1 + (2*pi*(10^x)*5.505e-6)*(2*pi*(10^x)*9.98e-7))/(1+(2*pi*(10^x)*9.98e-7)^2))^2
+                 + (0.0997*((2*pi*(10^x)*5.505e-6) - (2*pi*(10^x)*9.98e-7))/(1+(2*pi*(10^x)*9.98e-7)^2))^2 )});
+  \addlegendentry{$|1/\beta|$ con CF = \SI{10}{\pico\farad}}
+  \draw[densely dashed,color=rojoojo] (axis cs:1.14e6,0.5) -- (axis cs:1.14e6,3.95);
+  \node[font=\scriptsize,color=rojoojo,anchor=east] at (axis cs:1.05e6,0.72) {cruce \SI{1.1}{\mega\hertz}, \SI{40}{\decibel}/déc.};
+  \draw[densely dashed,color=verdeplaca] (axis cs:2.9e6,0.5) -- (axis cs:2.9e6,1.55);
+  \node[font=\scriptsize,color=verdeplaca,anchor=west] at (axis cs:3.2e6,2.5) {cruce \SI{2.9}{\mega\hertz}};
+\end{axis}
+\end{tikzpicture}
+\caption{Diagrama de Bode (solo magnitud) del lazo del sumador. Sin CF, la ganancia de ruido sube desde
+\SI{319}{\kilo\hertz} y corta a $|A|$ con pendiente de cierre de \SI{40}{\decibel}/década. Con CF = \SI{10}{\pico\farad}
+se aplana en 1,55 y el cruce es limpio. Curvas calculadas con los valores de la sección; $|A|$ ignora el segundo polo
+del op-amp, que sí incluye \archivo{tools/analisis_opamp.py}.}
+\label{fig:c03-bode}
+\end{figure}
+
+\subsection{Elegir el valor de CF}
+
+El script barre varios valores de CF con un modelo de dos polos: el polo dominante sale del GBW y el segundo polo se
+ajusta para reproducir el margen de fase a ganancia 1 del datasheet (\SI{60}{\degree} en el TLV9152 \doc{SBOS986E
+p.12}, \SI{55}{\degree} en el TLV9062 \doc{SBOS839N p.13}). La tabla~\ref{tab:c03-cf} es su salida
+(\texttt{python -X utf8 -I tools/analisis\_opamp.py}).
+
+\begin{table}[htbp]
+\centering\small
+\caption{Barrido de CF en el sumador (salida de \archivo{tools/analisis_opamp.py}). ``$-3$~dB'' es el ancho de banda
+de la señal de \net{IEPE} a \net{REST_OUT}.}
+\label{tab:c03-cf}
+\begin{tabular}{@{}r rrrr rrr@{}}
+\toprule
+ & \multicolumn{4}{c}{TLV9152 (el de la placa)} & \multicolumn{3}{c}{TLV9062 (el original)}\\
+\cmidrule(lr){2-5}\cmidrule(l){6-8}
+CF & cruce & margen & pico & $-3$ dB & cruce & margen & $-3$ dB\\
+(\si{\pico\farad}) & (\si{\kilo\hertz}) & (\si{\degree}) & (\si{\decibel}) & (\si{\kilo\hertz}) & (\si{\kilo\hertz}) & (\si{\degree}) & (\si{\kilo\hertz})\\
+\midrule
+0    & 1114 & 7,8  & 17,0 & 1820 & 1445 & 3,4  & 2291\\
+4,7  & 2027 & 70,8 & 0    & 380  & 3739 & 72,3 & 363\\
+\textbf{10}   & \textbf{2741} & \textbf{69,7} & \textbf{0} & \textbf{166} & 5352 & 68,8 & 166\\
+22   & 3313 & 66,8 & 0    & 75,9 & 6744 & 64,6 & 75,9\\
+47   & 3649 & 64,9 & 0    & 34,7 & 7611 & 61,9 & 34,7\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.8\linewidth, height=5.6cm,
+  xlabel={CF (\si{\pico\farad})}, ylabel={Margen de fase (\si{\degree})},
+  xmin=-2, xmax=50, ymin=0, ymax=80,
+  xtick={0,4.7,10,22,47}, xticklabels={0,{4,7},10,22,47},
+  grid=major, grid style={draw=gray!25},
+  legend pos=south east, legend style={font=\scriptsize},
+  tick label style={font=\scriptsize}, label style={font=\small}]
+  \addplot[thick,mark=*,color=verdeplaca] coordinates {(0,7.8) (4.7,70.8) (10,69.7) (22,66.8) (47,64.9)};
+  \addlegendentry{TLV9152}
+  \addplot[thick,mark=square*,color=cobre,densely dashed] coordinates {(0,3.4) (4.7,72.3) (10,68.8) (22,64.6) (47,61.9)};
+  \addlegendentry{TLV9062}
+  \draw[densely dotted,color=grisnota] (axis cs:-2,60) -- (axis cs:50,60);
+  \node[font=\scriptsize,color=grisnota,anchor=north west] at (axis cs:30,58) {\SI{60}{\degree}};
+\end{axis}
+\end{tikzpicture}
+\caption{Margen de fase del sumador contra CF (datos de la tabla~\ref{tab:c03-cf}). Cualquier CF de algunos picofaradios
+resuelve el problema; sin CF el circuito queda al borde de oscilar con cualquiera de los dos op-amps.}
+\label{fig:c03-pm}
+\end{figure}
+
+\begin{decision}[CF = \SI{10}{\pico\farad} C0G (cambio C16)]
+\textbf{Qué se decidió.} Agregar C56 (canal 1) y C57 (canal 2): \SI{10}{\pico\farad}, dieléctrico C0G, \SI{50}{\volt},
+0603 (\net{CL10C100JB8NNNC}, LCSC C1634), en paralelo con R7+R8 y con R42+R43.
+
+\textbf{Alternativas.} No poner nada (el circuito original del equipo no tenía CF); \SI{4.7}{\pico\farad};
+\SI{22}{\pico\farad} o más.
+
+\textbf{Por qué.}
+\begin{itemize}
+  \item Sin CF el margen es de \SI{3.4}{\degree} (TLV9062) o \SI{7.8}{\degree} (TLV9152): riesgo real de oscilación.
+  \item \SI{4.7}{\pico\farad} ya da \SI{70.8}{\degree}, pero el margen depende de $C_{\mathrm{SUM}}$, que tiene una
+        parte estimada (la pista). Con \SI{10}{\pico\farad}, $C_F$ pesa más que la incertidumbre y el margen se queda
+        cerca de \SI{70}{\degree} aunque la capacidad real del nodo sea algo distinta.
+  \item \SI{10}{\pico\farad} limita la banda de la señal a $1/(2\pi R_f C_F) = 1/(2\pi\cdot\SI{99.8}{\kilo\ohm}\cdot
+        \SI{10}{\pico\farad}) \approx \SI{160}{\kilo\hertz}$ (el script da \SI{166}{\kilo\hertz} con su resolución de
+        frecuencia). A \SI{20}{\kilo\hertz} la atenuación es $1/\sqrt{1+(20/160)^2}$, unos \SI{0.07}{\decibel}:
+        nada en la banda de audio. Y ayuda a filtrar ruido de alta frecuencia antes del ADC.
+  \item Con \SI{22}{\pico\farad} o \SI{47}{\pico\farad} la banda bajaría a \SI{76}{\kilo\hertz} o \SI{35}{\kilo\hertz}
+        sin ganar margen.
+  \item C0G porque su capacidad no cambia con la tensión ni con la temperatura (un X7R de \SI{10}{\pico\farad} sí
+        cambiaría, y la banda y el margen dependen directamente de ese valor).
+\end{itemize}
+
+\textbf{Fuente.} \archivo{tools/analisis_opamp.py}, \archivo{tools/changes.json} (C16), \archivo{CALCULOS.md} §9.
+\end{decision}
+
+\begin{ojo}[es un modelo, no una simulación del fabricante]
+El modelo de dos polos es una aproximación ajustada a dos números del datasheet. No se simuló con el modelo SPICE de
+TI. La prueba real es en el banco: aplicar un escalón (el puente JP1 o un cambio de código del DAC) y mirar
+\net{REST_OUT} en TP2 con el osciloscopio: no debe haber oscilación ni sobrepico \medir. El sitio de C56 junto a U3 y
+la longitud de las pistas del nodo \net{SUM} se tratan en el capítulo~\ref{cap:ruteo}.
+\end{ojo}
+
+% =====================================================================================================
+\section{TLV9152 en lugar del TLV9062}\label{sec:c03-tlv}
+
+\subsection{Por qué se cambió}
+
+El diseño del equipo usaba el TLV9062IDDFR (LCSC C2867884). En la auditoría de piezas para JLCPCB tenía \textbf{2
+unidades en stock en JLC y 0 en LCSC}, y la placa necesita 2 por tarjeta (U3 y U9)
+(\archivo{fabricacion/auditoria_piezas.md}). Se reemplazó por el TLV9152IDDFR (LCSC C2861011), que tenía stock y viene
+en el mismo encapsulado.
+
+\begin{table}[htbp]
+\centering\small
+\caption{TLV9062 frente a TLV9152. Datos del TLV9152 leídos de SBOS986E; los del TLV9062, de SBOS839N tal como los
+usa \archivo{tools/analisis_opamp.py}.}
+\label{tab:c03-tlv}
+\begin{tabular}{@{}L{0.33\linewidth}L{0.27\linewidth}L{0.32\linewidth}@{}}
+\toprule
+Característica & TLV9062 (original) & TLV9152 (placa)\\
+\midrule
+Encapsulado y pines & TSOT-23-8 (DDF) & mismo DDF y mismo orden de pines \doc{SBOS986E fig. 5-4 p.6}\\
+Alimentación & — & \SIrange{2.7}{16}{\volt} \doc{SBOS986E p.1}\\
+Entrada rail-to-rail & sí & $(V-)-\SI{0.1}{\volt}$ a $(V+)+\SI{0.1}{\volt}$ \doc{SBOS986E p.11}\\
+GBW & \SI{10}{\mega\hertz} \doc{SBOS839N p.13} & \SI{4.5}{\mega\hertz} \doc{SBOS986E p.12}\\
+Margen de fase a G = +1 & \SI{55}{\degree} & \SI{60}{\degree} ($R_L = \SI{10}{\kilo\ohm}$)\\
+Carga capacitiva admitida & — & \SI{1000}{\pico\farad} \doc{SBOS986E p.12}\\
+Capacidad de entrada & — & $C_{ID}$ = \SI{3}{\pico\farad}, $C_{ICM}$ = \SI{1}{\pico\farad} \doc{SBOS986E p.11}\\
+Consumo por amplificador & — & \SI{560}{\micro\ampere} típ., \SI{685}{\micro\ampere} máx. \doc{SBOS986E p.12}\\
+Ruido de tensión & — & \SI{10.8}{\nano\volt\per\sqrt\hertz} (auditoría de piezas)\\
+Stock (noviembre 2026) & 2 en JLC, 0 en LCSC & 542 en JLC\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Los guiones son datos del TLV9062 que no se leyeron para este informe. Lo importante del cambio: el pinout es el mismo
+(el footprint y el esquemático no cambian) y el GBW baja a menos de la mitad. Por eso hubo que rehacer el análisis de
+estabilidad con el TLV9152 (tabla~\ref{tab:c03-cf}) y además revisar dos cosas nuevas.
+
+\subsection{Comprobación 1: la otra mitad (el seguidor)}
+
+Un seguidor es la configuración más exigente para la estabilidad de un op-amp (ganancia 1, toda la salida vuelve a la
+entrada). Lo que lo pone en riesgo es la \emph{carga capacitiva} en la salida.
+
+\begin{calculo}[carga del seguidor U3B]
+\begin{itemize}
+  \item La red \net{VSHIFT} solo tiene U3.3, U3.6 y U3.7 (\archivo{tools/target.json}): no hay condensadores.
+  \item La carga es la entrada $+$ de U3A: \SI{3}{\pico\farad} diferenciales + \SI{1}{\pico\farad} de modo común
+        \doc{SBOS986E p.11}, más la pista: unos \SI{5}{\pico\farad}.
+  \item El TLV9152 admite \SI{1000}{\pico\farad} de carga y tiene \SI{60}{\degree} de margen a ganancia 1
+        \doc{SBOS986E p.12}.
+  \item El filtro R12/C4 está en la \emph{entrada} del seguidor (\net{DAC_F}), fuera de su lazo, así que no afecta su
+        estabilidad.
+\end{itemize}
+Resultado: \SI{5}{\pico\farad} frente a \SI{1000}{\pico\farad} admitidos. Estable por datos del datasheet; falta verlo
+en el osciloscopio \medir. El canal 2 (U9B con R37/C51) es idéntico.
+\end{calculo}
+
+\subsection{Comprobación 2: la región de transición de la entrada}\label{sec:c03-transicion}
+
+\begin{idea}[dos pares de entrada]
+Para que un op-amp tenga entrada rail-to-rail, por dentro tiene \emph{dos} pares diferenciales en paralelo: un par de
+transistores P que funciona desde un poco debajo de $V-$ hasta cerca de $V+$ menos unos voltios, y un par N que
+funciona cerca de $V+$. En la zona donde se pasa de uno al otro trabajan los dos a la vez, y ahí el op-amp es peor: su
+offset cambia, y empeoran el rechazo de modo común (CMRR), el de la fuente (PSRR), el ruido y la distorsión.
+\end{idea}
+
+En el TLV9152 el par P funciona hasta unos $(V+) - \SI{2}{\volt}$ y el par N desde unos $(V+) - \SI{1}{\volt}$; entre
+los dos está la región de transición, cuyos límites son \emph{típicos} y varían con el proceso de fabricación
+\doc{SBOS986E §7.3.4 p.26}. La CMRR de la tabla eléctrica solo está garantizada por debajo de $(V+) - \SI{2}{\volt}$
+\doc{SBOS986E p.11}.
+
+¿Qué tensión ven las entradas? En el sumador, las dos entradas de U3A están a \net{VSHIFT} (la $+$ directamente y la
+$-$ por ser tierra virtual). En el seguidor, las dos están a \net{DAC_F} $\approx$ \net{VSHIFT}. O sea: \textbf{el modo
+común de las dos mitades es \net{VSHIFT}}.
+
+\begin{calculo}[dónde empieza la región con nuestro riel]
+$V+$ es \net{5V_A}: \SI{5}{\volt} $\pm\SI{1.5}{\percent}$ del buck \doc{SNVSB49D p.8} menos la caída en R33
+(\SI{10}{\ohm}) con \SIrange{10.8}{14}{\milli\ampere} de consumo:
+\begin{align*}
+  V+_{\min} &= 5\cdot 0{,}985 - 0{,}014\cdot 10 = \SI{4.785}{\volt}, &
+  V+_{\max} &= 5\cdot 1{,}015 - 0{,}0108\cdot 10 = \SI{4.967}{\volt}.
+\end{align*}
+La región de transición empieza en $V+ - \SI{2}{\volt}$: entre \SI{2.785}{\volt} y \SI{2.967}{\volt}.
+\end{calculo}
+
+Con la ecuación~\eqref{eq:c03-vshift} se puede calcular \net{VSHIFT} para cada objetivo de \net{REST_OUT} y cada
+polarización $V_B$ del micrófono. El DAC además tiene un tope: unos \SI{3.21}{\volt} en el peor caso (3V3 al
+$-\SI{1.5}{\percent}$, menos la caída en R9, por $4095/4096$). La tabla~\ref{tab:c03-transicion} es la salida del
+script.
+
+\begin{table}[htbp]
+\centering\small
+\caption{\net{VSHIFT} necesario según el objetivo de \net{REST_OUT} y la polarización del micrófono
+(\archivo{tools/analisis_opamp.py}, función \texttt{transicion()}). ``Par P'' = fuera de la región de transición.}
+\label{tab:c03-transicion}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Objetivo de \net{REST_OUT} & $V_B$ = \SI{8}{\volt} & \SI{10}{\volt} & \SI{12.5}{\volt} (RG-50) & \SI{14}{\volt}\\
+\midrule
+\SI{1.50}{\volt} & \SI{2.09}{\volt} par P & \SI{2.27}{\volt} par P & \SI{2.50}{\volt} par P & \SI{2.63}{\volt} par P\\
+\SI{2.00}{\volt} & \SI{2.54}{\volt} par P & \SI{2.73}{\volt} par P & \textcolor{cobre}{\SI{2.95}{\volt} transición} & \textcolor{cobre}{\SI{3.09}{\volt} transición}\\
+\SI{2.45}{\volt} (mitad del riel) & \textcolor{cobre}{\SI{2.95}{\volt} transición} & \textcolor{cobre}{\SI{3.13}{\volt} transición} & \textcolor{rojoojo}{DAC al tope} & \textcolor{rojoojo}{DAC al tope}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Lee la última fila con atención: la idea ``natural'' de centrar la salida a mitad del riel
+(\SI{2.45}{\volt}) mete \net{VSHIFT} en la región de transición, y con el RG-50 el DAC ni siquiera alcanza la tensión
+necesaria (pediría más de \SI{3.21}{\volt}).
+
+\begin{decision}[objetivo de REST\_OUT $\approx$ \SI{1.5}{\volt} (pendiente de aprobación)]
+\textbf{Qué se recomienda.} Que el firmware lleve \net{REST_OUT} a unos \SI{1.5}{\volt} (\net{DC_MON}
+$\approx$ \SI{0.75}{\volt}). Es una recomendación: el repositorio no tiene un objetivo fijado y falta la aprobación
+del dueño.
+
+\textbf{Alternativas.} Mitad del riel (\SI{2.45}{\volt}); \SI{2}{\volt}; \SI{1.3}{\volt}.
+
+\textbf{Por qué.}
+\begin{itemize}
+  \item Con \SI{1.5}{\volt}, \net{VSHIFT} queda entre \SI{2.09}{\volt} y \SI{2.63}{\volt} para polarizaciones de
+        \SIrange{8}{14}{\volt}: siempre en el par P, fuera de la región.
+  \item La salida conserva margen: $1{,}5 \pm 0{,}32$~V con el RG-50 a \SI{130}{\decibel} pico, y $1{,}5 \pm 1{,}08$~V
+        con la excursión máxima del SV 12. Lo más bajo es \SI{0.42}{\volt}, lejos de GND.
+  \item El margen más chico es con $V_B = \SI{14}{\volt}$: \SI{2.63}{\volt} contra \SI{2.785}{\volt}, solo
+        \SI{155}{\milli\volt}. Como el límite de la región es típico, si se quiere más margen se puede bajar a unos
+        \SI{1.3}{\volt}; el piso lo pone la excursión de \SI{1.08}{\volt} del SV 12, cuya polarización aún no se midió.
+\end{itemize}
+\textbf{¿Qué tan grave sería caer en la región?} Aquí el modo común es un nivel de DC que no se mueve con la señal
+(configuración inversora y lazo de DC). El cambio de offset es DC y el lazo lo corrige; la peor CMRR casi no importa
+porque el modo común no varía. Lo que el lazo no corrige es el aumento de ruido y de distorsión. Por eso conviene
+evitarla, aunque no sea un desastre.
+
+\textbf{Fuente.} \archivo{CALCULOS.md} §9, \archivo{tools/analisis_opamp.py}, SBOS986E §7.3.4.
+\end{decision}
+
+% =====================================================================================================
+\section{El canal 2 es un espejo del canal 1}\label{sec:c03-ch2}
+
+El Altium del equipo solo tenía dibujado el canal 1. El canal 2 se generó copiando pieza por pieza y cambiando el
+nombre de las redes (\archivo{tools/design.py}, diccionarios \texttt{MIRROR} y \texttt{NETMAP}). La
+tabla~\ref{tab:c03-espejo} da la correspondencia.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Correspondencia entre el canal 1 y el canal 2.}
+\label{tab:c03-espejo}
+\begin{tabular}{@{}L{0.30\linewidth}L{0.28\linewidth}L{0.34\linewidth}@{}}
+\toprule
+Función & Canal 1 & Canal 2\\
+\midrule
+Fuente IEPE & U1, R1, C1–C3, R2$parallel$R3, R4–R6 & U8, R36, C48–C50, R35, R34\\
+Escalón & R47 + JP1 & R48 + JP2\\
+Conector y punto de prueba & J2, TP1, habilitación J1 & J8, TP3, habilitación J7\\
+Cadena de entrada & R13, R14, R16, R18 & R38, R39, R40, R41\\
+Realimentación y CF & R7, R8, C56 & R42, R43, C57\\
+Op-amp & U3 (A y B) & U9 (A y B)\\
+DAC y filtro & U2 (0x60), R12, C4 & U10 (0x61), R37, C51\\
+Alimentación del DAC & R9, C5, C6 & R46, C52, C53\\
+\net{DC_MON} & R15, R17, C8 & R44, R45, C55 (\net{DC_MON2}, PA1)\\
+Desacoplo del op-amp & C7 & C54\\
+Redes & \net{IEPE}, \net{SUM}, \net{VSHIFT}, \net{REST_OUT} & \net{IEPE_SV}, \net{SUM_SV}, \net{VSHIFT_SV}, \net{REST_SV}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las únicas diferencias eléctricas son:
+\begin{itemize}
+  \item la fuente: \SI{1.51}{\milli\ampere} / \SI{2.51}{\milli\ampere} en vez de \SI{2.81}{\milli\ampere} /
+        \SI{3.98}{\milli\ampere}, con una sola $R_{\mathrm{SET}}$ (R34) y una sola $R_{\mathrm{OUT}}$ (R35);
+  \item la dirección del DAC: el pin A0 de U10 va a \net{3V3_DAC_SV} (0x61) en vez de GND;
+  \item la salida va a la entrada derecha del ADC (\net{REST_SV} $\to$ C14 $\to$ \net{AC_RIGHT}).
+\end{itemize}
+En la placa, el canal 2 también quedó con la misma geometría que el canal 1 desplazada \SI{22.5}{\milli\meter}
+(capítulo~\ref{cap:placement}).
+
+% =====================================================================================================
+\section{Alimentación y desacoplo del canal}\label{sec:c03-alim}
+
+\subsection{El riel 5V\_A}
+
+Los op-amps U3 y U9 (y el PCM1808) no se alimentan del \SI{5}{\volt} del buck directamente, sino de \net{5V_A}, que
+sale de un filtro RC: R33 (\SI{10}{\ohm}) en serie y C47 (\SI{10}{\micro\farad}) a tierra.
+\begin{equation*}
+  f_c = \frac{1}{2\pi\cdot\SI{10}{\ohm}\cdot\SI{10}{\micro\farad}} \approx \SI{1.6}{\kilo\hertz}.
+\end{equation*}
+A \SI{1}{\mega\hertz}, la frecuencia del buck, eso atenúa unas $10^6/1{,}6\cdot10^3 \approx 600$ veces
+(\SI{56}{\decibel}) en la aproximación de primer orden. Además los op-amps tienen su propio rechazo de fuente. El costo
+es la caída en R33 (\SIrange{0.11}{0.14}{\volt}), que ya se usó arriba para calcular dónde empieza la región de
+transición. Los detalles del buck y del filtro están en el capítulo~\ref{cap:alim}.
+
+\subsection{Desacoplos}
+
+\begin{itemize}
+  \item \textbf{C7} (\SI{100}{\nano\farad} X7R) en el pin 8 de U3 (\net{5V_A}); \textbf{C54} igual en U9. Un op-amp
+        necesita su condensador lo más cerca posible del pin de alimentación: es la ``reserva'' de carga para los
+        picos de corriente rápidos que la pista no alcanza a entregar. En la placa C7 quedó a \SI{0.975}{\milli\meter}
+        de U3.8 y C54 a \SI{0.74}{\milli\meter} de U9.8 \medido.
+  \item \textbf{C5} (\SI{10}{\micro\farad}) y \textbf{C6} (\SI{100}{\nano\farad}) en el VDD del DAC (\net{3V3_DAC});
+        C52/C53 en el canal 2. El datasheet del MCP4725 pide \SI{0.1}{\micro\farad} (más \SI{10}{\micro\farad}) a no
+        más de \SI{4}{\milli\meter} de VDD \doc{DS22039D §8.3}; quedaron entre \SI{1.22}{\milli\meter} y
+        \SI{1.48}{\milli\meter} \medido.
+  \item Todos los \SI{100}{\nano\farad} del canal son X7R (cambio C7): los Y5V del diseño original pierden buena parte
+        de su capacidad con la tensión y la temperatura.
+\end{itemize}
+
+Cómo se colocaron y rutearon esos condensadores (con su vía a GND pegada al pad) se explica en el
+capítulo~\ref{cap:ruteo}, y las excepciones aceptadas en la distancia de algunos de ellos en el
+capítulo~\ref{cap:banco}.
+
+% =====================================================================================================
+\section{Qué queda por comprobar en el banco}\label{sec:c03-banco}
+
+\begin{itemize}
+  \item Corriente de cada fuente con amperímetro en J1/J7, con y sin puente: \
+um{2.81}/\SI{3.98}{\milli\ampere} y
+        \
+um{1.51}/\SI{2.51}{\milli\ampere} \medir.
+  \item Polarización del SV 12 a \SI{2.5}{\milli\ampere} (esperado entre \
+um{7} y \SI{14}{\volt}) y si le alcanza el
+        compliance para su excursión máxima \medir.
+  \item \net{VSHIFT} y \net{REST_OUT} en DC con cada micrófono; que \net{VSHIFT} quede por debajo de unos \SI{2.7}{\volt}
+        con el objetivo de \SI{1.5}{\volt} \medir.
+  \item Respuesta a un escalón (puente JP1/JP2 o código del DAC) en TP2/TP4: sin oscilación ni sobrepico \medir.
+  \item Ruido de la cadena completa con el micrófono en una caja silenciosa \medir.
+\end{itemize}
+
+% =====================================================================================================
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+\begin{itemize}
+  \item El LT3092 hace una fuente de corriente con $I = \SI{10}{\micro\ampere}(1 + R_{\mathrm{SET}}/R_{\mathrm{OUT}})$:
+        \SI{2.81}{\milli\ampere} en el canal 1 (RG-50) y \SI{1.51}{\milli\ampere} en el canal 2 (SV 12). Los puentes
+        JP1/JP2 dan un escalón a \
+um{3.98} y \SI{2.51}{\milli\ampere} para la demostración del lazo.
+  \item Con \SI{24}{\volt} quedan unos \SI{6}{\volt} de margen para el RG-50; el SV 12 hay que medirlo.
+  \item El sumador U3A da $V_{\mathrm{REST}} = 1{,}0997\,V_{\mathrm{SHIFT}} - 0{,}0997\,v_{\mathrm{IEPE}}$: resta la
+        polarización en DC y atenúa la señal diez veces, para que la excursión del SV 12 (\SI{10.8}{\volt}) quepa en los
+        $\pm\SI{1.5}{\volt}$ del ADC.
+  \item \net{VSHIFT} lo genera un DAC de 12 bits (0x60/0x61) con su alimentación filtrada, un RC de \SI{1}{\milli\second}
+        y un seguidor. El firmware mide \net{DC_MON} y corrige \net{VSHIFT} con $e/1{,}1$; el lazo queda quieto
+        mientras se graba.
+  \item El nodo \net{SUM} (\SI{1}{\mega\ohm} con \SI{5.5}{\pico\farad}) dejaba el sumador con menos de
+        \SI{8}{\degree} de margen. CF = \SI{10}{\pico\farad} C0G lo sube a unos \SI{70}{\degree} y limita la banda a
+        unos \SI{160}{\kilo\hertz}.
+  \item El TLV9152 reemplazó al TLV9062 por stock: mismo pinout, menos GBW. El seguidor es estable (\
+um{5} de
+        \SI{1000}{\pico\farad}). Para no caer en la región de transición de la entrada se recomienda un objetivo de
+        \net{REST_OUT} de unos \SI{1.5}{\volt}, pendiente de aprobación.
+  \item El canal 2 es un espejo exacto del canal 1, con otra corriente y otra dirección I\textsuperscript{2}C.
+\end{itemize}

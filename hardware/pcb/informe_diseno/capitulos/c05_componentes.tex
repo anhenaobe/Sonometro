@@ -1,0 +1,443 @@
+\chapter{Selección de componentes}\label{cap:piezas}
+
+Una placa ensamblada en fábrica no se diseña como un prototipo de protoboard. Si una pieza no está en el almacén de la fábrica, la fábrica no la puede montar. Si su footprint no coincide con el de la fábrica, la monta girada. Este capítulo cuenta cómo se escogió cada pieza para que JLCPCB pudiera fabricar y montar la placa, qué piezas se cambiaron respecto al diseño del equipo y por qué.
+
+\textbf{En este capítulo vas a ver:}
+\begin{itemize}
+  \item Cómo funciona el ensamblaje en JLCPCB: código LCSC, piezas \emph{basic} y \emph{extended}, stock, Economic y Standard.
+  \item La regla que se siguió para cambiar una pieza sin cambiar el circuito.
+  \item La lista completa de piezas, agrupada por bloque, con para qué sirve cada una.
+  \item Los cambios C1--C17 respecto al diseño del equipo, uno por uno.
+  \item Por qué importa el dieléctrico de un condensador (X7R, Y5V, C0G).
+  \item Cómo se compararon los footprints de KiCad con los de JLC y qué se corrigió.
+  \item Por qué el archivo de posiciones (CPL) lleva rotaciones distintas a las de KiCad, con un ejemplo numérico.
+  \item El stock del día y la limitación que puso la bobina \net{L2}.
+\end{itemize}
+
+\section{Cómo se monta una placa en JLCPCB}\label{sec:c05-jlc}
+
+\subsection{Los archivos que pide la fábrica}
+
+Para fabricar y ensamblar, JLCPCB necesita tres cosas (\archivo{REGLAS.md} §2):
+\begin{enumerate}
+  \item \textbf{Los Gerber y los taladros}: el dibujo de cada capa de la placa. Con eso se fabrica la placa desnuda.
+  \item \textbf{El BOM} (\emph{bill of materials}, lista de materiales): una fila por cada pieza distinta, con columnas \emph{Comment} (valor), \emph{Designator} (referencias, p.\,ej.\ \net{C1,C3,...}), \emph{Footprint} y \emph{LCSC Part Number}. Está en \archivo{fabricacion/bom.csv}: 36 líneas que suman 112 piezas.
+  \item \textbf{El CPL} (\emph{component placement list}): para cada pieza, su posición $(x,y)$, la cara de la placa y la rotación. Está en \archivo{fabricacion/cpl.csv}.
+\end{enumerate}
+
+\begin{idea}[el código LCSC lo es todo]
+LCSC es el distribuidor de componentes asociado a JLCPCB. Cada pieza de su catálogo tiene un código como \net{C14663}. La fábrica no lee el valor ni el MPN (\emph{manufacturer part number}): monta exactamente la pieza de ese código. Si el código está mal, la placa sale con la pieza equivocada aunque el esquemático esté perfecto. Por eso el script \archivo{tools/stock_bom.py} revisa que el MPN del catálogo de JLC coincida con el MPN escrito en la placa, línea por línea.
+\end{idea}
+
+\subsection{Basic, extended y el costo de cada pieza distinta}
+
+JLCPCB divide su catálogo en dos tipos:
+\begin{itemize}
+  \item \textbf{Basic}: piezas comunes (resistencias, condensadores, diodos típicos) que tienen siempre cargadas en las máquinas. No cobran nada extra por usarlas.
+  \item \textbf{Extended}: todo lo demás. Para montar una pieza extended hay que cargar un alimentador (\emph{feeder}) en la máquina, y eso se cobra una vez por cada pieza distinta: unos USD~3,07 según su página de precios (\nolinkurl{fabricacion/auditoria_piezas.md} §1). Algunas extended están marcadas \emph{preferred}.
+\end{itemize}
+
+Como se paga por pieza \emph{distinta} y no por unidad, conviene que muchas posiciones usen la misma pieza. Por ejemplo, los 19 condensadores de \SI{100}{\nano\farad} de la placa usan todos el mismo código basic \net{C14663}.
+
+\begin{calculo}[cuánto se ahorró pasando pasivos a basic]
+Antes de los cambios, el diseño tenía \textbf{30} piezas extended distintas (\archivo{auditoria_piezas.md} §1). Después del cambio C17, el BOM tiene \textbf{19} extended, 1 extended \emph{preferred} (\net{R47}) y 16 basic (\nolinkurl{fabricacion/stock_bom.md}). Con unos USD~3,07 por extended:
+\[
+(30-19)\times\text{USD }3{,}07\approx\text{USD }34 \text{ menos por pedido}
+\]
+Es una estimación \estimado: la tarifa la fija JLC al cotizar.
+\end{calculo}
+
+Las 19 que siguen siendo extended no tienen equivalente basic: los integrados (LT3092, MCP4725, TLV9152, PCM1808, LMR36015), el oscilador, las dos bobinas Coilcraft, el TVS \net{SMBJ26A}, los condensadores de los bucks y las resistencias de valor no estándar al \SI{1}{\percent} (\SI{390}{\kilo\ohm}, \SI{365}{\kilo\ohm}, \SI{191}{\kilo\ohm}, \SI{54.9}{\kilo\ohm}, \SI{43.2}{\kilo\ohm}, \SI{24.9}{\kilo\ohm}).
+
+\subsection{Economic o Standard}
+
+\begin{decision}[ensamblaje Economic, solo cara superior]
+\textbf{Qué se decidió:} pedir el ensamblaje \textbf{Economic}, con todas las piezas SMD en la cara superior (\capa{F.Cu}).
+
+\textbf{Alternativas:} ensamblaje Standard.
+
+\textbf{Por qué:} Economic es más barato (JLC junta pedidos de varios clientes) y acepta placas desde \num{10}\,$\times$\,\SI{10}{\milli\meter}. Standard exige placas de al menos \num{70}\,$\times$\,\SI{70}{\milli\meter} y la nuestra mide \num{90}\,$\times$\,\SI{64}{\milli\meter}, así que no entra por el lado de \SI{64}{\milli\meter}. Economic solo monta una cara, por eso todas las piezas que monta JLC están arriba. También se confirmó que Economic admite 4 capas, \SI{1.6}{\milli\meter}, máscara verde y HASL sin plomo: la fila ``4L · 1.6 · Green · Lead-Free:HASL / ENIG'' de su tabla de capacidades, leída el 16/11/2026.
+
+\textbf{Fuente:} \doc{jlcpcb.com/capabilities/pcb-assembly-capabilities}; \archivo{REGLAS.md} §2 y §9.
+\end{decision}
+
+\section{La regla para escoger o cambiar una pieza}\label{sec:c05-regla}
+
+Durante la auditoría (\nolinkurl{tools/auditoria_jlc.py}, informe en \nolinkurl{fabricacion/auditoria_piezas.md}) se consultó el catálogo público de JLC para cada pieza del diseño del equipo. Aparecieron tres tipos de problema: piezas sin stock, piezas que no existen en el catálogo y piezas extended con equivalente basic. Para cualquier reemplazo se aplicó esta regla, y ninguna pieza se cambió sin la aprobación del dueño:
+
+\begin{enumerate}
+  \item \textbf{Mismo valor} y \textbf{mismo encapsulado}: el footprint no cambia.
+  \item \textbf{Tensión nominal igual o mayor}.
+  \item \textbf{Mismo dieléctrico} en condensadores (X7R por X7R, X5R por X5R, C0G por C0G).
+  \item \textbf{Tolerancia igual o mejor} en resistencias.
+  \item \textbf{Stock suficiente para 5 placas} el día de la consulta.
+  \item Si el reemplazo es un integrado: \textbf{mismo pinout} y parámetros verificados en el datasheet.
+\end{enumerate}
+
+\begin{ojo}[el stock cambia todos los días]
+Los números de stock de este capítulo son de la consulta del 16/11/2026 (\nolinkurl{fabricacion/stock_bom.md}). Antes de hacer el pedido hay que correr de nuevo \archivo{tools/stock_bom.py}.
+\end{ojo}
+
+\section{Todas las piezas, bloque por bloque}\label{sec:c05-lista}
+
+La tabla~\ref{tab:c05-piezas} lista las piezas de la placa agrupadas por bloque funcional. Los valores, encapsulados y códigos salen de \archivo{tools/target.json} y de \archivo{fabricacion/bom.csv}. ``A mano'' quiere decir que JLC no la monta y se suelda en el laboratorio (sección~\ref{sec:c05-mano}).
+
+{\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}L{0.16\linewidth}L{0.1\linewidth}L{0.1\linewidth}L{0.23\linewidth}L{0.33\linewidth}@{}}
+\caption{Piezas de la placa por bloque.}\label{tab:c05-piezas}\\
+\toprule
+Piezas & Valor & Encaps. & MPN · LCSC & Para qué sirve\\\midrule\endfirsthead
+\toprule
+Piezas & Valor & Encaps. & MPN · LCSC & Para qué sirve\\\midrule\endhead
+\midrule\multicolumn{5}{r}{\emph{sigue en la página siguiente}}\\\endfoot
+\bottomrule\endlastfoot
+\multicolumn{5}{@{}l}{\textbf{Entrada de \SI{24}{\volt} y protección} (capítulo~\ref{cap:alim})}\\
+\net{J5} & 24V\_IN & bornera \SI{5}{\milli\meter} & JL126-50002G01 · C394556 & Entrada de la fuente de laboratorio (a mano)\\
+\net{D1} & SS34 & SMA & SS34 · C8678 & Schottky en serie: bloquea la polaridad invertida\\
+\net{D2} & SMBJ26A & SMB & SMBJ26A · C123820 & TVS: recorta picos sobre \net{24V_PROT}\\
+\multicolumn{5}{@{}l}{\textbf{Buck de \SI{3.3}{\volt}} (\net{U6})}\\
+\net{U6} & LMR36015 & RNX (VQFN-HR 12) & LMR36015FBRNXR · C1850339 & Convertidor reductor de \SI{1}{\mega\hertz} en FPWM\\
+\net{L1} & \SI{6.8}{\micro\henry} & XAL4030 & XAL4030-682MEC · C3040663 & Bobina del buck\\
+\net{C27} \net{C28} & \SI{4.7}{\micro\farad} \SI{100}{\volt} & 2220 & FS55X475K101EGG · C153031 & CIN: condensadores de entrada\\
+\net{C29} \net{C30} & \SI{220}{\nano\farad} \SI{100}{\volt} & 0805 & C0805C224K1RACTU · C2167405 & CHF: alta frecuencia, pegados a VIN/PGND\\
+\net{C31}--\net{C34} & \SI{15}{\micro\farad} \SI{16}{\volt} & 1210 & C3225X7R1C156MT000N · C694469 & COUT: condensadores de salida\\
+\net{C35} & \SI{100}{\nano\farad} & 0603 & CC0603KRX7R9BB104 · C14663 & CBOOT: alimenta el MOSFET de arriba\\
+\net{C36} & \SI{2.2}{\micro\farad} & 0805 & CC0805KKX7R9BB225 · C125847 & CVCC: regulador interno del chip\\
+\net{R29} \net{R30} & \SI{100}{\kilo\ohm}, \SI{43.2}{\kilo\ohm} & 0603 & C25803 · C137720 & Divisor de realimentación (fija \SI{3.3}{\volt})\\
+\multicolumn{5}{@{}l}{\textbf{Buck de \SI{5}{\volt}} (\net{U7}) y riel \net{5V_A}}\\
+\net{U7} & LMR36015 & RNX & LMR36015FBRNXR · C1850339 & Igual que \net{U6}, salida de \SI{5}{\volt}\\
+\net{L2} & \SI{10}{\micro\henry} & XAL4040 & XAL4040-103MEC · C5144883 & Bobina del buck de \SI{5}{\volt}\\
+\net{C37}--\net{C46} & (como \net{U6}) & & mismos códigos & CIN, CHF, COUT, CBOOT y CVCC de \net{U7}\\
+\net{R31} \net{R32} & \SI{100}{\kilo\ohm}, \SI{24.9}{\kilo\ohm} & 0603 & C25803 · C137761 & Divisor de realimentación (fija \SI{5}{\volt})\\
+\net{R33} \net{C47} & \SI{10}{\ohm}, \SI{10}{\micro\farad} & 0603 & C22859 · C19702 & Filtro RC: de \net{5V} a \net{5V_A} (analógico)\\
+\multicolumn{5}{@{}l}{\textbf{Fuente de corriente IEPE, canal 1} (capítulo~\ref{cap:analog})}\\
+\net{J1} & puente & bornera & JL126-50002G01 · C394556 & Habilita CH1; ahí se mide la corriente (a mano)\\
+\net{R1} \net{C2} \net{C3} & \SI{10}{\ohm}, \SI{1}{\micro\farad}, \SI{100}{\nano\farad} & 0402/0603 & C25077 · C15849 · C14663 & Filtro de entrada de la fuente (\net{IEPE_SUP})\\
+\net{U1} & LT3092 & TSOT-23-8 & LT3092ETS8\#TRPBF · C462641 & Fuente de corriente de \SI{10}{\micro\ampere}$\times R_{SET}/R_{OUT}$\\
+\net{R4} \net{R5} \net{R6} & \SI{10}{\kilo\ohm}, \SI{10}{\kilo\ohm}, \SI{1}{\kilo\ohm} & 0603 & C25804 · C21190 & $R_{SET}=\SI{21}{\kilo\ohm}$ en serie\\
+\net{C1} & \SI{100}{\nano\farad} & 0603 & C14663 & Filtra el ruido de $R_{SET}$ (entre SET e \net{IEPE})\\
+\net{R2} \net{R3} & \SI{150}{\ohm} & 0603 & C22808 & $R_{OUT}=\SI{75}{\ohm}$ en paralelo $\Rightarrow$ \SI{2.81}{\milli\ampere}\\
+\net{R47} \net{JP1} & \SI{180}{\ohm} + puente & 0603 / THT & C22828 · — & Escalón de corriente a \SI{3.98}{\milli\ampere} (JP1 a mano)\\
+\net{J2} & BNC & THT a \ang{90} & KH-BNC75-3511 · C2837588 & Micrófono CH1 (RG-50) (a mano)\\
+\multicolumn{5}{@{}l}{\textbf{Fuente de corriente IEPE, canal 2}}\\
+\net{J7} \net{R36} \net{C49} \net{C50} & como CH1 & & mismos códigos & Habilitación y filtro de entrada de CH2\\
+\net{U8} & LT3092 & TSOT-23-8 & C462641 & Fuente de corriente de CH2\\
+\net{R34} \net{C48} & \SI{15}{\kilo\ohm}, \SI{100}{\nano\farad} & 0603 & C22809 · C14663 & $R_{SET}$ de CH2 y su filtro\\
+\net{R35} & \SI{100}{\ohm} & 0603 & C22775 & $R_{OUT}$ $\Rightarrow$ \SI{1.51}{\milli\ampere}\\
+\net{R48} \net{JP2} & \SI{150}{\ohm} + puente & 0603 / THT & C22808 · — & Escalón a \SI{2.51}{\milli\ampere} (JP2 a mano)\\
+\net{J8} & BNC & THT a \ang{90} & C2837588 & Micrófono CH2 (SV~12L, con adaptador BNC--TNC) (a mano)\\
+\multicolumn{5}{@{}l}{\textbf{AFE del canal 1} (capítulo~\ref{cap:analog}); CH2 es el espejo con \net{R38}--\net{R46}, \net{C51}--\net{C55}, \net{C57}, \net{U9}, \net{U10}}\\
+\net{R13} \net{R14} \net{R16} \net{R18} & \SI{390}{\kilo\ohm}, \SI{365}{\kilo\ohm}, \SI{191}{\kilo\ohm}, \SI{54.9}{\kilo\ohm} & 0603 & C137735 · C185336 · C227635 · C185321 & Cadena de entrada de \SI{1.0009}{\mega\ohm} al nodo \net{SUM}\\
+\net{R7} \net{R8} & \SI{49.9}{\kilo\ohm} & 0603 & C23184 & Realimentación $R_F=\SI{99.8}{\kilo\ohm}$\\
+\net{C56} & \SI{10}{\pico\farad} C0G & 0603 & CL10C100JB8NNNC · C1634 & CF: estabiliza el sumador\\
+\net{U3} & TLV9152 & TSOT-23-8 & TLV9152IDDFR · C2861011 & Op-amp doble: sumador (A) y seguidor de \net{VSHIFT} (B)\\
+\net{C7} & \SI{100}{\nano\farad} & 0603 & C14663 & Desacoplo de \net{5V_A} en \net{U3}\\
+\net{U2} & MCP4725 & SOT-23-6 & MCP4725A0T-E/CH · C144198 & DAC de 12 bits que fija \net{VSHIFT} (I2C 0x60)\\
+\net{R9} \net{C5} \net{C6} & \SI{100}{\ohm}, \SI{10}{\micro\farad}, \SI{100}{\nano\farad} & 0603 & C22775 · C19702 · C14663 & Alimentación filtrada del DAC (\net{3V3_DAC})\\
+\net{R12} \net{C4} & \SI{10}{\kilo\ohm}, \SI{100}{\nano\farad} & 0603 & C25804 · C14663 & Filtro RC de la salida del DAC (\SI{1}{\milli\second})\\
+\net{R15} \net{R17} \net{C8} & \SI{10}{\kilo\ohm}, \SI{10}{\kilo\ohm}, \SI{100}{\nano\farad} & 0603 & C25804 · C14663 & Divisor $\div2$ y filtro de \net{DC_MON}\\
+\multicolumn{5}{@{}l}{\textbf{ADC} (capítulo~\ref{cap:digital})}\\
+\net{U4} & PCM1808 & TSSOP-14 & PCM1808PWR · C55513 & ADC delta-sigma estéreo de 24 bits\\
+\net{Y1} & \SI{24.576}{\mega\hertz} & 3225 & O322524576MEEA4SC · C27869 & Reloj de sistema ($512\,f_S$)\\
+\net{C9} \net{C14} & \SI{10}{\micro\farad} & 0603 & C19702 & Acople AC de \net{REST_OUT}/\net{REST_SV}\\
+\net{R19} \net{R20} \net{C10} \net{C19} & \SI{100}{\ohm}, \SI{10}{\nano\farad} & 0603/0402 & C22775 · C15195 & Filtro antialiasing de cada entrada\\
+\net{C17} \net{C18} & \SI{100}{\nano\farad}, \SI{10}{\micro\farad} & 0603 & C14663 · C19702 & Desacoplo de VCC (\net{5V_A})\\
+\net{C12} \net{C11} & \SI{100}{\nano\farad}, \SI{10}{\micro\farad} & 0603 & C14663 · C19702 & Desacoplo de VDD (\net{3V3})\\
+\net{C16} \net{C15} & \SI{100}{\nano\farad}, \SI{10}{\micro\farad} & 0603 & C14663 · C19702 & Desacoplo de \net{PCM_VREF}\\
+\net{C13} \net{C20} & \SI{100}{\nano\farad} & 0603 & C14663 & Desacoplo de \net{3V3} en el grupo del oscilador y el ADC\\
+\net{R21}--\net{R24} & \SI{100}{\ohm} & 0603 & C22775 & En serie en MCLK, BCK, LRCK y DOUT\\
+\net{R49} \net{R50} \net{R51} & \SI{10}{\kilo\ohm} & 0603 & C25804 & Configuración MD0 = 1, MD1 = 0, FMT = 0\\
+\multicolumn{5}{@{}l}{\textbf{Parte digital}}\\
+\net{A1} & NUCLEO-L432KC & zócalo $2\times(1\times15)$ & KH-2.54FH-1X15P-H8.5 · C2932676 ($\times$2) & Zócalo de la NUCLEO (a mano)\\
+\net{R10} \net{R11} & \SI{4.7}{\kilo\ohm} & 0603 & C23162 & Pull-ups del bus I2C\\
+\multicolumn{5}{@{}l}{\textbf{Prueba y fabricación}}\\
+\net{TP1}--\net{TP7} & — & pad THT & — & \net{IEPE}, \net{REST_OUT}, \net{IEPE_SV}, \net{REST_SV} y tres GND\\
+\net{FID1}--\net{FID3} & — & fiducial \SI{1}{\milli\meter} & — & Marcas ópticas para la máquina de montaje\\
+\end{longtable}
+}
+
+\begin{calculo}[las corrientes IEPE de la tabla]
+El LT3092 saca una corriente de \SI{10}{\micro\ampere} por su pin SET, y el chip hace que la caída en $R_{OUT}$ sea igual a la caída en $R_{SET}$. Por eso $I_{OUT}=\SI{10}{\micro\ampere}\cdot R_{SET}/R_{OUT}$ (nota de \net{R34} en \archivo{tools/design.py}). Con los valores de la placa:
+\begin{align*}
+\text{CH1:}\quad & I=\SI{10}{\micro\ampere}\cdot\frac{\SI{21}{\kilo\ohm}}{\SI{150}{\ohm}\parallel\SI{150}{\ohm}}=\SI{10}{\micro\ampere}\cdot\frac{21000}{75}=\SI{2.8}{\milli\ampere}\\
+\text{CH1 con JP1:}\quad & R_{OUT}=75\parallel180=\SI{52.9}{\ohm}\;\Rightarrow\; I=\SI{3.97}{\milli\ampere}\\
+\text{CH2:}\quad & I=\SI{10}{\micro\ampere}\cdot\frac{\SI{15}{\kilo\ohm}}{\SI{100}{\ohm}}=\SI{1.5}{\milli\ampere}\\
+\text{CH2 con JP2:}\quad & R_{OUT}=100\parallel150=\SI{60}{\ohm}\;\Rightarrow\; I=\SI{2.5}{\milli\ampere}
+\end{align*}
+Los registros del diseño dan \SI{2.81}{} / \SI{3.98}{\milli\ampere} y \SI{1.51}{} / \SI{2.51}{\milli\ampere}; la diferencia está en el redondeo. El detalle del circuito está en el capítulo~\ref{cap:analog}.
+\end{calculo}
+
+\section{Los cambios respecto al diseño del equipo (C1--C17)}\label{sec:c05-cambios}
+
+El punto de partida fue el proyecto Altium del equipo (\net{Sonometro_2CH}): el canal~1 completo. Lo que no estaba dibujado (los bucks, el canal~2) se completó con \archivo{docs/connection_matrix.md}. Sobre eso se registraron 17 cambios en \archivo{tools/changes.json}, cada uno con su motivo. La tabla~\ref{tab:c05-cambios} los resume. Después se explican en detalle los que tienen que ver con piezas.
+
+{\footnotesize
+\begin{longtable}{@{}L{0.05\linewidth}L{0.33\linewidth}L{0.56\linewidth}@{}}
+\caption{Cambios C1--C17 (\archivo{tools/changes.json}).}\label{tab:c05-cambios}\\
+\toprule
+ID & Cambio & Motivo\\\midrule\endfirsthead
+\toprule ID & Cambio & Motivo\\\midrule\endhead
+\bottomrule\endlastfoot
+C1 & STM32 soldado $\to$ NUCLEO-L432KC enchufada & La NUCLEO trae micro, programador ST-LINK y USB. Se eliminan \net{U5}, \net{C21}--\net{C26}, \net{R25}--\net{R28}, \net{J3} (SWD) y \net{J4} (UART).\\
+C2 & Zócalo para la NUCLEO (\net{A1}) & Pines verificados en DS11451 y UM1956 (capítulo~\ref{cap:digital}).\\
+C3 & Oscilador \SI{25}{\mega\hertz} $\to$ \SI{24.576}{\mega\hertz} (C27869) & El KC2016 no existe en LCSC. $512\times\SI{48}{\kilo\hertz}=\SI{24.576}{\mega\hertz}$ da muestreo estándar.\\
+C4 & Protección de entrada: \net{D1} SS34 + \net{D2} SMBJ26A & Polaridad invertida y picos de tensión (capítulo~\ref{cap:alim}).\\
+C5 & Se elimina \net{J6} (fuente externa de CH2) & Siempre se usa la misma fuente de \SI{24}{\volt}: \net{J7} toma \net{24V_PROT} como \net{J1}.\\
+C6 & Filtros del lazo de DC de \SI{10}{\micro\farad} a \SI{100}{\nano\farad} (\net{C4}, \net{C51}, \net{C8}, \net{C55}) & Constantes de tiempo de \SI{1}{\milli\second} y \SI{0.5}{\milli\second} en vez de \SI{100}{\milli\second} y \SI{50}{\milli\second}: la corrección del DC es más rápida.\\
+C7 & 19 condensadores de \SI{100}{\nano\farad} a X7R (C14663, basic) & Los del Altium eran Y5V (sección~\ref{sec:c05-dielectricos}).\\
+C8 & Borneras de micrófono $\to$ BNC a \ang{90} (C2837588) & Conexión directa del cable coaxial del micrófono. El SV~12L (TNC) usa adaptador.\\
+C9 & Escalón de corriente: \net{JP1}+\net{R47}, \net{JP2}+\net{R48} & Provoca un cambio de DC que el lazo debe corregir: sirve para la demostración.\\
+C10 & Puntos de prueba \net{TP1}--\net{TP7} & Medir con el osciloscopio sin soldar cables.\\
+C11 & MD0/MD1/FMT con resistencias de \SI{10}{\kilo\ohm} (\net{R49}--\net{R51}) & Lo pide el datasheet del PCM1808 (§8.2.2.1).\\
+C12 & La NUCLEO se alimenta por su USB & No poner su regulador en paralelo con el buck de \SI{3.3}{\volt}.\\
+C13 & TSOT-23-8 con pads de \num{0.40}\,$\times$\,\SI{1.22}{\milli\meter} & Land pattern de ADI: \SI{0.25}{\milli\meter} entre pads en vez de \SI{0.15}{\milli\meter} (sección~\ref{sec:c05-tsot}).\\
+C14 & Borneras con serigrafía recortada al borde & La serigrafía del footprint de KiCad se salía de la placa.\\
+C15 & Serigrafía a \SI{0.15}{\milli\meter} de los pads (0402, TP, Y1) & Mínimo de JLCPCB; los pads no cambian.\\
+C16 & CF = \SI{10}{\pico\farad} C0G en los sumadores (\net{C56}, \net{C57}) & Sin CF el margen de fase del sumador era de 3--\ang{8}: riesgo de oscilación (capítulo~\ref{cap:analog}).\\
+C17 & Piezas con stock y pasivos a basic & Sección~\ref{sec:c05-c17}.\\
+\end{longtable}
+}
+
+\subsection{El dieléctrico de un condensador: X7R, Y5V y C0G}\label{sec:c05-dielectricos}
+
+Dos condensadores cerámicos de ``\SI{100}{\nano\farad}'' pueden comportarse muy distinto según el material de su dieléctrico. El código de tres caracteres (X7R, Y5V, C0G\ldots) dice cuánto cambia la capacidad con la temperatura. Según los códigos EIA \copia:
+
+\begin{table}[h]
+\centering
+\caption{Clases de dieléctrico que aparecen en este proyecto (códigos EIA, \copia).}\label{tab:c05-dielectricos}
+\begin{tabular}{@{}lL{0.3\linewidth}L{0.42\linewidth}@{}}\toprule
+Código & Variación con la temperatura & Dónde se usa\\\midrule
+C0G (NP0) & prácticamente nula ($\pm\SI{30}{\ppm\per\degreeCelsius}$) & CF de \SI{10}{\pico\farad} (\net{C56}, \net{C57})\\
+X7R & $\pm\SI{15}{\percent}$ de \SI{-55}{} a \SI{125}{\degreeCelsius} & \SI{100}{\nano\farad}, CIN, COUT, CVCC, CHF, \SI{10}{\nano\farad}\\
+X5R & $\pm\SI{15}{\percent}$ de \SI{-55}{} a \SI{85}{\degreeCelsius} & \SI{10}{\micro\farad} en 0603\\
+Y5V & $+\SI{22}{\percent}$ / $-\SI{82}{\percent}$ de \SI{-30}{} a \SI{85}{\degreeCelsius} & ninguno (estaba en el Altium)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Además de la temperatura, los cerámicos de clase~2 (X7R, X5R, Y5V) pierden capacidad cuando se les aplica voltaje de DC (\emph{DC bias}), y los Y5V son los que más pierden. Un ``\SI{100}{\nano\farad}'' Y5V puede terminar dando una fracción de eso en el circuito real. Por eso en el cambio C7 se reemplazaron los 19 condensadores \net{0603F104Z500CT} (Y5V) del diseño del equipo por \net{CC0603KRX7R9BB104} (Yageo X7R \SI{50}{\volt}, \net{C14663}, basic). Como además es basic, el cambio no costó nada.
+
+\begin{decision}[CF de \SI{10}{\pico\farad} en C0G]
+\textbf{Qué se decidió:} los condensadores de realimentación \net{C56}/\net{C57} son \SI{10}{\pico\farad} C0G \SI{50}{\volt} en 0603 (\net{CL10C100JB8NNNC}, \net{C1634}, basic).
+
+\textbf{Alternativas:} un X7R del mismo valor.
+
+\textbf{Por qué:} CF fija un polo del sumador y su margen de fase (capítulo~\ref{cap:analog}). Si su capacidad cambiara con la temperatura o con el voltaje de la señal, el polo se movería y además la capacidad variable con el voltaje genera distorsión. C0G es estable con la temperatura y no depende del voltaje. Para valores de pocos pF, C0G es además lo normal y es basic.
+
+\textbf{Fuente:} \archivo{tools/changes.json} (C16), \archivo{tools/analisis_opamp.py}.
+\end{decision}
+
+\subsection{C17: piezas sin stock y pasivos a basic}\label{sec:c05-c17}
+
+La auditoría del 15/11/2026 encontró piezas que no se podían montar (\nolinkurl{fabricacion/auditoria_piezas.md} §1--2). La tabla~\ref{tab:c05-c17} muestra cada reemplazo.
+
+{\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}L{0.16\linewidth}L{0.22\linewidth}L{0.24\linewidth}L{0.3\linewidth}@{}}
+\caption{Cambios de pieza del C17.}\label{tab:c05-c17}\\
+\toprule
+Piezas & Antes & Ahora & Motivo\\\midrule\endfirsthead
+\toprule Piezas & Antes & Ahora & Motivo\\\midrule\endhead
+\bottomrule\endlastfoot
+\multicolumn{4}{@{}l}{\emph{Por stock o porque no están en el catálogo}}\\
+\net{U3} \net{U9} & TLV9062IDDFR (C2867884) & TLV9152IDDFR · C2861011 & Stock 2 en JLC y 0 en LCSC para 2 piezas por placa\\
+\net{C27} \net{C28} \net{C37} \net{C38} & C5750X7R2A475K230KA & PSA FS55X475K101EGG · C153031 & Stock 0. Mismo \SI{4.7}{\micro\farad} \SI{100}{\volt} X7R 2220\\
+\net{C31}--\net{C34}, \net{C41}--\net{C44} & C3225X7R1C156M250AB & TDK C3225X7R1C156MT000N · C694469 & Stock 0. Misma serie TDK, \SI{15}{\micro\farad} \SI{16}{\volt} X7R 1210\\
+\net{C36} \net{C46} & C0805C225K5RACTU & Yageo CC0805KKX7R9BB225 · C125847 & El original no está en el catálogo\\
+\net{R33} & CRCW0603010RJNEAHP & 0603WAF100JT5E · C22859 & No está en el catálogo\\
+\net{R2} \net{R3} & RTT031500FTP & 0603WAF1500T5E · C22808 & Stock 11\\
+\net{R10} \net{R11} & SCR0603F4K7 & 0603WAF4701T5E · C23162 & Stock 19\\
+\multicolumn{4}{@{}l}{\emph{A basic, por costo}}\\
+\net{R4} \net{R5} \net{R12} \net{R15} \net{R17} \net{R37} \net{R44} \net{R45} \net{R49}--\net{R51} & \SI{10}{\kilo\ohm} \SI{5}{\percent} & C25804 (\SI{1}{\percent}) & Basic. Los divisores de \net{DC_MON} quedan al \SI{1}{\percent}\\
+\net{R9} \net{R19}--\net{R24} \net{R35} \net{R46} & \SI{100}{\ohm} \SI{5}{\percent} & C22775 (\SI{1}{\percent}) & Basic\\
+\net{R7} \net{R8} \net{R42} \net{R43} & \SI{49.9}{\kilo\ohm} & C23184 & Basic\\
+\net{R1} \net{R36} · \net{R6} · \net{R29} \net{R31} · \net{R34} & \SI{10}{\ohm}, \SI{1}{\kilo\ohm}, \SI{100}{\kilo\ohm}, \SI{15}{\kilo\ohm} & C25077 · C21190 · C25803 · C22809 & Basic\\
+\net{C5} \net{C9} \net{C11} \net{C14} \net{C15} \net{C18} \net{C47} \net{C52} & \SI{10}{\micro\farad} X5R & CL10A106KP8NNNC · C19702 & Basic, X5R \SI{10}{\volt}\\
+\net{C10} \net{C19} & \SI{10}{\nano\farad} sin código & CL05B103KB5NNNC · C15195 & Basic, X7R \SI{50}{\volt}\\
+\multicolumn{4}{@{}l}{\emph{Propuesto y no aplicado}}\\
+\net{C29} \net{C30} \net{C39} \net{C40} (CHF) & C0805C224K1RACTU \SI{100}{\volt} & se queda · C2167405 & Se propuso C5378 (\SI{50}{\volt}, basic); se conservó el original\\
+\end{longtable}
+}
+
+\subsubsection{TLV9062 $\to$ TLV9152}
+
+Es el cambio más delicado, porque es un integrado activo dentro de la cadena de señal. Antes de proponerlo se verificó en el datasheet del TLV9152 \doc{SBOS986E}:
+\begin{itemize}
+  \item \textbf{Mismo encapsulado y mismo pinout DDF}: OUT1, IN1$-$, IN1+, V$-$, IN2+, IN2$-$, OUT2, V+ \doc{fig.~5-4 p.6}. El footprint no cambia.
+  \item \textbf{Alimentación} de \SIrange{2.7}{16}{\volt} y \textbf{entrada rail-to-rail} de $(V-)-\SI{0.1}{\volt}$ a $(V+)+\SI{0.1}{\volt}$ \doc{p.11}: funciona con \net{5V_A}.
+  \item \textbf{Diferencias}: \SI{4.5}{\mega\hertz} de GBW contra \SI{10}{\mega\hertz} del TLV9062 \doc{p.12}, y \SI{560}{\micro\ampere} típicos por amplificador \doc{p.12}.
+\end{itemize}
+
+Un integrado ``compatible pin a pin'' no es automáticamente equivalente: cambian la estabilidad y el rango de entrada. Por eso se rehízo el análisis de estabilidad del sumador con los datos del TLV9152 y se estudió su región de transición de entrada. Los resultados están en el capítulo~\ref{cap:analog}. La alternativa que quedó anotada fue el TLV9002IDDFR (\net{C2862620}, \SI{1}{\mega\hertz}), cuyo datasheet no se revisó.
+
+\subsubsection{Condensadores de los bucks}
+
+Los condensadores de entrada (CIN) y de salida (COUT) originales tenían stock 0. Se reemplazaron por piezas de mismo valor, tensión, dieléctrico y tamaño. El registro del cambio dice que la capacidad efectiva se verificó (\archivo{tools/changes.json}, C17).
+
+Para \net{C36}/\net{C46} (el condensador del regulador interno VCC del LMR36015) la auditoría había propuesto \net{C28234} (Samsung \SI{2.2}{\micro\farad} X7R 0805). En el punto de control~2 se aplicó \net{C125847} (Yageo \net{CC0805KKX7R9BB225}, X7R 0805, registrado como \SI{50}{\volt} en \archivo{tools/changes.json}) (\archivo{PLAN_RUTEO.md} §6). Los documentos no dicen por qué se prefirió esa pieza. El datasheet pide \SI{1}{\micro\farad} de \SI{16}{\volt} como mínimo (\archivo{auditoria_piezas.md} §2), y las dos cumplen.
+
+\begin{ojo}[CHF: una propuesta que no se aplicó]
+Para los \SI{220}{\nano\farad} de alta frecuencia de los bucks (CHF) se propuso pasar a un basic de \SI{50}{\volt} (\net{C5378}), con el criterio ``$\SI{50}{\volt}\ge 2\times\SI{24}{\volt}$''. Al final se conservó el original de \SI{100}{\volt} (\net{C2167405}, extended), que sí tiene stock (\num{1240} unidades). La razón no quedó escrita. Un argumento técnico a favor: CHF está directamente sobre la entrada de \SI{24}{\volt}, que el TVS deja subir por encima de \SI{28.9}{\volt} en un pico, y un X7R de mayor tensión pierde menos capacidad con el DC aplicado. Toma esto como interpretación, no como el motivo registrado.
+\end{ojo}
+
+\section{Footprints: que la fábrica monte lo mismo que dibujaste}\label{sec:c05-footprints}
+
+\begin{idea}[qué es un footprint y por qué compararlo]
+El footprint (o \emph{land pattern}) es el dibujo de los pads de cobre donde se suelda una pieza: tamaño, posición y número de cada pad. KiCad trae su propia biblioteca, pero JLC monta con la \emph{suya}. Si en tu footprint el pin~1 está en una esquina y en el de JLC está en otra, la máquina pone el chip girado. Si los pads son demasiado pequeños para la pieza real, la soldadura queda débil. Por eso cada footprint se comparó con el que JLC usa para \emph{ese} código LCSC exacto.
+\end{idea}
+
+\subsection{Cómo se hizo la comparación}
+
+El script \nolinkurl{tools/auditoria_footprints.py} descarga el footprint de EasyEDA/JLC de cada código LCSC (con la herramienta \net{easyeda2kicad}), empareja los pads por su número y busca el giro $d$ y la traslación $\vec t$ que mejor llevan los pads de KiCad ($\vec p$) sobre los de JLC ($\vec q$):
+\[
+\vec q \approx R(d)\,\vec p + \vec t
+\]
+donde $R(d)$ es la matriz de rotación de $d$ grados. Luego reporta el error máximo de posición después de alinear (\emph{err}) y la diferencia máxima de tamaño de pad ($\Delta$tam). Los resultados completos están en \nolinkurl{fabricacion/auditoria_piezas.md} §3; la tabla~\ref{tab:c05-fp} muestra los integrados.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Comparación de footprints de los integrados (\archivo{auditoria_piezas.md} §3).}\label{tab:c05-fp}
+\begin{tabular}{@{}lllrrr@{}}\toprule
+Pieza & LCSC & Footprint KiCad & $d$ (\si{\degree}) & err (\si{\milli\meter}) & $\Delta$tam (\si{\milli\meter})\\\midrule
+PCM1808 & C55513 & TSSOP-14 & 90 & \num{0.062} & \num{0.225}\\
+MCP4725 & C144198 & SOT-23-6 & 90 & \num{0.012} & \num{0.253}\\
+LT3092 & C462641 & TSOT-23-8 & 180 & \num{0.073} & \num{0.136}\\
+TLV9152 & C2861011 & TSOT-23-8 & 180 & \num{0.093} & \num{0.136}\\
+LMR36015 & C1850339 & RNX (VQFN-HR-12) & 90 & \num{0.006} & \num{0.000}\\
+Oscilador & C27869 & SMD3225-4 & 0 & \num{0.000} & \num{0.000}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Lo que se aprendió de la comparación:
+\begin{itemize}
+  \item \textbf{Pasivos, diodos, oscilador y bobinas}: misma orientación ($d=\ang{0}$), pin~1 y cátodo del mismo lado, posiciones a $\le\SI{0.2}{\milli\meter}$. La XAL4040 da $d=\ang{180}$, que en una bobina de dos pads iguales no importa. Las diferencias de tamaño de pad ($\le\SI{0.5}{\milli\meter}$) son de las distintas variantes IPC del land pattern y no afectan el montaje.
+  \item \textbf{Integrados}: JLC los dibuja girados respecto a KiCad, y el giro \textbf{depende de la pieza exacta, no del encapsulado}. Por ejemplo, en TSOT-23-8 el TLV9062 da \ang{90}, el LT3092 y el TLV9152 dan \ang{180} y el TLV9002 da \ang{0}. Es la razón por la que las rotaciones del CPL se calculan por código LCSC (sección~\ref{sec:c05-cpl}).
+  \item \textbf{Pendiente}: el footprint de la resistencia original de \net{R10}/\net{R11} (\net{C3016318}) no se pudo bajar. Es un 0603 igual a los demás y, de todos modos, se reemplazó.
+\end{itemize}
+
+\subsection{El TSOT-23-8 con pads de \SI{0.40}{\milli\meter} (cambio C13)}\label{sec:c05-tsot}
+
+El TSOT-23-8 lleva el LT3092 (\net{U1}, \net{U8}) y el TLV9152 (\net{U3}, \net{U9}). Tiene 8 patas con paso de \SI{0.65}{\milli\meter}. El footprint genérico de KiCad usaba pads de \SI{0.5}{\milli\meter} de ancho.
+
+\begin{calculo}[espacio entre pads y puente de máscara]
+Con paso $p=\SI{0.65}{\milli\meter}$ y pads de ancho $w$, el espacio libre entre pads vecinos es $p-w$:
+\[
+\text{KiCad: } 0{,}65-0{,}50=\SI{0.15}{\milli\meter}\qquad\qquad \text{ADI: } 0{,}65-0{,}40=\SI{0.25}{\milli\meter}
+\]
+\SI{0.15}{\milli\meter} es justo el mínimo de pad a pad de JLC, y obligaba a una excepción de la regla de separación de \SI{0.2}{\milli\meter}. Además, entre dos aperturas de máscara tiene que quedar una tira de máscara (el \emph{puente}) de al menos \SI{0.10}{\milli\meter} en verde (\archivo{auditoria_piezas.md} §3). Con aperturas iguales a los pads, el puente es igual al espacio entre pads: \SI{0.25}{\milli\meter} con el footprint nuevo.
+\end{calculo}
+
+\begin{decision}[footprint TSOT-23-8 con el land pattern de ADI]
+\textbf{Qué se decidió:} usar un footprint local, \nolinkurl{Sonometro:TSOT-23-8_Pad0.40x1.22mm_P0.65mm_ADI}, con pads de \num{0.40}\,$\times$\,\SI{1.22}{\milli\meter} y filas a \SI{2.62}{\milli\meter} entre centros.
+
+\textbf{Alternativas:} dejar los pads de \SI{0.5}{\milli\meter} y poner una excepción de \SI{0.15}{\milli\meter} en las reglas.
+
+\textbf{Por qué:} es el land pattern recomendado por Analog Devices para el LT3092 (dibujo LTC 05-08-1637, \doc{ADI LT3092 Rev~D p.22}). Da \SI{0.25}{\milli\meter} entre pads y \SI{0.25}{\milli\meter} de puente de máscara, sin excepciones. También sirve para el TLV9152: el land pattern de TI para DDF usa pads de \num{0.45}\,$\times$\,\SI{1.05}{\milli\meter} con filas a \SI{2.6}{\milli\meter}, y el pie de la pata mide como máximo \SI{0.38}{\milli\meter} de ancho, así que \SI{0.40}{\milli\meter} lo cubre entero (cambio C13). JLC dibuja \num{0.364}\,$\times$\,\SI{1.222}{\milli\meter} (LT3092) y \num{0.40}\,$\times$\,\SI{0.90}{\milli\meter} (TLV9062): el nuestro cubre los dos.
+
+\textbf{Fuente:} \archivo{REGLAS.md} §3, \archivo{auditoria_piezas.md} §3, \archivo{tools/changes.json} (C13).
+\end{decision}
+
+\subsection{Otros footprints que se revisaron o se hicieron a mano}
+
+\begin{itemize}
+  \item \textbf{LMR36015 (RNX, VQFN-HR de 12 pines)}: footprint local \nolinkurl{Sonometro:Texas_RNX0012A_VQFN-HR-12_2x3mm_P0.5mm}. Contra el de JLC coincide pad por pad (err \SI{0.006}{\milli\meter}), pero JLC lo tiene girado \ang{90} y corrido \SI{0.14}{\milli\meter}. Eso entra en el CPL. El punto de pin~1 de la serigrafía se movió a $(-1{,}75;\,-1{,}45)$ porque tocaba una vía (capítulo~\ref{cap:ruteo}).
+  \item \textbf{BNC Kinghelm KH-BNC75-3511} (\net{J2}, \net{J8}, cambio C8): footprint local hecho con el plano del fabricante. El cuerpo que apoya en la placa es de plástico (PBT), y el barril metálico sale por el borde. Es un BNC de \SI{75}{\ohm}: a frecuencias de audio la impedancia del conector no importa y acopla mecánicamente con los de \SI{50}{\ohm}.
+  \item \textbf{Borneras MX126} (\net{J1}, \net{J5}, \net{J7}, cambio C14): mismos pads que el footprint de KiCad, pero con el contorno de serigrafía recortado a $\ge\SI{0.5}{\milli\meter}$ del borde. Antes se salía de la placa.
+  \item \textbf{0402, puntos de prueba y Y1} (cambio C15): copias locales con la serigrafía a \SI{0.15}{\milli\meter} de los pads, el mínimo de JLC. En Y1 se quitó el punto de pin~1 que caía sobre un pad; queda la escuadra exterior.
+\end{itemize}
+
+\section{Rotaciones del CPL: por qué no coinciden con KiCad}\label{sec:c05-cpl}
+
+Cada biblioteca define la ``rotación cero'' de un footprint a su manera: en una, el pin~1 está arriba a la izquierda; en otra, abajo a la izquierda. JLC coloca la pieza con su propio footprint, así que si le pasas la rotación de KiCad tal cual, la pieza puede quedar girada \ang{90} o \ang{180}. No existe una tabla oficial de corrección (\archivo{REGLAS.md} §2): hay que calcularla pieza por pieza.
+
+\subsection{La cuenta}
+
+El script \archivo{tools/fabricacion.py} usa el giro $d$ y la traslación $\vec t$ de la comparación de footprints de la sección anterior. Si en KiCad la pieza está en la posición $\vec P$ con giro $\theta$, entonces para JLC:
+\begin{align}
+\theta_{JLC} &= (\theta - d) \bmod 360 \label{eq:c05-rot}\\
+\vec M &= \vec P - R(\theta_{JLC})\,\vec t \label{eq:c05-pos}
+\end{align}
+Todo con el eje $Y$ hacia arriba (KiCad lo tiene hacia abajo, por eso en \archivo{cpl.csv} las $Y$ salen negativas) y rotación positiva en sentido antihorario, que es la convención de JLC. La matriz de rotación es
+\[
+R(\alpha)=\begin{pmatrix}\cos\alpha & -\sin\alpha\\ \sin\alpha & \cos\alpha\end{pmatrix}.
+\]
+
+\begin{calculo}[ejemplo: el buck U6]
+En la placa, \net{U6} está en $\vec P=(129{,}000;\,108{,}800)$ en coordenadas de KiCad, con $\theta=\ang{0}$. Con $Y$ hacia arriba: $\vec P=(129{,}000;\,-108{,}800)$.
+
+La comparación de footprints dio $d=\ang{90}$ y $\vec t\approx(-0{,}14;\,0)$ (en el archivo, $t_x=\SI{-0.137}{\milli\meter}$).
+\begin{enumerate}
+  \item Rotación: $\theta_{JLC}=(0-90)\bmod 360=\ang{270}$.
+  \item Traslación girada: $R(270^\circ)\,\vec t=\begin{pmatrix}0 & 1\\ -1 & 0\end{pmatrix}\begin{pmatrix}-0{,}137\\0\end{pmatrix}=\begin{pmatrix}0\\0{,}137\end{pmatrix}$.
+  \item Posición: $\vec M=(129{,}000;\,-108{,}800)-(0;\,0{,}137)=(129{,}000;\,-108{,}937)$.
+\end{enumerate}
+Es exactamente la fila de \net{U6} en \archivo{fabricacion/cpl.csv}: \texttt{U6,129.0000,-108.9370,Top,270}.
+\end{calculo}
+
+\begin{calculo}[ejemplo: el ADC U4]
+\net{U4} está girado $\theta=\ang{90}$ en KiCad y su comparación dio $d=\ang{90}$, $\vec t=\vec 0$. Entonces $\theta_{JLC}=\ang{0}$ y la posición no cambia: \texttt{U4,164.0000,-129.0000,Top,0}. En KiCad está a \ang{90} y para JLC va a \ang{0}: si se hubiera mandado \ang{90}, el chip habría quedado girado un cuarto de vuelta.
+\end{calculo}
+
+\subsection{La comprobación del pin 1}
+
+Después de calcular cada fila del CPL, el script coloca el footprint de JLC con esa posición y esa rotación y mide la distancia entre \emph{su} pad~1 y el pad~1 de la placa. Si pasa de \SI{0.3}{\milli\meter}, lo marca como problema. En la placa final ninguna pieza pasa de \SI{0.21}{\milli\meter} (los diodos SMA/SMB, por la diferencia de tamaño de pad); los integrados quedan entre \SI{0.00}{} y \SI{0.10}{\milli\meter} (\nolinkurl{fabricacion/rotaciones.md}).
+
+\begin{ojo}[la última palabra la tiene la vista previa de JLC]
+La cuenta compara contra el footprint de EasyEDA, pero la máquina usa la biblioteca de montaje de JLC. Antes de pagar hay que mirar en la vista previa del pedido (DFM): el pin~1 de \net{U1}--\net{U10} sobre la marca de la placa, el cátodo de \net{D1}/\net{D2} del lado de la franja, el pin~1 de \net{Y1} y el centrado de \net{U6}/\net{U7} (\archivo{fabricacion/LEEME.md}).
+\end{ojo}
+
+\section{El stock del día y la bobina L2}\label{sec:c05-stock}
+
+El script \archivo{tools/stock_bom.py} consulta la API pública de piezas de JLC para cada línea del BOM. Comprueba que el código LCSC sea el aprobado en \archivo{tools/target.json}, que el MPN del catálogo coincida con el de la placa y que haya stock para 5 placas (cantidad de la línea $\times5$). El 16/11/2026 el resultado fue \textbf{35 de 36 líneas bien}.
+
+La única observación fue \net{L2} (\net{XAL4040-103MEC}, \net{C5144883}): \textbf{4 unidades} en stock y se necesitan 5 para 5 placas.
+
+\begin{decision}[ensamblar como máximo 4 placas]
+\textbf{Qué se decidió:} pedir 5 placas y ensamblar como máximo 4. La quinta queda sin ensamblar.
+
+\textbf{Alternativas:} cambiar la bobina por otra de \SI{10}{\micro\henry}, o esperar a que haya stock.
+
+\textbf{Por qué:} cambiar la bobina de un buck no es un cambio menor: cambian la corriente de saturación, la resistencia DC y el rizado, y habría que revisar el diseño del convertidor y el footprint. Para un proyecto de laboratorio, 4 placas sobran.
+
+\textbf{Pendiente:} confirmar en el formulario de JLC que Economic deja elegir 4 de 5 placas. Si solo ofrece 2 o 5, se ensamblan 2.
+
+\textbf{Fuente:} \nolinkurl{fabricacion/stock_bom.md}, \archivo{fabricacion/LEEME.md}.
+\end{decision}
+
+Otras piezas con stock justo, que conviene vigilar o reservar en la biblioteca de piezas de JLC: \net{LMR36015FBRNXR} (27 unidades, se usan 2 por placa), \net{MCP4725A0T-E/CH} (184), las resistencias de \SI{191}{\kilo\ohm} (164) y \SI{43.2}{\kilo\ohm} (148).
+
+\section{Lo que se suelda a mano}\label{sec:c05-mano}
+
+JLC no monta las piezas de agujero pasante (THT) en el ensamblaje Economic que se pidió. Las piezas que van a mano están en \nolinkurl{fabricacion/soldar_a_mano.md}:
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Piezas que se sueldan en el laboratorio.}\label{tab:c05-mano}
+\begin{tabular}{@{}lL{0.3\linewidth}L{0.2\linewidth}L{0.3\linewidth}@{}}\toprule
+Pieza & Qué es & LCSC (para comprar) & Nota\\\midrule
+\net{A1} & 2 tiras hembra $1\times15$ de \SI{2.54}{\milli\meter} + NUCLEO-L432KC & C2932676 ($\times$2) & La NUCLEO va enchufada\\
+\net{J1} \net{J5} \net{J7} & Bornera de 2 vías, paso \SI{5}{\milli\meter} & C394556 & Entrada de \SI{24}{\volt} y habilitaciones IEPE\\
+\net{J2} \net{J8} & BNC hembra a \ang{90} & C2837588 & Micrófonos\\
+\net{JP1} \net{JP2} & Tira $1\times2$ + jumper & — & Escalón de corriente\\
+\net{TP1}--\net{TP7} & Pad con agujero & — & Sin componente: se mide directo\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Por eso esos pads THT se conectan a los planos con \emph{alivio térmico} (rayos finos en vez de cobre sólido): si estuvieran unidos de lleno al plano, el cautín no alcanzaría a calentarlos. Eso se explica en el capítulo~\ref{cap:ruteo}.
+
+\section*{Resumen}
+\begin{itemize}
+  \item JLC monta la pieza del código LCSC, no la del valor. El BOM (36 líneas, 112 piezas) y el CPL se generan desde la placa y se verifican con scripts.
+  \item Se pidió ensamblaje Economic (una cara), porque la placa mide \num{90}\,$\times$\,\SI{64}{\milli\meter} y Standard exige \num{70}\,$\times$\,\SI{70}{\milli\meter} como mínimo.
+  \item Para reemplazar una pieza se exigió: mismo valor y encapsulado, tensión igual o mayor, mismo dieléctrico, tolerancia igual o mejor, stock para 5 placas y, en integrados, mismo pinout verificado.
+  \item C17 resolvió las piezas sin stock (TLV9152, CIN, COUT, \net{C36}/\net{C46}, \net{R2}/\net{R3}, \net{R10}/\net{R11}, \net{R33}) y bajó las extended distintas de 30 a 19.
+  \item Los \SI{100}{\nano\farad} pasaron de Y5V a X7R; el CF del sumador es C0G.
+  \item Cada footprint se comparó con el de JLC. El TSOT-23-8 pasó al land pattern de ADI (\SI{0.25}{\milli\meter} entre pads).
+  \item La rotación del CPL es $\theta-d$ con un ajuste de posición, calculado por código LCSC. El pin~1 queda a $\le\SI{0.21}{\milli\meter}$ en todas las piezas, y se confirma en la vista previa de JLC.
+  \item \net{L2} tenía 4 unidades: se ensamblan como máximo 4 placas.
+\end{itemize}

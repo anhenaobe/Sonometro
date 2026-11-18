@@ -1,0 +1,414 @@
+\chapter{El convertidor de audio y la parte digital}\label{cap:digital}
+
+En los capítulos anteriores la señal de cada micrófono se convirtió en un voltaje limpio, \net{REST_OUT} para el canal~1 y \net{REST_SV} para el canal~2. Ahora toca pasar esos voltajes a números y llevarlos al microcontrolador. Este capítulo cubre el último tramo de la placa: el convertidor analógico--digital (ADC) PCM1808, su reloj y las líneas digitales que van a la tarjeta NUCLEO.
+
+\textbf{En este capítulo vas a ver:}
+\begin{itemize}
+  \item Qué es un ADC delta-sigma de audio y por qué el PCM1808 sirve para este proyecto.
+  \item Cómo se escoge la frecuencia de muestreo y por qué el oscilador es de \SI{24.576}{\mega\hertz}.
+  \item Cómo se configura el chip con tres resistencias (sin programarlo).
+  \item La red de entrada: acople AC, filtro antialiasing y la tensión de referencia \net{PCM_VREF}.
+  \item Alimentación, desacoplo y tierras del ADC.
+  \item Las conexiones con la NUCLEO-L432KC: I2S (SAI), I2C para los DAC y las dos líneas de monitoreo de DC.
+  \item Qué es una línea de reloj ``crítica'' y por qué se rutea con reglas propias.
+\end{itemize}
+
+\section{El ADC: PCM1808 (U4)}\label{sec:c04-pcm}
+
+\subsection{Qué es un ADC delta-sigma, en palabras sencillas}
+
+Un ADC ``clásico'' de aproximaciones sucesivas (como el del STM32) toma una muestra del voltaje y la compara bit a bit contra una referencia. Para tener 24 bits así haría falta un comparador y una referencia absurdamente precisos.
+
+El PCM1808 hace otra cosa. Su modulador delta-sigma compara la entrada contra su propia salida \emph{muchísimas} veces por segundo con una resolución muy baja (casi de 1 bit), y luego un filtro digital promedia todo ese chorro de bits para sacar pocas muestras de muchos bits. En el PCM1808 el modulador trabaja a 64 veces la frecuencia de muestreo \doc{SLES177B p.1}: con $f_S=\SI{48}{\kilo\hertz}$, el modulador corre a $64\times\SI{48}{\kilo\hertz}=\SI{3.072}{\mega\hertz}$.
+
+\begin{idea}[sobremuestreo]
+Si tomas 64 muestras ``malas'' donde necesitabas una y las promedias bien, el ruido de cuantización se reparte en una banda 64 veces más ancha, y el filtro digital se queda solo con la parte de audio. Por eso un convertidor de 1 bit muy rápido puede entregar 24 bits a \SI{48}{\kilo\hertz}. El precio es que necesita un reloj rápido y muy estable (más adelante en la sección~\ref{sec:c04-reloj}).
+\end{idea}
+
+Los datos clave del PCM1808, todos de su datasheet:
+
+\begin{table}[h]
+\centering
+\caption{Características del PCM1808 que importan aquí ($V_{CC}=\SI{5}{\volt}$, $V_{DD}=\SI{3.3}{\volt}$, $f_S=\SI{48}{\kilo\hertz}$, modo maestro 512\,$f_S$).}\label{tab:c04-pcm}
+\begin{tabular}{@{}L{0.42\linewidth}L{0.28\linewidth}L{0.22\linewidth}@{}}\toprule
+Parámetro & Valor típico & Fuente\\\midrule
+Resolución & 24 bits & \doc{SLES177B p.1}\\
+Sobremuestreo del modulador & $\times 64$ & \doc{p.1}\\
+Rango dinámico (ponderado A) & \SI{99}{\decibel} (mín.\ \SI{95}{\decibel}) & \doc{p.6}\\
+THD+N a \SI{-0.5}{\decibel} & \SI{-93}{\decibel} & \doc{p.6}\\
+Entrada a fondo de escala & \SI{3}{\volt} pico a pico & \doc{p.4}\\
+Impedancia de entrada & \SI{60}{\kilo\ohm} & \doc{p.6}\\
+Centro de la entrada (VREF) & $0{,}5\,V_{CC}$ & \doc{p.6}\\
+Filtro antialiasing interno ($-\SI{3}{\decibel}$) & \SI{1.3}{\mega\hertz} & \doc{p.6}\\
+Banda de paso del filtro digital & $0{,}454\,f_S$ = \SI{21.8}{\kilo\hertz} & \doc{p.6}\\
+Banda de rechazo & $0{,}583\,f_S$ = \SI{28.0}{\kilo\hertz} & \doc{p.6}\\
+Pasa-altos digital ($-\SI{3}{\decibel}$) & $0{,}019\,f_S/1000$ = \SI{0.91}{\hertz} & \doc{p.6, p.1}\\
+Corriente analógica $I_{CC}$ & \SI{8.6}{\milli\ampere} (máx.\ \SI{11}{\milli\ampere}) & \doc{p.6}\\
+Corriente digital $I_{DD}$ & \SI{5.9}{\milli\ampere} (máx.\ \SI{8}{\milli\ampere}) & \doc{p.6}\\
+Disipación & \SI{62}{\milli\watt} (máx.\ \SI{81}{\milli\watt}) & \doc{p.6}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{decision}[usar el PCM1808 y no el ADC del microcontrolador]
+\textbf{Qué se decidió:} digitalizar el audio con un ADC externo de audio (PCM1808), estéreo, un canal por micrófono. Viene del diseño del equipo en Altium; la Rev~B lo conserva.
+
+\textbf{Alternativas:} el ADC de 12 bits del STM32, o un ADC de instrumentación bipolar (la sugerencia del profesor en la primera revisión, por ejemplo un AD7606).
+
+\textbf{Por qué:} el PCM1808 trae en un solo chip el filtro antialiasing digital, el pasa-altos y una salida I2S que el STM32 recibe por hardware (periférico SAI) sin ocupar la CPU. Su rango dinámico típico de \SI{99}{\decibel} es muy superior al de un ADC de 12 bits. Además existe en JLCPCB con mucho stock (\num{45906} unidades el 16/11/2026, \archivo{fabricacion/stock_bom.md}).
+
+\textbf{Fuente:} \doc{SLES177B pp.1, 6}.
+\end{decision}
+
+\section{El reloj: por qué \SI{24.576}{\mega\hertz}}\label{sec:c04-reloj}
+
+\subsection{De la frecuencia de muestreo al oscilador}
+
+El PCM1808 necesita un reloj de sistema en su pin \net{SCKI} (pin~6) que sea 256, 384 o 512 veces la frecuencia de muestreo $f_S$ \doc{SLES177B §7.3.2 p.14}. Para audio estándar se escogió $f_S=\SI{48}{\kilo\hertz}$, y con el modo de 512\,$f_S$:
+
+\begin{calculo}[frecuencia del oscilador]
+\[
+f_{SCKI} = 512 \cdot f_S = 512 \times \SI{48}{\kilo\hertz} = \SI{24.576}{\mega\hertz}
+\]
+Es exactamente el valor de la tabla~1 del datasheet para 48~kHz y 512\,$f_S$ \doc{SLES177B p.15}. Con ese reloj, en modo maestro el chip genera:
+\begin{itemize}
+  \item el reloj de bit \net{BCK} = $64\,f_S$ = \SI{3.072}{\mega\hertz} (``64 BCK por trama'' \doc{p.16});
+  \item el reloj de palabra \net{LRCK} = $f_S$ = \SI{48}{\kilo\hertz} (izquierda/derecha).
+\end{itemize}
+Un período de \net{BCK} dura $1/\SI{3.072}{\mega\hertz}\approx\SI{326}{\nano\second}$.
+\end{calculo}
+
+\begin{decision}[oscilador YXC de \SI{24.576}{\mega\hertz} (Y1)]
+\textbf{Qué se decidió:} cambiar el oscilador del diseño del equipo (Kyocera KC2016 de \SI{25}{\mega\hertz}) por un oscilador YXC de \SI{24.576}{\mega\hertz}: código \net{O322524576MEEA4SC}, LCSC \net{C27869} (cambio C3 de \archivo{tools/changes.json}).
+
+\textbf{Alternativas:} quedarse con \SI{25}{\mega\hertz}, o sacar el reloj del microcontrolador.
+
+\textbf{Por qué:} el KC2016 no existe en LCSC, así que JLC no lo podía montar. Además, con \SI{25}{\mega\hertz}/512 la frecuencia de muestreo sería \SI{48.828}{\kilo\hertz}, un valor raro. Con \SI{24.576}{\mega\hertz} se obtienen \SI{48}{\kilo\hertz} exactos. No se toma el reloj del microcontrolador porque un reloj generado por un MCU suele tener más \emph{jitter} (temblor en el tiempo de los flancos), y el datasheet avisa que la calidad del reloj influye en el desempeño dinámico \doc{SLES177B §10.1.6 p.21}. La guía de ADI MT-031 \copia{} recomienda tratar el oscilador de muestreo como parte analógica y ponerlo junto al convertidor (\archivo{REGLAS.md} §4).
+
+\textbf{Fuente:} \doc{SLES177B pp.14--16, 21}; descripción de la pieza en \archivo{tools/design.py}: \SI{3.3}{\volt}, $\pm\SI{25}{\ppm}$, pines 1~OE, 2~GND, 3~OUT, 4~VDD.
+\end{decision}
+
+El pin~1 (OE, habilitación) del oscilador va a \net{3V3}, así que el reloj corre siempre que hay alimentación. La salida (pin~3, red \net{MCLK_SOURCE}) pasa por \net{R21} (\SI{100}{\ohm}) antes de llegar a \net{SCKI}; más abajo se explica para qué sirven esas resistencias en serie. Junto al pin de alimentación del oscilador está \net{C13} (\SI{100}{\nano\farad}). El consumo del oscilador no está verificado: se supuso $\le\SI{10}{\milli\ampere}$ \estimado{} porque no se tiene su datasheet a mano (\archivo{CALCULOS.md}).
+
+\section{Configuración por pines: MD0, MD1 y FMT}\label{sec:c04-straps}
+
+El PCM1808 no tiene registros que se programen por I2C o SPI. Se configura con tres pines que se dejan en alto o en bajo:
+
+\begin{table}[h]
+\centering
+\caption{Pines de configuración del PCM1808 y cómo quedan.}\label{tab:c04-straps}
+\begin{tabular}{@{}lllL{0.42\linewidth}@{}}\toprule
+Pin & Resistencia & Nivel & Efecto \doc{SLES177B tablas 2 y 3, p.16}\\\midrule
+MD1 (11) & \net{R50} \SI{10}{\kilo\ohm} a GND & bajo & \multirow{2}{0.42\linewidth}{MD1 = 0, MD0 = 1: \textbf{modo maestro 512\,$f_S$}}\\
+MD0 (10) & \net{R49} \SI{10}{\kilo\ohm} a 3V3 & alto & \\
+FMT (12) & \net{R51} \SI{10}{\kilo\ohm} a GND & bajo & formato \textbf{I2S de 24 bits}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{idea}[maestro y esclavo]
+En una interfaz de audio uno de los dos chips ``manda'' los relojes \net{BCK} y \net{LRCK}. En \emph{modo maestro} los genera el PCM1808 a partir de su oscilador; el STM32 solo escucha. Así los relojes de muestreo salen del oscilador limpio que está pegado al ADC y no dependen del microcontrolador.
+\end{idea}
+
+¿Por qué con resistencias de \SI{10}{\kilo\ohm} y no con cables directos a 3V3 y GND? Porque el datasheet lo pide así: ``\emph{should be controlled either by biasing with a 10 kΩ resistor to VDD or GND, or by driving with GPIO}'' \doc{SLES177B §8.2.2.1 p.20} (cambio C11). Además, si algún día se quisiera manejar esos pines desde el microcontrolador, la resistencia evita un corto.
+
+\begin{calculo}[¿le gana R49 a la resistencia interna?]
+Los pines MD0, MD1 y FMT tienen una resistencia interna a tierra (\emph{pulldown}) de \SI{50}{\kilo\ohm} típica \doc{SLES177B p.5, nota 3}. En MD0, \net{R49} (\SI{10}{\kilo\ohm} a \SI{3.3}{\volt}) y ese pulldown forman un divisor:
+\[
+V_{MD0} = \SI{3.3}{\volt}\cdot\frac{50}{10+50} = \SI{2.75}{\volt}
+\]
+El umbral de nivel alto para esos pines es $V_{IH}\ge\SI{2}{\volt}$ \doc{p.5}, así que MD0 se lee como ``1'' con \SI{0.75}{\volt} de margen. En MD1 y FMT la resistencia externa va a tierra, en paralelo con el pulldown: quedan en 0~V sin discusión.
+\end{calculo}
+
+\begin{ojo}[los pines se leen al encender]
+El datasheet dice que MD1 y MD0 deben estar fijos \emph{antes} de encender \doc{p.16}. Con resistencias fijas eso se cumple solo. Si algún día se manejan desde GPIO, hay que fijarlos antes de dar alimentación al ADC.
+\end{ojo}
+
+\begin{figure}[h]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  % caja del chip
+  \draw[thick] (0,0) rectangle (3.2,4.2);
+  \node[align=center] at (1.6,4.55) {\net{U4} PCM1808};
+  \node[anchor=south east, inner sep=2pt] at (3.15,3.5) {MD0 (10)};
+  \node[anchor=south east, inner sep=2pt] at (3.15,2.1) {MD1 (11)};
+  \node[anchor=south east, inner sep=2pt] at (3.15,0.7) {FMT (12)};
+  % pulldown interno (uno como ejemplo)
+  \draw[gray] (3.2,3.5) -- (0.7,3.5) to[R, color=gray, l_={\color{gray}\scriptsize \SI{50}{\kilo\ohm}}] (0.7,2.4) node[ground, gray]{};
+  % conexiones externas
+  \draw (3.2,3.5) -- (4.5,3.5) to[R,l=\net{R49} \SI{10}{\kilo\ohm}] (6.8,3.5) -- (7.4,3.5) node[right]{\net{3V3}};
+  \draw (3.2,2.1) -- (4.5,2.1) to[R,l=\net{R50} \SI{10}{\kilo\ohm}] (6.8,2.1) -- (7.2,2.1) node[ground]{};
+  \draw (3.2,0.7) -- (4.5,0.7) to[R,l=\net{R51} \SI{10}{\kilo\ohm}] (6.8,0.7) -- (7.2,0.7) node[ground]{};
+\end{circuitikz}
+\caption{Pines de configuración del PCM1808. En gris, la resistencia interna de \SI{50}{\kilo\ohm} que tiene cada pin (se dibuja una sola como ejemplo).}\label{fig:c04-straps}
+\end{figure}
+
+\section{La entrada analógica}\label{sec:c04-entrada}
+
+Cada canal llega al ADC por la misma cadena de tres piezas. Para el canal~1:
+
+\begin{figure}[h]
+\centering
+\begin{circuitikz}[scale=0.9, transform shape]
+  \draw (0,0) node[left]{\net{REST_OUT}} to[C,l=\net{C9} \SI{10}{\micro\farad}] (3.0,0)
+        node[circ]{} to[R,l=\net{R19} \SI{100}{\ohm}] (6.0,0) node[circ]{} -- (7.6,0);
+  \node[below, font=\small] at (3.0,-0.1) {\net{AC_LEFT}};
+  \draw (6.0,0) to[C,l_=\net{C10} \SI{10}{\nano\farad}] (6.0,-1.8) node[ground]{};
+  \node[below right, font=\small] at (6.05,-0.05) {\net{ADC_INL}};
+  % dentro del chip
+  \draw[dashed] (7.6,1.0) rectangle (11.8,-3.0);
+  \node[anchor=north east, font=\small] at (11.8,1.0) {\net{U4} PCM1808};
+  \node[anchor=south east, font=\scriptsize] at (7.55,0.05) {pin 13};
+  \draw (7.6,0) -- (8.6,0) to[R,l=\SI{60}{\kilo\ohm}] (8.6,-1.8) -- (8.6,-2.0) node[below, font=\small]{$V_{REF}=0{,}5\,V_{CC}$};
+  \draw (8.6,0) -- (9.6,0) node[right, font=\small]{al modulador};
+\end{circuitikz}
+\caption{Entrada del canal~1 (izquierdo). El canal~2 es igual: \net{REST_SV}, \net{C14}, \net{R20}, \net{C19} y el pin~14 (VINR). La resistencia de \SI{60}{\kilo\ohm} es el modelo de la impedancia de entrada del chip \doc{SLES177B p.6}.}\label{fig:c04-entrada}
+\end{figure}
+
+\subsection{Acople AC con C9 y C14}
+
+El PCM1808 polariza su entrada internamente alrededor de $V_{REF}=0{,}5\,V_{CC}\approx\SI{2.5}{\volt}$ \doc{p.6}. La salida del AFE, en cambio, tiene su propio nivel de DC, que fija el lazo de DC del capítulo~\ref{cap:analog} (la recomendación es $\approx\SI{1.5}{\volt}$). Si se unieran directo, el AFE y el ADC ``pelearían'' por el nivel de DC. El condensador \net{C9} deja pasar solo la parte AC (el audio) y bloquea la diferencia de DC.
+
+\begin{idea}[el DC no se pierde]
+Que el ADC no vea el DC no es un problema: el nivel de DC de \net{REST_OUT} se mide por otro camino, la línea \net{DC_MON} hacia el ADC del STM32 (sección~\ref{sec:c04-nucleo}). El audio va por el PCM1808 y el DC por el microcontrolador.
+\end{idea}
+
+\begin{calculo}[frecuencia de corte del acople]
+\net{C9} forma un pasa-altos con la impedancia de entrada de \SI{60}{\kilo\ohm} del chip:
+\[
+f_c = \frac{1}{2\pi\,R\,C}=\frac{1}{2\pi\cdot\SI{60}{\kilo\ohm}\cdot\SI{10}{\micro\farad}}\approx\SI{0.27}{\hertz},
+\qquad \tau = RC = \SI{0.6}{\second}
+\]
+El datasheet, con \SI{1}{\micro\farad} electrolítico, da \SI{2.7}{\hertz} \doc{SLES177B p.19, nota 1}; con \SI{10}{\micro\farad} el corte baja diez veces. Además el chip tiene su propio pasa-altos digital de \SI{0.91}{\hertz}, así que el corte real de la cadena lo pone el filtro digital y no \net{C9}.
+\end{calculo}
+
+\begin{ojo}[cerámico X5R en vez de electrolítico]
+\net{C9}/\net{C14} son cerámicos X5R de \SI{10}{\micro\farad} y \SI{10}{\volt} (\net{CL10A106KP8NNNC}, basic). Los cerámicos X5R pierden capacidad con el voltaje de DC aplicado. Aquí el DC entre sus terminales es pequeño (unos \SI{2.5}{\volt} menos el nivel de \net{REST_OUT}, del orden de \SI{1}{\volt} \estimado), así que la pérdida no debería mover el corte por encima de \SI{1}{\hertz}. No se midió.
+\end{ojo}
+
+\subsection{Filtro antialiasing R19/C10}
+
+\begin{calculo}[polo del RC de entrada]
+\[
+f_c = \frac{1}{2\pi\cdot\SI{100}{\ohm}\cdot\SI{10}{\nano\farad}}\approx\SI{159}{\kilo\hertz}
+\]
+\end{calculo}
+
+¿Por qué tan alto, si el audio llega a \SI{20}{\kilo\hertz}? Por el sobremuestreo. El filtro digital del chip ya elimina todo lo que está entre \SI{21.8}{\kilo\hertz} y la mitad de la frecuencia del modulador. Lo único que puede ``doblarse'' (alias) dentro del audio es lo que esté cerca de \SI{3.072}{\mega\hertz} y sus múltiplos. Contra eso basta un RC suave: el chip ya tiene uno interno a \SI{1.3}{\mega\hertz} \doc{p.6}, y el externo ayuda además a frenar ruido de radiofrecuencia y la corriente de carga que el modulador pide a su entrada. El datasheet recomienda justamente un RC pasivo ``\emph{in the range of 100 Ω and 0.01 µF to 1 kΩ and 1000 pF}'' \doc{SLES177B §10.1.3 p.21}. Se usó el extremo de \SI{100}{\ohm} y \SI{10}{\nano\farad}, que es también lo que hace el EVM de TI (\archivo{REGLAS.md} §3).
+
+\subsection{Rango de entrada y nivel de señal}
+
+\begin{calculo}[¿cabe la señal en el ADC?]
+El fondo de escala es \SI{3}{\volt} pico a pico \doc{SLES177B p.4}, es decir $\pm\SI{1.5}{\volt}$ alrededor de $V_{REF}$. La ganancia del AFE de \net{IEPE} a \net{REST_OUT} es $-0{,}0997$ (capítulo~\ref{cap:analog}). Entonces:
+\begin{itemize}
+  \item RG-50 a \SI{130}{\decibel} pico (unos \SI{3.2}{\volt} pico en la salida del micrófono, \archivo{AGENTS.md} §3.2): $3{,}2\times0{,}0997\approx\SI{0.32}{\volt}$ pico. Cabe con mucha holgura.
+  \item SV~12 con su excursión máxima de \SI{10.8}{\volt} pico: $10{,}8\times0{,}0997\approx\SI{1.08}{\volt}$ pico, que sigue por debajo de \SI{1.5}{\volt}.
+\end{itemize}
+\end{calculo}
+
+\begin{calculo}[¿a cuántos dBFS queda un tono de calibración de 94~dB?]
+Un calibrador de \SI{94}{\decibel} SPL produce \SI{1}{\pascal} rms. Con el RG-50 de \SI{50}{\milli\volt\per\pascal} nominal:
+\[
+v_{IEPE} = \SI{50}{\milli\volt} \text{ rms}\;\Rightarrow\; v_{REST}= 0{,}0997\times\SI{50}{\milli\volt}\approx\SI{4.99}{\milli\volt}\text{ rms}
+\]
+El fondo de escala senoidal es $\SI{3}{\volt}/(2\sqrt{2})\approx\SI{1.061}{\volt}$ rms, así que
+\[
+20\log_{10}\frac{\num{0.00499}}{\num{1.061}}\approx\SI{-46.6}{dBFS}
+\]
+Con un rango dinámico típico de \SI{99}{\decibel} (ponderado A), el ruido del ADC queda en $\approx\SI{-99}{dBFS}$, que equivale a unos $94-(99-46{,}6)\approx\SI{42}{\decibel}$ SPL con este micrófono. Es decir, por debajo de unos \SI{42}{\decibel} SPL el ruido del ADC pesa más que el del micrófono (el RG-50 tiene $\approx\SI{27}{\decibel}$(A)). Es un cálculo con valores típicos y sin contar el ruido del AFE \estimado; sirve para saber el orden de magnitud. Para el objetivo del proyecto (ver la forma de onda) sobra.
+\end{calculo}
+
+\subsection{La referencia PCM\_VREF}
+
+El pin~1 (\net{PCM_VREF}) saca el punto medio interno $0{,}5\,V_{CC}$. No alimenta nada externo: solo hay que desacoplarlo para que la referencia del convertidor tenga baja impedancia. El datasheet pide \SI{0.1}{\micro\farad} cerámico y \SI{10}{\micro\farad} entre VREF y AGND, ``\emph{as close as possible}'' \doc{SLES177B §10.1.4 p.21}. En la placa son \net{C16} (\SI{100}{\nano\farad}) y \net{C15} (\SI{10}{\micro\farad} cerámico X5R).
+
+\section{Alimentación, desacoplo y tierra del ADC}\label{sec:c04-alim}
+
+El PCM1808 tiene dos alimentaciones separadas:
+\begin{itemize}
+  \item \textbf{VCC} (pin~3, analógica, \SI{5}{\volt}): viene de \net{5V_A}, el riel de \SI{5}{\volt} filtrado con \net{R33}/\net{C47} (capítulo~\ref{cap:alim}). Desacoplo: \net{C17} \SI{100}{\nano\farad} + \net{C18} \SI{10}{\micro\farad}.
+  \item \textbf{VDD} (pin~4, digital, \SI{3.3}{\volt}): viene de \net{3V3}. Desacoplo: \net{C12} \SI{100}{\nano\farad} + \net{C11} \SI{10}{\micro\farad}.
+\end{itemize}
+
+Que VDD sea \SI{3.3}{\volt} tiene una ventaja directa: las salidas digitales del ADC (\net{BCK}, \net{LRCK}, \net{DOUT}) salen con niveles de \SI{3.3}{\volt}, los mismos del STM32. No hace falta traductor de niveles.
+
+\begin{idea}[para qué sirven dos condensadores por pin]
+El de \SI{100}{\nano\farad} es pequeño y tiene poca inductancia: entrega los picos de corriente rápidos (de nanosegundos) que pide el chip en cada flanco de reloj. El de \SI{10}{\micro\farad} guarda más carga y cubre las variaciones más lentas. Como la inductancia de la pista se suma a la del condensador, el pequeño va lo más pegado posible al pin. Por eso en el ruteo se intercambiaron \net{C11}$\leftrightarrow$\net{C12} y \net{C15}$\leftrightarrow$\net{C16}: el de \SI{100}{\nano\farad} quedó en el lugar más cercano (capítulo~\ref{cap:placement}).
+\end{idea}
+
+\begin{decision}[AGND y DGND unidos debajo del chip, una sola red GND]
+\textbf{Qué se decidió:} los pines AGND (2) y DGND (5) van a la misma red \net{GND}, unidos directamente debajo del encapsulado con una vía al plano de tierra. No hay ``tierra analógica'' y ``tierra digital'' separadas en la placa.
+
+\textbf{Alternativas:} partir el plano en una zona AGND y otra DGND unidas en un solo punto.
+
+\textbf{Por qué:} el datasheet dice que no hay unión interna entre las dos tierras y que ``\emph{they should be connected directly to each other under the PCM1808 device package}'' \doc{SLES177B §10.1.2 p.21}. Las notas de TI SLYT499/SLYT512 \doc{} recomiendan un solo plano sin cortes, repartido por zonas: lo analógico se rutea sobre su zona, lo digital sobre la suya, y el convertidor queda en la frontera (\archivo{REGLAS.md} §4). Partir el plano obligaría a las corrientes de retorno a dar vueltas; eso se explica en el capítulo~\ref{cap:capas}.
+
+\textbf{Fuente:} \doc{SLES177B §10.1.2}, \archivo{REGLAS.md} §3--4.
+\end{decision}
+
+\section{Conexiones con la NUCLEO-L432KC}\label{sec:c04-nucleo}
+
+El microcontrolador no está soldado en la placa: es una tarjeta NUCLEO-L432KC (de ST) enchufada en un zócalo de dos tiras hembra de $1\times15$ (\net{A1}). Esto viene de los cambios C1 y C2: la NUCLEO trae su propio STM32L432, su programador ST-LINK y su USB, así que por ese mismo cable se programa y se mandan los datos al PC. Se eliminaron del diseño original el STM32 soldado (\net{U5}), sus condensadores, el conector SWD (\net{J3}) y el UART (\net{J4}).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[scale=0.8, transform shape, font=\small, >=Stealth,
+  blq/.style={draw, thick, rounded corners=1pt, align=center},
+  res/.style={draw, fill=white, minimum width=10mm, minimum height=4.5mm, inner sep=1pt, font=\scriptsize}]
+  % bloques
+  \draw[thick] (-1.3,-2.2) rectangle (1.3,2.2);
+  \node[align=center] at (0,-0.6) {\net{U4}\\PCM1808\\(maestro)};
+  \draw[thick] (9.5,-6.4) rectangle (12.6,2.2);
+  \node[align=center] at (11.05,-2.1) {\net{A1}\\NUCLEO\\L432KC};
+  \node[blq, minimum width=24mm, minimum height=9mm] (y1) at (0,4.7) {\net{Y1}\\\SI{24.576}{\mega\hertz}};
+  % reloj del ADC
+  \node[res] (r21) at (0,3.25) {\net{R21}};
+  \draw[->] (y1.south) -- (r21.north);
+  \draw[->] (r21.south) -- (0,2.2);
+  \node[anchor=west, font=\scriptsize] at (0.1,2.65) {\net{MCLK_SOURCE} $\to$ SCKI (pin 6)};
+  % I2S
+  \foreach \y/\rr/\s/\nn/\p in {1.4/R22/BCK/SAI\_SCK/{CN3-12 (D9, PA8)}, 0.6/R23/LRCK/SAI\_FS/{CN3-1 (D1, PA9)}, -0.2/R24/DOUT/SAI\_SD/{CN3-2 (D0, PA10)}}{
+    \node[res] (n\rr) at (2.9,\y) {\texttt{\rr}};
+    \draw (1.3,\y) -- (n\rr.west);
+    \node[anchor=south west, font=\scriptsize, inner sep=1pt] at (1.35,\y) {\s};
+    \draw[->] (n\rr.east) -- (9.5,\y);
+    \node[anchor=south, font=\scriptsize, inner sep=1.5pt] at (6.4,\y) {\texttt{\nn} · \p};
+  }
+  % I2C
+  \draw[thick] (0.6,-3.2) -- (9.5,-3.2);
+  \node[anchor=south, font=\scriptsize, inner sep=1.5pt] at (5.6,-3.2) {bus I2C: \net{I2C_SCL} (CN3-8, PB6) y \net{I2C_SDA} (CN3-7, PB7)};
+  \node[blq, minimum width=22mm, minimum height=9mm] (dac1) at (1.6,-4.4) {\net{U2} MCP4725\\dirección 0x60};
+  \node[blq, minimum width=22mm, minimum height=9mm] (dac2) at (4.6,-4.4) {\net{U10} MCP4725\\dirección 0x61};
+  \draw (dac1.north) -- (1.6,-3.2) node[circ]{};
+  \draw (dac2.north) -- (4.6,-3.2) node[circ]{};
+  \node[res, minimum width=16mm] (rpu) at (7.6,-4.3) {\net{R10}, \net{R11}};
+  \draw (rpu.north) -- (7.6,-3.2) node[circ]{};
+  \node[font=\scriptsize] at (7.6,-4.95) {\SI{4.7}{\kilo\ohm} a \net{3V3}};
+  % DC_MON
+  \node[anchor=east, align=right, font=\scriptsize] at (-1.4,-5.55) {\net{REST_OUT}/2 (\net{R15}, \net{R17}, \net{C8})};
+  \draw[->] (-1.3,-5.55) -- (9.5,-5.55);
+  \node[anchor=south, font=\scriptsize, inner sep=1.5pt] at (6.4,-5.55) {\net{DC_MON} · CN4-12 (A0, PA0)};
+  \node[anchor=east, align=right, font=\scriptsize] at (-1.4,-6.15) {\net{REST_SV}/2 (\net{R44}, \net{R45}, \net{C55})};
+  \draw[->] (-1.3,-6.15) -- (9.5,-6.15);
+  \node[anchor=north, font=\scriptsize, inner sep=1.5pt] at (6.4,-6.15) {\net{DC_MON2} · CN4-11 (A1, PA1)};
+  % USB
+  \draw[<->] (12.6,-2.1) -- (13.5,-2.1) node[right, align=left, font=\scriptsize]{USB\\al PC};
+\end{tikzpicture}
+\caption{Conexiones entre el ADC, los DAC y la NUCLEO. Las flechas indican el sentido de la señal: en modo maestro los relojes \net{BCK} y \net{LRCK} salen del PCM1808. GND llega a la NUCLEO por CN3-4 y CN4-2.}\label{fig:c04-nucleo}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Pines usados de la NUCLEO (cambio C2). En el zócalo \net{A1}, los pines 1--15 son CN3-1\ldots15 y los 16--30 son CN4-1\ldots15.}\label{tab:c04-nucleo}
+\begin{tabular}{@{}llllL{0.3\linewidth}@{}}\toprule
+Red & Zócalo & Pin NUCLEO & Pin STM32 & Función\\\midrule
+\net{SAI_FS} & A1.1 & CN3-1 (D1) & PA9 & SAI1\_FS\_A (AF13), recibe \net{LRCK}\\
+\net{SAI_SD} & A1.2 & CN3-2 (D0) & PA10 & SAI1\_SD\_A (AF13), recibe \net{DOUT}\\
+\net{SAI_SCK} & A1.12 & CN3-12 (D9) & PA8 & SAI1\_SCK\_A (AF13), recibe \net{BCK}\\
+\net{I2C_SDA} & A1.7 & CN3-7 (D4) & PB7 & I2C1\_SDA (AF4)\\
+\net{I2C_SCL} & A1.8 & CN3-8 (D5) & PB6 & I2C1\_SCL (AF4)\\
+\net{DC_MON} & A1.27 & CN4-12 (A0) & PA0 & entrada del ADC del STM32\\
+\net{DC_MON2} & A1.26 & CN4-11 (A1) & PA1 & entrada del ADC del STM32\\
+\net{GND} & A1.4, A1.17 & CN3-4, CN4-2 & — & tierra común\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las funciones alternas de los pines (AF13 para el SAI, AF4 para el I2C) se verificaron en el datasheet del STM32L432, DS11451 Rev~4, y la numeración de los conectores en el manual de la NUCLEO-32, UM1956 Rev~6, tabla~16 (cambio C2, \archivo{tools/design.py}).
+
+\begin{ojo}[CN4-7 y CN4-8 quedan libres a propósito]
+En la NUCLEO-32, los pines A4 y A5 (CN4-8 y CN4-7) están unidos por los puentes de soldadura SB16/SB18 a PB7 y PB6, los mismos del I2C. Por eso en el zócalo se dejan sin conectar: si se usaran para otra cosa, chocarían con el bus I2C (nota de \net{A1} en \archivo{tools/design.py}).
+\end{ojo}
+
+\subsection{I2S por el periférico SAI}
+
+El STM32L432 no tiene un periférico llamado ``I2S''; tiene el SAI (\emph{Serial Audio Interface}), que puede recibir en formato I2S. Como el PCM1808 es maestro, el SAI se configura como esclavo receptor: toma \net{SAI_SCK} (el \net{BCK}) y \net{SAI_FS} (el \net{LRCK}) como entradas y lee \net{SAI_SD} (\net{DOUT}). Cada trama de \net{LRCK} trae una palabra de 24 bits del canal izquierdo (CH1) y otra del derecho (CH2).
+
+\subsection{Las resistencias en serie R21--R24}
+
+Entre cada salida de reloj o datos y su destino hay una resistencia de \SI{100}{\ohm}: \net{R21} (oscilador $\to$ \net{SCKI}), \net{R22} (\net{BCK}), \net{R23} (\net{LRCK}) y \net{R24} (\net{DOUT}). Todas están junto al pin que \emph{genera} la señal.
+
+\begin{idea}[amortiguar los flancos]
+Una salida digital cambia de 0 a \SI{3.3}{\volt} en pocos nanosegundos (el datasheet da hasta \SI{20}{\nano\second} de subida y bajada \doc{SLES177B p.7}). Ese flanco rápido carga de golpe la capacidad de la pista y de la entrada que está al otro lado. Sin nada que lo frene aparecen sobrepicos y oscilaciones (\emph{ringing}) y picos de corriente que se cuelan por la tierra hacia la parte analógica. Una resistencia en serie a la salida suaviza el flanco y amortigua las oscilaciones. Es lo que hace el EVM de TI del PCM1808: resistencias en serie en SCKI, BCK, LRCK y DOUT (\archivo{REGLAS.md} §3).
+\end{idea}
+
+\begin{calculo}[¿la resistencia no daña la señal?]
+Con \SI{100}{\ohm} y una carga de unos \SI{10}{\pico\farad} (pista más pin, \estimado):
+\[
+\tau = \SI{100}{\ohm}\times\SI{10}{\pico\farad}=\SI{1}{\nano\second}
+\]
+El período de \net{BCK} es \SI{326}{\nano\second} y el de \net{SCKI} es $1/\SI{24.576}{\mega\hertz}\approx\SI{40.7}{\nano\second}$. Un \si{\nano\second} de redondeo no afecta a ninguno de los dos.
+\end{calculo}
+
+Para \net{DOUT}, si la línea es larga, el datasheet recomienda poner un buffer cerca del chip y bajar la carga capacitiva \doc{SLES177B §10.1.5 p.21}. Aquí la línea es corta y \net{R24} cumple la función de limitar la carga vista por el pin.
+
+\subsection{El bus I2C de los dos DAC}
+
+Los dos DAC MCP4725 (\net{U2} canal~1, \net{U10} canal~2) comparten un mismo bus I2C (\net{I2C_SCL}, \net{I2C_SDA}). Para que el microcontrolador los distinga, cada uno debe tener una dirección distinta.
+
+\begin{calculo}[direcciones I2C de los DAC]
+La dirección del MCP4725 es \texttt{1100\,A2\,A1\,A0} \doc{DS22039D §7.2 p.27}. A2 y A1 vienen de fábrica: la versión ``A0'' del código (\net{MCP4725A0T-E/CH}) tiene A2~=~A1~=~0 \doc{p.47}. A0 lo fija el pin~6:
+\begin{itemize}
+  \item \net{U2}: pin~6 a GND $\Rightarrow$ \texttt{1100000} = \textbf{0x60};
+  \item \net{U10}: pin~6 a su alimentación (\net{3V3_DAC_SV}) $\Rightarrow$ \texttt{1100001} = \textbf{0x61}.
+\end{itemize}
+\end{calculo}
+
+El I2C usa salidas de drenador abierto: los chips solo pueden bajar la línea a 0, y una resistencia la sube a 1. Esas resistencias son \net{R10} y \net{R11}, de \SI{4.7}{\kilo\ohm} a \net{3V3}. El datasheet del DAC acepta pull-ups de 1 a \SI{10}{\kilo\ohm} \doc{DS22039D §8.1} (\archivo{REGLAS.md} §3). Están una sola vez para todo el bus.
+
+\begin{idea}[cada DAC tiene su propia alimentación filtrada]
+El MCP4725 usa su pin VDD como referencia de voltaje: su salida es una fracción de VDD \doc{DS22039D §5.3 p.19}. Cualquier ruido en VDD aparece en la salida. Por eso cada DAC toma \net{3V3} a través de \SI{100}{\ohm} (\net{R9} y \net{R46}) con \SI{10}{\micro\farad} + \SI{100}{\nano\farad} a tierra (\net{C5}/\net{C6}, \net{C52}/\net{C53}). Es un pasa-bajos con
+\[
+f_c=\frac{1}{2\pi\cdot\SI{100}{\ohm}\cdot\SI{10.1}{\micro\farad}}\approx\SI{158}{\hertz}.
+\]
+La caída en la resistencia es $I_{DD}\cdot R=\SI{210}{\micro\ampere}\times\SI{100}{\ohm}=\SI{21}{\milli\volt}$ típicos (\SI{40}{\milli\volt} con los \SI{400}{\micro\ampere} máximos \doc{DS22039D p.3}). Por eso el máximo del DAC queda en unos \SI{3.21}{\volt} y no en \SI{3.3}{\volt} (capítulo~\ref{cap:analog}).
+\end{idea}
+
+\subsection{DC\_MON y DC\_MON2: el DC de cada canal hacia el STM32}
+
+Cada salida del AFE pasa por un divisor de dos resistencias iguales de \SI{10}{\kilo\ohm} con un condensador de \SI{100}{\nano\farad} a tierra: \net{R15}/\net{R17}/\net{C8} en el canal~1 y \net{R44}/\net{R45}/\net{C55} en el canal~2. El resultado (\net{DC_MON}, \net{DC_MON2}) va a las entradas analógicas A0 y A1 de la NUCLEO.
+
+\begin{calculo}[divisor y filtro de DC\_MON]
+\[
+V_{DC\_MON}=\frac{V_{REST}}{2},\qquad R_{Th}=\SI{10}{\kilo\ohm}\parallel\SI{10}{\kilo\ohm}=\SI{5}{\kilo\ohm},\qquad \tau=\SI{5}{\kilo\ohm}\times\SI{100}{\nano\farad}=\SI{0.5}{\milli\second}
+\]
+Con el objetivo recomendado de \net{REST_OUT}~$\approx\SI{1.5}{\volt}$, \net{DC_MON} queda en \SI{0.75}{\volt}, dentro del rango de 0 a \SI{3.3}{\volt} del ADC del STM32. Aunque \net{REST_OUT} llegara a \SI{5}{\volt}, \net{DC_MON} no pasaría de \SI{2.5}{\volt}. El filtro se bajó de \SI{10}{\micro\farad} a \SI{100}{\nano\farad} (cambio C6) para que la corrección del DC tarde milisegundos y no décimas de segundo.
+\end{calculo}
+
+\subsection{Alimentación de la NUCLEO}
+
+La NUCLEO se alimenta \textbf{solo} por su USB. Con la placa comparte la tierra y las señales; sus pines +3V3, +5V y VIN no se conectan al zócalo. Si se unieran, el regulador de la NUCLEO y el buck de \SI{3.3}{\volt} de la placa quedarían en paralelo peleando por el mismo riel (cambio C12). El orden de encendido recomendado es: primero el USB y después los \SI{24}{\volt}.
+
+\begin{ojo}[entradas con la NUCLEO apagada]
+Si la placa tiene \SI{24}{\volt} y la NUCLEO no tiene USB, el PCM1808 sigue sacando relojes hacia pines de un microcontrolador sin alimentación. Por eso el orden USB primero. Ese caso no se analizó más allá de esta recomendación.
+\end{ojo}
+
+\section{Líneas de reloj ``críticas''}\label{sec:c04-reloj-critico}
+
+En la placa hay redes que llevan flancos rápidos y repetitivos: la salida de \net{Y1} (\SI{24.576}{\mega\hertz}), \net{SCKI}, \net{BCK} (\SI{3.072}{\mega\hertz}), \net{LRCK}, \net{DOUT} y sus continuaciones \net{SAI_*} hacia la NUCLEO. Cada flanco tiene armónicos de muchos megahertz que pueden acoplarse por capacidad o inductancia mutua a pistas vecinas.
+
+\begin{idea}[por qué un reloj al lado de un nodo de 1~MΩ es mala idea]
+Imagina dos pistas paralelas como las placas de un condensador diminuto (fracciones de pF). Para un nodo de baja impedancia, como la salida de un op-amp, esa capacidad no importa. Pero el nodo \net{SUM} del AFE tiene \SI{1}{\mega\ohm} de un lado: ahí una corriente pequeñísima inyectada por un reloj produce un voltaje visible. Por eso los relojes se mantienen lejos de las redes analógicas de alta impedancia.
+\end{idea}
+
+Por eso estas redes se agruparon en la clase de red \textbf{Reloj} (\archivo{tools/config_reglas.py}):
+\begin{itemize}
+  \item ancho \SI{0.2}{\milli\meter} y separación \SI{0.3}{\milli\meter} con cualquier otra red;
+  \item regla propia \net{reloj_lejos_de_analogica} en \archivo{pcb.kicad_dru}: al menos \SI{0.5}{\milli\meter} entre una pista de la clase Reloj y una de la clase Analógica;
+  \item todas van en \capa{F.Cu}, encima del plano de tierra entero de \capa{In1.Cu}, y nunca bajan a otra capa;
+  \item \net{MCLK} lo más corta posible: el oscilador está pegado al ADC;
+  \item el layout de ejemplo del datasheet pone tierra entre las entradas L y R y alrededor del reloj \doc{SLES177B fig.~28 p.22}; en la placa lo cumple el relleno de tierra de \capa{F.Cu}.
+\end{itemize}
+
+Un ejemplo concreto del ruteo: \net{DOUT} pasa por debajo de \net{R19} y, para que quedara a $\ge\SI{0.5}{\milli\meter}$ de las redes de entrada del ADC, \net{R19} se subió \SI{0.1}{\milli\meter} (\archivo{PLAN_RUTEO.md} §11). Los detalles de cómo se trazaron estas líneas están en el capítulo~\ref{cap:ruteo}.
+
+\section*{Resumen}
+\begin{itemize}
+  \item El PCM1808 es un ADC delta-sigma estéreo de 24 bits. Trabaja a \SI{48}{\kilo\hertz} en modo maestro con un reloj de $512\,f_S=\SI{24.576}{\mega\hertz}$ que da el oscilador \net{Y1}, pegado al chip.
+  \item Se configura sin software: MD0 = 1, MD1 = 0 (maestro 512\,$f_S$) y FMT = 0 (I2S de 24 bits), con resistencias de \SI{10}{\kilo\ohm} como pide el datasheet.
+  \item La entrada de cada canal es un acople AC de \SI{10}{\micro\farad} (corte $\approx\SI{0.27}{\hertz}$) más un RC antialiasing de \SI{100}{\ohm}/\SI{10}{\nano\farad} (\SI{159}{\kilo\hertz}), dentro del rango recomendado por TI.
+  \item La señal máxima esperada ($\pm\SI{1.08}{\volt}$ con el SV~12) cabe en el fondo de escala de $\pm\SI{1.5}{\volt}$.
+  \item VCC (\SI{5}{\volt} filtrado), VDD (\SI{3.3}{\volt}) y VREF llevan \SI{100}{\nano\farad} + \SI{10}{\micro\farad}. AGND y DGND se unen debajo del chip, en una sola red GND.
+  \item La NUCLEO-L432KC va enchufada y alimentada por USB. Recibe el audio por el SAI (PA8, PA9 y PA10), controla los DAC por I2C (0x60 y 0x61) y lee el DC de cada canal por A0/A1.
+  \item Las resistencias de \SI{100}{\ohm} en serie suavizan los flancos. Las redes de reloj tienen su propia clase y quedan a $\ge\SI{0.5}{\milli\meter}$ de lo analógico.
+\end{itemize}

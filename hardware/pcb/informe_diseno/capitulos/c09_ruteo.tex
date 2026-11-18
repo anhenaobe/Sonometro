@@ -1,0 +1,693 @@
+\chapter{Cómo se ruteó la placa}\label{cap:ruteo}
+
+% colores y estilos de las figuras generadas desde la placa (figuras/c09_*.tex)
+\colorlet{fondo}{verdeplaca!6}\colorlet{padfill}{black!18}\colorlet{paddraw}{black!55}
+\colorlet{cSW}{red!80!black}\colorlet{c24}{orange!90!black}\colorlet{cOut}{green!50!black}
+\colorlet{cGND}{black!70}\colorlet{cSig}{blue!70!black}\colorlet{cIn}{violet}\colorlet{cB}{cyan!60!black}
+\tikzset{etiq/.style={font=\sffamily\tiny\bfseries,text=black,fill=white,fill opacity=0.7,text opacity=1,inner sep=0.6pt}}
+
+Con el placement fijo (capítulo~\ref{cap:placement}) y la placa ya en 4 capas (capítulo~\ref{cap:capas}), faltaba
+lo más largo: dibujar las pistas. Aquí vas a ver las reglas que siguió cada pista, por qué existe cada regla, cómo se
+dibujó la placa (no con un autorouter) y qué se decidió en cada uno de los diez bloques del ruteo.
+
+\textbf{En este capítulo vas a ver:}
+\begin{itemize}
+  \item el método: pistas escritas como listas de puntos, por bloques, con verificación después de cada bloque;
+  \item las reglas de trazado, una por una, con su porqué y cómo se comprueba;
+  \item anchos de pista, separaciones, zonas de cobre y vías de cosido;
+  \item el recorrido bloque por bloque, desde los buck hasta los teardrops y la serigrafía;
+  \item en qué orden hay que correr los pasos finales y por qué ese orden importa.
+\end{itemize}
+
+% =====================================================================================================
+\section{El método: polilíneas por bloques}\label{sec:c09-metodo}
+
+\subsection{Por qué no un autorouter}
+
+Un autorouter (como Freerouting) encuentra caminos, pero no entiende el circuito: no sabe que el lazo de entrada de un
+buck tiene que ser diminuto, que un condensador de desacoplo tiene que ir pegado al pin, que el nodo \net{SUM} no
+puede tener nada debajo, ni que una pista debe entrar al pad por el centro. Además deja quiebres, vías y desvíos que
+luego hay que limpiar a mano. Por eso Freerouting solo se usó como \emph{oráculo} en copias de la placa, para
+preguntar si existía solución con una regla (capítulo~\ref{cap:capas}). El ruteo real se hizo a mano.
+
+\subsection{``A mano'', pero escrito como datos}
+
+``A mano'' no quiere decir con el mouse en KiCad. Cada pista se escribió como una lista de puntos de paso (coordenadas
+de KiCad en mm) en un archivo de Python por bloque. Los archivos están en la carpeta
+\archivo{tools/ruteo/bloques/}. Por ejemplo, el comienzo del bloque 2 (entrada de \SI{24}{\volt}) se ve así:
+
+\begin{small}
+\begin{verbatim}
+PISTAS = [
+    # 24V_IN: J5.1 -> D1.2 (ánodo), recto
+    ('Net-(D1-A)', 1.0, 'F.Cu', [(104.5, 103.6), (111.25, 103.6)]),
+    # 24V_PROT: D1.1 (cátodo) -> D2.1
+    ('24V_PROT', 1.0, 'F.Cu', [(111.25, 107.6), (111.25, 108.95),
+                              (111.75, 109.45), (111.75, 110.95)]),
+    ...
+\end{verbatim}
+\end{small}
+
+Cada entrada es (red, ancho en mm, capa, puntos). Hay listas iguales para las vías (\texttt{VIAS}) y las zonas
+(\texttt{ZONAS}). El script \archivo{tools/ruteo/polilineas.py} lee el bloque y lo escribe en la placa con la API de
+KiCad (\texttt{pcbnew}). Antes de escribir nada \textbf{valida el bloque}: cada segmento tiene que ser múltiplo de
+\ang{45}, medir al menos \SI{0.1}{\milli\meter} y girar \ang{0} o \ang{45} respecto del anterior. Si el bloque no es
+válido, no toca la placa.
+
+\begin{idea}[por qué escribir las pistas como datos]
+\begin{itemize}
+  \item \textbf{Se puede rehacer un bloque sin tocar el resto.} Cada bloque se guarda en un grupo de KiCad
+  (\texttt{ruteo:<bloque>}). Al volver a aplicarlo, el script borra lo que tenía ese grupo y lo vuelve a escribir.
+  \item \textbf{Cada coordenada tiene un comentario} que dice por qué la pista pasa por ahí (``entre los pads de
+  \net{R22} y \net{R24}, \SI{0.325}{\milli\meter} a cada lado'').
+  \item \textbf{Es revisable y repetible}: el ruteo queda en git como texto, y cualquier cambio se ve en un diff.
+\end{itemize}
+\end{idea}
+
+\subsection{Verificar después de cada bloque}
+
+Después de cada bloque se corrió \archivo{tools/ruteo/verificar_bloque.py}, que hace siempre lo mismo:
+\begin{enumerate}
+  \item DRC de KiCad con paridad esquemático--placa, todas las severidades, rellenando las zonas y guardando el relleno;
+  \item ERC del esquemático;
+  \item \archivo{revisar_pistas.py}, el revisor propio con los chequeos A--M (lo que el DRC no ve);
+  \item imágenes de cada capa para mirar a ojo.
+\end{enumerate}
+Solo con todo en cero se hacía commit y se pasaba al bloque siguiente. Después del bloque 1 hubo una parada
+obligatoria para que el dueño revisara en KiCad. El detalle de estas herramientas está en el capítulo~\ref{cap:verif}.
+
+% =====================================================================================================
+\section{Las reglas de trazado, una por una}\label{sec:c09-reglas}
+
+\subsection{Solo ángulos de 45°}
+
+\textbf{Qué:} cada segmento de pista es horizontal, vertical o diagonal a \ang{45}, y dos segmentos seguidos forman un
+ángulo interior de \ang{135} o más. Nada de esquinas de \ang{90} ni agudas.
+
+\textbf{Por qué:} a las frecuencias de esta placa una esquina de \ang{90} no cambia el comportamiento eléctrico de forma
+apreciable, así que el motivo no es ``la esquina radia''. Los motivos reales son de fabricación y de orden: un ángulo
+agudo deja una cuña estrecha de cobre o de separación que es difícil de grabar bien; las diagonales acortan los
+recorridos frente a dos tramos a \ang{90}; y una regla uniforme hace la placa fácil de revisar. Además era una regla
+pedida por el dueño.
+
+\textbf{Cómo se comprueba:} con la regla propia \texttt{solo\_45} del archivo \archivo{pcb.kicad_dru}
+(\texttt{track\_angle} mínimo de \ang{135}, error en el DRC), con la validación de \archivo{polilineas.py} y con los
+chequeos A y B de \archivo{revisar_pistas.py}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \begin{scope}
+    \draw[line width=3pt,cobre] (0,0) -- (1.5,0) -- (2.5,1) -- (2.5,2);
+    \node[font=\small,green!40!black] at (1.3,-0.5) {bien: \ang{135}};
+  \end{scope}
+  \begin{scope}[xshift=4cm]
+    \draw[line width=3pt,cobre] (0,0) -- (2,0) -- (2,2);
+    \node[font=\small,rojoojo] at (1.2,-0.5) {mal: \ang{90}};
+  \end{scope}
+  \begin{scope}[xshift=8cm]
+    \draw[line width=3pt,cobre] (0,0) -- (2,0) -- (0.8,1.2);
+    \node[font=\small,rojoojo] at (1.1,-0.5) {mal: \ang{45} (agudo)};
+  \end{scope}
+\end{tikzpicture}
+\caption{Esquinas permitidas y prohibidas. La regla mide el ángulo \emph{interior} entre los dos segmentos.}
+\label{fig:c09-angulos}
+\end{figure}
+
+\subsection{Entrar al pad por el centro y por su eje}
+
+\textbf{Qué:} la pista termina en el centro del pad y llega paralela a uno de sus ejes. Si tiene que girar, el quiebre
+queda \emph{fuera} del pad.
+
+\textbf{Por qué:} el pad de un componente pequeño (un 0402 o un 0603) es casi del tamaño de la pista. Si la pista
+entra en diagonal o por una esquina, el cobre ``visible'' del pad cambia de forma: la soldadura moja distinto a cada
+lado y en las piezas chicas eso favorece que el componente se levante de un lado (efecto lápida o
+\emph{tombstoning}). Entrar por el eje y por el centro hace que los dos pads de una pieza se vean iguales para la
+soldadura. Además, una pista que sale de un pin fino con el ancho del pad no deja esquinas de cobre fuera del pad.
+
+\textbf{Cómo se comprueba:} chequeo C de \archivo{revisar_pistas.py}. Hubo una sola excepción aceptada, el enlace del
+nodo \net{SUM} entre el condensador de realimentación y la resistencia de entrada (bloque 5).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \tikzset{pad/.style={fill=black!18,draw=black!55,rounded corners=1pt}}
+  \begin{scope}
+    \draw[pad] (0,0) rectangle (1,1.2);
+    \draw[line width=4pt,cobre] (0.5,0.6) -- (2.5,0.6) -- (3.3,1.4);
+    \fill (0.5,0.6) circle (0.05);
+    \node[font=\small,green!40!black,align=center] at (1.6,-0.5) {bien: llega por el eje,\\quiebre fuera del pad};
+  \end{scope}
+  \begin{scope}[xshift=5cm]
+    \draw[pad] (0,0) rectangle (1,1.2);
+    \draw[line width=4pt,cobre] (0.5,0.6) -- (1.8,1.9);
+    \node[font=\small,rojoojo,align=center] at (1.1,-0.5) {mal: entra\\en diagonal};
+  \end{scope}
+  \begin{scope}[xshift=9cm]
+    \draw[pad] (0,0) rectangle (1,1.2);
+    \draw[line width=4pt,cobre] (0.9,0.2) -- (2.5,0.2);
+    \node[font=\small,rojoojo,align=center] at (1.3,-0.5) {mal: termina\\fuera del centro};
+  \end{scope}
+\end{tikzpicture}
+\caption{Entrada de una pista a un pad. Solo la primera cumple el chequeo C.}
+\label{fig:c09-entrada}
+\end{figure}
+
+\subsection{Sin \emph{stubs}}
+
+\textbf{Qué:} ninguna pista termina en el aire ni sigue de largo después de su último punto de conexión. Tampoco hay
+segmentos duplicados o superpuestos, ni vías que no conecten al menos dos capas.
+
+\textbf{Por qué:} un tramo que no lleva a ningún lado (\emph{stub}) no conduce corriente útil, pero sí tiene capacidad y
+se comporta como una pequeña antena que capta ruido. En señales rápidas, un stub refleja la señal. Y casi siempre es
+un error: un pedazo de pista que quedó de una edición anterior.
+
+\textbf{Cómo se comprueba:} chequeos E y F de \archivo{revisar_pistas.py} y las reglas \texttt{track\_dangling} y
+\texttt{via\_dangling} del DRC, configuradas como error.
+
+\subsection{Ramificar solo en pads o en zonas}
+
+\textbf{Qué:} si una red tiene que repartirse a varias piezas, la división se hace en el pad de una pieza (o en una
+zona de cobre), nunca en medio de una pista.
+
+\textbf{Por qué:} una ``T'' en medio de una pista crea un ángulo de \ang{90} entre ramas, y con tres ramas en un punto
+no pueden quedar todas a \ang{135} o más entre sí. El DRC de KiCad mide eso con \texttt{track\_angle} y lo marca. Se
+descubrió al probar el bus de \SI{24}{\volt} en una copia de la placa: una unión en T sobre pista desnuda la marcó el DRC.
+
+Hubo un caso más sutil en el bloque 8: la regla \texttt{track\_angle} también mira las uniones \emph{en vías}. Una vía
+con tres pistas en la misma capa tiene el mismo problema que la T. Por eso el pad \net{R9.2} tiene \textbf{dos vías}
+unidas por \capa{F.Cu}, y de cada una sale una sola rama.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \tikzset{pad/.style={fill=black!18,draw=black!55,rounded corners=1pt}}
+  \begin{scope}
+    \draw[line width=3pt,cobre] (0,0) -- (3,0);
+    \draw[line width=3pt,cobre] (1.5,0) -- (1.5,1.4);
+    \node[font=\small,rojoojo] at (1.5,-0.5) {mal: T en pista};
+  \end{scope}
+  \begin{scope}[xshift=5cm]
+    \draw[pad] (1.1,-0.4) rectangle (1.9,0.4);
+    \draw[line width=3pt,cobre] (0,0) -- (1.5,0) -- (3,0);
+    \draw[line width=3pt,cobre] (1.5,0) -- (1.5,1.4);
+    \node[font=\small,green!40!black] at (1.5,-0.8) {bien: la unión es el pad};
+  \end{scope}
+\end{tikzpicture}
+\caption{Una ramificación en pista libre deja un ángulo de \ang{90}. Si la unión cae en el centro de un pad, la
+``esquina'' queda dentro del cobre del pad y no hay ángulo de pista.}
+\label{fig:c09-t}
+\end{figure}
+
+\subsection{Teardrops}
+
+\textbf{Qué:} un \emph{teardrop} (lágrima) es un relleno triangular de cobre en la unión entre una pista y un pad o una
+vía, que ensancha la pista justo antes de llegar.
+
+\textbf{Por qué:} la unión pista--pad es el punto mecánicamente más débil. Si el taladro sale un poco corrido (todos los
+fabricantes tienen tolerancia de registro), el anillo de cobre alrededor del agujero puede quedar muy angosto justo
+donde llega la pista, y la pista se puede cortar. El teardrop agrega cobre ahí y también reparte el esfuerzo térmico y
+mecánico.
+
+\textbf{Cómo se hizo:} \archivo{tools/ruteo/teardrops.py} activa los teardrops en todos los pads con red y en todas las
+vías, con los parámetros por defecto de KiCad 10. No hace falta abrir KiCad: el DRC por línea de comandos con
+\texttt{-{}-refill-zones -{}-save-board} genera las zonas de teardrop. Resultado: \textbf{440 teardrops} \medido.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=1]
+  \begin{scope}
+    \fill[black!18] (0,0) circle (0.6); \fill[white] (0,0) circle (0.25);
+    \draw[line width=4pt,cobre] (0.5,0) -- (2.6,0);
+    \node[font=\small] at (1.2,-0.9) {sin teardrop};
+  \end{scope}
+  \begin{scope}[xshift=4.5cm]
+    \fill[cobre!70] (0.35,0.45) .. controls (0.9,0.3) and (1.3,0.08) .. (1.7,0.07) -- (1.7,-0.07) .. controls (1.3,-0.08) and (0.9,-0.3) .. (0.35,-0.45) -- cycle;
+    \fill[black!18] (0,0) circle (0.6); \fill[white] (0,0) circle (0.25);
+    \draw[line width=4pt,cobre] (0.5,0) -- (2.6,0);
+    \node[font=\small] at (1.2,-0.9) {con teardrop};
+  \end{scope}
+\end{tikzpicture}
+\caption{Unión pista--vía sin y con teardrop. El relleno refuerza la zona donde un taladro corrido dejaría el anillo
+más angosto.}
+\label{fig:c09-teardrop}
+\end{figure}
+
+\subsection{Desacoplo pegado al pin, con su vía GND al lado}
+
+\textbf{Qué:} cada condensador de desacoplo queda a \SI{1.0}{\milli\meter} o menos (borde a borde) del pin que desacopla
+(chequeo L), y el pad GND del condensador tiene su vía al plano a \SI{1.0}{\milli\meter} o menos (chequeo K). Lo mismo
+para cada pin GND SMD de los integrados.
+
+\textbf{Por qué:} un integrado pide corriente en pulsos muy cortos (cada vez que conmuta algo adentro). Esa corriente
+no puede venir desde el buck, que está lejos y detrás de pistas con inductancia: la entrega el condensador de
+desacoplo, que es una ``reserva'' local. Para que funcione, el lazo condensador $\to$ pin de alimentación $\to$ pin de
+GND $\to$ plano $\to$ condensador tiene que ser chico (sección~\ref{sec:c08-area}). Cada milímetro de más es
+inductancia en serie con el condensador, y por encima de cierta frecuencia el condensador deja de servir. La nota de
+ADI MT-101 lo dice así: \SIrange{0.01}{0.1}{\micro\farad} lo más cerca posible del pin, unido al plano con vía o pista
+corta \doc{MT-101}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \tikzset{pad/.style={fill=black!18,draw=black!55,rounded corners=1pt}}
+  \begin{scope}
+    \draw[pad] (0,0) rectangle (2,2.4); \node[font=\small] at (1,1.2) {IC};
+    \draw[pad] (2,1.75) rectangle (2.5,2.05);
+    \draw[pad] (2.75,1.6) rectangle (3.3,2.2); \draw[pad] (3.65,1.6) rectangle (4.2,2.2);
+    \draw[line width=2.5pt,cobre] (2.5,1.9) -- (2.95,1.9);
+    \filldraw[fill=cGND,draw=black] (4.6,1.9) circle (0.17); \fill[white] (4.6,1.9) circle (0.08);
+    \draw[line width=2.5pt,black!70] (3.95,1.9) -- (4.45,1.9);
+    \node[font=\small,green!40!black,align=center] at (2.3,-0.6) {bien: C junto al pin,\\vía GND al lado};
+  \end{scope}
+  \begin{scope}[xshift=6.6cm]
+    \draw[pad] (0,0) rectangle (2,2.4); \node[font=\small] at (1,1.2) {IC};
+    \draw[pad] (2,1.75) rectangle (2.5,2.05);
+    \draw[pad] (4.4,0.6) rectangle (4.95,1.2); \draw[pad] (5.3,0.6) rectangle (5.85,1.2);
+    \draw[line width=2.5pt,cobre] (2.5,1.9) -- (3.6,1.9) -- (4.3,1.2) -- (4.65,0.9);
+    \filldraw[fill=cGND,draw=black] (5.6,-0.4) circle (0.17); \fill[white] (5.6,-0.4) circle (0.08);
+    \draw[line width=2.5pt,black!70] (5.6,0.9) -- (5.6,-0.23);
+    \node[font=\small,rojoojo,align=center] at (2.6,-1.1) {mal: C lejos y vía lejos\\(lazo grande)};
+  \end{scope}
+\end{tikzpicture}
+\caption{Desacoplo. A la izquierda el lazo pin--condensador--vía--plano es mínimo; a la derecha cada milímetro extra suma
+inductancia y el condensador pierde efecto a alta frecuencia.}
+\label{fig:c09-desacoplo}
+\end{figure}
+
+\begin{ojo}[cuando no se pudo cumplir]
+Algunos condensadores quedaron a más de \SI{1.0}{\milli\meter} y se aceptaron como excepciones: \net{C36}/\net{C46}
+(VCC de los buck, \SI{3.0}{\milli\meter}), los condensadores de entrada de los LT3092 (\net{C2}, \net{C3}, \net{C49},
+\net{C50}), los del PCM1808 (\net{C11}, \net{C12}, \net{C15}, \net{C16}, \net{C18}), y los del MCP4725, que se juzgan
+con el límite de su datasheet (\SI{4}{\milli\meter} \doc{DS22039D §8.3}). La lista completa y el motivo de cada una
+está en el capítulo~\ref{cap:banco}.
+\end{ojo}
+
+\subsection{Vías taponadas a \SI{0.35}{\milli\meter} o más de los pads}
+
+\textbf{Qué:} ninguna vía queda a menos de \SI{0.35}{\milli\meter} de un pad (de cualquier red).
+
+\textbf{Por qué:} en placas de 4 capas JLCPCB tapona las vías por defecto (\emph{plugged}): rellena el agujero con tinta
+de máscara. Su artículo de recubrimiento de vías dice que ``vias with a distance less than 0.35mm from the pad cannot
+be plugged with ink'' \doc{JLCPCB}. Una vía mal tapada junto a un pad puede chupar soldadura del pad durante el
+reflujo y dejar la unión pobre.
+
+\textbf{Cómo se hizo:} una regla propia en \archivo{pcb.kicad_dru}:
+\begin{small}
+\begin{verbatim}
+(rule "via_tapada_lejos_de_pad"
+  (condition "A.Type == 'Via' && B.Type == 'Pad'")
+  (constraint physical_clearance (min 0.35mm)))
+\end{verbatim}
+\end{small}
+Cuando se agregó (después del bloque 4) ya había vías puestas; 43 de ellas violaban la regla. Se corrieron con ayuda
+de \archivo{tools/ruteo/sugerir_vias.py}, que prueba posiciones sobre los cuatro ejes del pad, entre
+\SI{0.35}{\milli\meter} y \SI{1.0}{\milli\meter} del borde (para seguir cumpliendo el chequeo K), y elige la más
+cercana que respeta todas las separaciones. En los buck, las vías de los condensadores de entrada y salida pasaron
+bajo el cuerpo del condensador. \net{C19} se quedó sin vía propia porque no había ningún lugar legal: su pad GND lo une
+el relleno de \capa{F.Cu}.
+
+\subsection{Anchos de pista}
+
+Cada red pertenece a una \emph{clase} con su ancho y su separación mínimos (\archivo{pcb.kicad_pro}):
+
+\begin{center}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Clase} & \textbf{Ancho} & \textbf{Separación} & \textbf{Ejemplos} \\
+\midrule
+Default & \SI{0.2}{\milli\meter} & \SI{0.2}{\milli\meter} & I2C, straps \\
+Analógica & \SI{0.2}{\milli\meter} & \SI{0.3}{\milli\meter} & \net{IEPE}, \net{SUM}, \net{REST_OUT}, \net{DC_MON} \\
+Reloj & \SI{0.2}{\milli\meter} & \SI{0.3}{\milli\meter} & \net{SAI_SCK}, \net{SAI_FS}, MCLK del ADC \\
+Potencia & \SI{0.25}{\milli\meter} & \SI{0.2}{\milli\meter} & \net{24V_PROT}, \net{3V3}, \net{5V_A}, GND \\
+Conmutado & \SI{0.25}{\milli\meter} & \SI{0.2}{\milli\meter} & \net{SW_3}, \net{SW_5} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Todas las clases usan vías de \SI{0.6}{\milli\meter} de diámetro con taladro de \SI{0.3}{\milli\meter}. La regla
+propia \texttt{ancho\_minimo\_potencia} hace que el DRC marque como error cualquier pista de Potencia o Conmutado más
+angosta que \SI{0.25}{\milli\meter}.
+
+\begin{idea}[el ancho lo fija la fabricación, no la corriente]
+En el plan inicial las clases de potencia tenían \SI{0.5}{\milli\meter}, que resultó ser el valor por defecto de
+KiCad y no un cálculo. Con IPC-2221 (\SI{10}{\celsius} de calentamiento) la pista más exigida, el nodo \net{SW} con
+\SI{275}{\milli\ampere} de pico, necesitaría solo \SI{0.051}{\milli\meter}; el bus de \SI{24}{\volt} con
+\SI{50}{\milli\ampere}, \SI{0.005}{\milli\meter} \doc{CALCULOS.md §3} \copia[fórmula IPC]. Por eso las pistas de
+potencia van de \SIrange{0.25}{1.0}{\milli\meter}: el mínimo lo pone la regla de clase, y donde hay lugar se
+ensanchan (el camino del TVS va a \SI{1.0}{\milli\meter}, la pista \net{SW} a la bobina a \SI{0.6}{\milli\meter}).
+Las salidas de los pines de los integrados finos van con el ancho del pad (\SI{0.25}{\milli\meter}) y se ensanchan
+fuera de él. Los números completos están en el capítulo~\ref{cap:calculos}.
+\end{idea}
+
+\subsection{Separaciones especiales}
+
+Además de la separación de cada clase, \archivo{pcb.kicad_dru} tiene dos reglas para alejar lo ruidoso de lo sensible:
+\begin{itemize}
+  \item \texttt{sw\_lejos\_de\_analogica}: \SI{1}{\milli\meter} entre una red Conmutada (los nodos \net{SW}, que saltan
+  \SI{24}{\volt} en nanosegundos) y cualquier red Analógica.
+  \item \texttt{reloj\_lejos\_de\_analogica}: \SI{0.5}{\milli\meter} entre una red de Reloj y una Analógica.
+\end{itemize}
+La razón es el acople capacitivo: la capacidad entre dos pistas baja cuando se separan, y con ella el ruido que pasa
+(sección~\ref{sec:c08-altaz}). El chequeo J de \archivo{revisar_pistas.py} añade una regla más: una pista analógica no
+puede ir en paralelo a una digital o de reloj a menos de \SI{1}{\milli\meter} por más de \SI{2}{\milli\meter}, en
+ninguna capa.
+
+\subsection{Zonas de cobre y sus prioridades}
+
+Una \emph{zona} es un polígono de cobre que KiCad rellena automáticamente, apartándose de lo que no es de su red.
+Cuando dos zonas se superponen, gana la de mayor \emph{prioridad}. Las zonas de la placa \medido:
+
+\begin{center}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Zona} & \textbf{Capa} & \textbf{Prioridad} & \textbf{Para qué} \\
+\midrule
+\texttt{SW\_3\_PIN3}, \texttt{SW\_5\_PIN3} & \capa{F.Cu} & 3 & unir el pin 3 (NC) con el pin 12 (SW) del buck \\
+\texttt{VOUT\_3V3}, \texttt{VOUT\_5V} & \capa{F.Cu} & 2 & salida de la bobina y condensadores de salida \\
+\texttt{BUS\_24V} & \capa{F.Cu} & 1 & bus de \SI{24}{\volt} a los condensadores de entrada \\
+\texttt{GND\_FCU} & \capa{F.Cu} & 0 & relleno GND en todo lo libre \\
+\texttt{GND\_IN1} & \capa{In1.Cu} & 0 & plano GND entero \\
+\texttt{GND\_BCU} & \capa{B.Cu} & 0 & GND alrededor de las pistas lentas \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El relleno GND de \capa{F.Cu} tiene la prioridad más baja para que \emph{ceda} ante las zonas de potencia: rellena todo
+lo que queda libre, pero nunca se mete en una zona de \SI{24}{\volt} o de \net{SW}.
+
+\textbf{Conexión de los pads a la zona.} Hay dos formas de unir un pad a una zona de su red:
+\begin{itemize}
+  \item \textbf{sólida}: el pad queda rodeado de cobre por completo. Es la mejor conexión eléctrica (baja resistencia e
+  inductancia). Se usó en todos los pads SMD, en particular en los pads GND de los condensadores de entrada y salida y
+  en los pines PGND de los buck, que llevan la corriente conmutada;
+  \item \textbf{alivio térmico}: el pad se une a la zona por unos pocos ``rayos'' finos. Se usa \textbf{solo en los
+  pads con agujero (THT)}, que se sueldan a mano: con una unión sólida, el plano se lleva el calor del cautín y la
+  soldadura no moja bien. Las piezas SMD las suelda JLCPCB en un horno de reflujo, donde toda la placa se calienta
+  pareja, así que no lo necesitan.
+\end{itemize}
+El script \archivo{tools/ruteo/conexion_solida.py} comprueba que en cada buck los 10 pads GND de potencia (condensadores
+de entrada, de alta frecuencia, de salida y los pines PGND) estén enteros dentro de la misma isla del relleno, sin
+rayos.
+
+\textbf{Sin islas.} Un pedazo de cobre que no está unido a nada (una isla) es una antena flotante. Las zonas eliminan
+las islas y el DRC tiene \texttt{isolated\_copper} como error.
+
+\subsection{Vías de cosido}
+
+Las \emph{vías de cosido} (\emph{stitching vias}) son vías GND que no conectan ninguna pieza: unen el relleno GND de
+\capa{F.Cu} con los planos de \capa{In1.Cu} y \capa{B.Cu} en muchos puntos. Así el relleno de \capa{F.Cu} no queda como
+una lámina conectada solo en un par de lugares, y la corriente de retorno tiene siempre una vía cerca cuando necesita
+cambiar de capa. \archivo{tools/ruteo/cosido.py} las propone así:
+\begin{itemize}
+  \item un anillo a \SI{1.2}{\milli\meter} del borde, una vía cada \SI{5}{\milli\meter};
+  \item una grilla de \SI{2.5}{\milli\meter} en la zona del AFE y del ADC, y de \SI{5}{\milli\meter} en el resto;
+  \item cada candidata se descarta si no cumple \emph{en las cuatro capas} (la vía las atraviesa todas):
+  \SI{0.35}{\milli\meter} de todo pad, separación de clase a pistas y vías de otras redes, fuera de las zonas de
+  potencia, \SI{0.8}{\milli\meter} del borde y \SI{0.15}{\milli\meter} de toda la serigrafía.
+\end{itemize}
+Quedaron \textbf{235 vías de cosido}. Contando todas, la placa tiene \textbf{329 vías}, de las cuales 299 son GND
+\medido.
+
+% =====================================================================================================
+\section{Bloque por bloque}\label{sec:c09-bloques}
+
+El ruteo se hizo en diez bloques, en un orden pensado para que lo más crítico tuviera el mejor lugar: primero las
+fuentes conmutadas (que más ruido generan), luego la entrada, las fuentes IEPE, el ADC, el AFE, las analógicas largas,
+lo digital, la alimentación y al final la tierra, los teardrops y la serigrafía.
+
+\subsection{Bloque 1: los buck \net{U6} (3,3 V) y \net{U7} (5 V)}
+
+\begin{idea}[el lazo caliente de un buck]
+En un buck la corriente de la \emph{bobina} es continua (sube y baja en triángulo), pero la corriente de \emph{entrada}
+es pulsada: cuando conduce el interruptor de arriba, toda la corriente de la bobina sale del condensador de entrada;
+cuando conduce el de abajo, cae a cero de golpe. Ese lazo, condensador de entrada $\to$ \net{VIN} $\to$ interruptores
+$\to$ \net{PGND} $\to$ condensador, tiene el $di/dt$ más grande de toda la placa. Se llama \textbf{lazo caliente}, y es
+lo primero que se dibuja y lo que tiene que ser más chico. El datasheet lo pide así: el lazo de entrada corto, ancho y de
+área mínima, y un condensador de \SI{220}{\nano\farad} lo más cerca posible de \emph{cada} par \net{VIN}/\net{PGND}
+(pines 2/1 y 10/11) \doc{SNVSB49D §12.1 p.34}.
+\end{idea}
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.95,transform shape]
+  \draw (0,0) to[C,l=$C_\text{IN}$] (0,3) to[nos,l=$Q_1$] (4.4,3);
+  \draw (0,0) -- (4.4,0);
+  \draw (4.4,3) to[nos,l=$Q_2$,*-*] (4.4,0);
+  \draw (4.4,3) to[L,l=$L$] (7.4,3) to[C,l=$C_\text{OUT}$] (7.4,0) -- (4.4,0);
+  \draw (6.0,0) node[ground]{};
+  \draw[line width=6pt,rojoojo,opacity=0.25,rounded corners] (0.25,0.25) rectangle (4.15,2.75);
+  \node[rojoojo,font=\small,align=center] at (2.2,1.45) {lazo caliente\\(corriente pulsada)};
+  \node[font=\small] at (-0.6,3.3) {\net{VIN}};
+  \node[font=\small] at (4.4,3.4) {\net{SW}};
+  \node[font=\small] at (2.2,-0.35) {\net{PGND}};
+\end{circuitikz}
+\caption{Esquema simplificado de un buck. El lazo de entrada (rojo) cambia de corriente de golpe en cada conmutación;
+el lazo de salida, a través de la bobina, lleva una corriente triangular continua y es menos crítico.}
+\label{fig:c09-lazo-buck}
+\end{figure}
+
+Lo que se hizo, siguiendo la figura~12-2 del datasheet \doc{SNVSB49D}:
+\begin{itemize}
+  \item \textbf{Todo el lazo de potencia en \capa{F.Cu}} (entrada, \net{SW}, bobina, salida), con zonas para la salida
+  (\texttt{VOUT\_3V3}, \texttt{VOUT\_5V}). \net{U7} es exactamente el mismo dibujo que \net{U6}, desplazado
+  \SI{21.6}{\milli\meter}.
+  \item \textbf{Medidas del lazo caliente} con \archivo{tools/ruteo/medir.py} \medido: \net{PGND} (pin 1) a su condensador
+  de \SI{220}{\nano\farad} \net{C29} por \SI{2.61}{\milli\meter} de pista, y el pin 11 a \net{C30} por
+  \SI{2.21}{\milli\meter}. Los lazos \net{VIN}--CHF--\net{PGND} miden \SI{7.25}{\milli\meter} de perímetro y
+  \SI{3.32}{\milli\meter\squared} de área de un lado, y \SI{6.97}{\milli\meter} y \SI{2.69}{\milli\meter\squared} del
+  otro. Para que entraran, \net{C29}/\net{C39} subieron \SI{0.3}{\milli\meter} y \net{C35}/\net{C45} (CBOOT) pasaron a
+  la izquierda del integrado.
+  \item \textbf{Pin 3 unido a \net{SW} (pin 12)} como pide el datasheet \doc{SNVSB49D §12.1 ítem 3}, con una zona
+  chica de \net{SW} (prioridad 3): con pistas no se podía entrar al centro del pin 12 sin un giro de \ang{90}.
+  \item \textbf{BOOT}: sale por la izquierda del pin 4 y baja por fuera del cobre de \net{SW} hasta \net{C35}.
+  \item \textbf{VCC}: \net{C36} quedó a \SI{3.0}{\milli\meter} del pin 5. Se aceptó con la pista de VCC a
+  \SI{0.3}{\milli\meter}, la vía GND pegada a \net{C36.2} y un retorno corto por \capa{F.Cu} al pin de tierra analógica.
+  \item \textbf{Realimentación (FB)}: \net{R29}/\net{R30} junto al pin 7; el sensado de la salida llega desde abajo,
+  lejos de \net{SW}. El nodo FB entero mide \SI{5.49}{\milli\meter} de cobre \medido.
+  \item \textbf{Puentes en \capa{B.Cu}}: tres puentes de unos \SI{2.2}{\milli\meter} debajo del bus de
+  \SI{24}{\volt}: el tronco de \net{3V3} y los dos sensados de FB. Solo cruzan potencia con potencia.
+  \item \textbf{13 vías GND por buck}, junto a cada pad GND.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\input{figuras/c09_buck_u6}
+\caption{Zona del buck de \SI{3.3}{\volt} (\net{U6}) dibujada desde la placa real (ventana de
+\qtyproduct{26 x 21}{\milli\meter}). Naranja: \SI{24}{\volt}; rojo: \net{SW}; verde: \net{3V3}; gris oscuro: GND;
+azul: señales (BOOT, VCC, FB); trazo a rayas: \capa{B.Cu}. Las zonas de color claro son la salida (arriba, verde) y el
+bus de \SI{24}{\volt} (abajo, naranja). No se dibujan los rellenos GND ni los planos. Fíjate en el pin \net{SW} de
+\net{U6} subiendo directo a \net{L1}, en \net{C29}/\net{C30} (CHF) a los lados del integrado y en los tres puentes de
+\capa{B.Cu} bajo el bus.}
+\label{fig:c09-buck}
+\end{figure}
+
+\subsection{Bloque 2: entrada y bus de 24 V}
+
+\begin{itemize}
+  \item \textbf{Camino del TVS corto y ancho:} \net{J5.1} $\to$ \net{D1} en línea recta (\SI{6.75}{\milli\meter}),
+  \net{D1} $\to$ \net{D2} (\SI{3.56}{\milli\meter}), todo a \SI{1.0}{\milli\meter}. Un TVS solo protege si la corriente
+  del pico llega a él por un camino de baja inductancia. \net{D2.2} tiene tres vías GND al plano.
+  \item \textbf{Bus de \SI{24}{\volt} como franja de zona} (\texttt{BUS\_24V}, $y$ = \numrange{116.9}{117.75}) con
+  ``dientes'' de pista que entran recto al centro de cada condensador de entrada. El bus llega al integrado
+  \emph{solo a través} de CIN $\to$ CHF $\to$ pin \net{VIN}: así el ruido del buck lo filtran primero sus
+  condensadores.
+  \item \textbf{Ramificación en pads:} \net{D2.1} reparte hacia el bus y hacia \net{J1}; \net{J1.1} sigue a
+  \net{J7.1} por la izquierda de \net{J1.2}, junto al borde, para dejar libre el otro lado a la alimentación de las
+  fuentes IEPE.
+\end{itemize}
+
+\subsection{Bloque 3: fuentes de corriente IEPE}
+
+\begin{itemize}
+  \item \textbf{\net{R6} se movió} a (\num{120.70}, \num{139.35}), horizontal y girado \ang{180}: en su lugar
+  original el enlace \net{R5.1}--\net{R6.1} no tenía camino en una capa (Freerouting lo dejó sin rutear tras 800
+  pasadas). Antes, 32 pasivos y puntos de prueba se alinearon \SI{0.094}{\milli\meter} o menos para que las pistas
+  entraran por el eje de los pads.
+  \item \textbf{Pasos bajo resistencias:} la red \net{N2} pasa por debajo de \net{R5} y de \net{R4}, entre sus pads
+  (\SI{0.85}{\milli\meter} libres, \SI{0.325}{\milli\meter} de separación a cada lado).
+  \item \textbf{Alimentación del canal 2 bajo el BNC \net{J2}.} La pista de \SI{24}{\volt} de \net{J7.2} a \net{R36}
+  quedaba encerrada por \net{IEPE} (que va del canal 1 a \net{J2} y al AFE) y por el propio canal 2. El único camino en
+  \capa{F.Cu} baja por el borde izquierdo, cruza en $y = \num{153.5}$ bajo el bloque del BNC \net{J2} (a
+  \SI{1.1}{\milli\meter} de sus pines) y sube entre \net{J2} y \net{J8}. Se comprobó en el plano del conector y en las
+  fotos de LCSC que ese bloque es de plástico (PBT) a \SI{0.5}{\milli\meter} de la placa: el metal no toca la pista.
+  Fue una excepción aceptada (capítulo~\ref{cap:banco}).
+  \item Todas las ramificaciones en pads (\net{U1}/\net{U8}, puntos de prueba, \net{JP1.2}, \net{C1.1},
+  \net{R2.1}\ldots).
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\linewidth]{figuras/bloque3_por_que_bajo_J2.png}
+\caption{Bloque 3: por qué la alimentación del canal 2 tuvo que pasar bajo el cuerpo del BNC \net{J2} (prototipo en una
+copia de la placa).}
+\label{fig:c09-j2}
+\end{figure}
+
+\subsection{Bloque 4: el ADC PCM1808}
+
+\begin{itemize}
+  \item \textbf{AGND y DGND unidos debajo del integrado}, con una vía al plano, como pide el datasheet
+  \doc{SLES177B §10.1.2}. Es el punto donde se tocan la tierra analógica y la digital del convertidor, y conviene que sea
+  uno solo y debajo del chip.
+  \item \textbf{Desacoplos con su vía:} \net{C17} (\SI{100}{\nano\farad} de VCC) quedó a \SI{0.71}{\milli\meter} del
+  pin 3; \net{C11}$\leftrightarrow$\net{C12} y \net{C15}$\leftrightarrow$\net{C16} se intercambiaron para que el
+  \SI{100}{\nano\farad} (el que actúa a alta frecuencia) quedara más cerca que el \SI{10}{\micro\farad}.
+  \item \textbf{Straps:} \net{MD1} y \net{FMT} son niveles estáticos y quedaban encerrados en \capa{F.Cu} por las
+  entradas analógicas; bajan a \capa{In2.Cu}. \net{MD0} pasa por debajo del cuerpo de \net{U4}.
+  \item \textbf{Reloj lejos de lo analógico} (\SI{0.5}{\milli\meter}): \net{DOUT} pasa por debajo de \net{R19} gracias a
+  que \net{R19} subió \SI{0.1}{\milli\meter}; la salida del oscilador entra a \net{R21} entre sus pads, porque el pad
+  GND de \net{Y1} cierra el paso por la izquierda.
+\end{itemize}
+
+\subsection{Bloque 5: el AFE de los dos canales}
+
+Es el bloque más delicado: aquí están el nodo \net{SUM}, la cadena de \SI{1}{\mega\ohm} y la realimentación. Todo en
+\capa{F.Cu}.
+\begin{itemize}
+  \item \textbf{Cadena de entrada en columna:} \net{R13} $\to$ \net{R14} $\to$ \net{R16} vertical, y \net{R16.1}
+  $\to$ \net{R18.2} pasando centrada entre los pads de \net{R17}.
+  \item \textbf{Nodo \net{SUM} mínimo:} \net{R18.1} es el punto de unión; llegan \net{U3.2} (entrada inversora),
+  \net{R7.1} (realimentación) y \net{C56.1} (el condensador CF). Cuanto más corto este nodo, menos capacidad parásita
+  tiene y menos ruido capta (capítulo~\ref{cap:analog}).
+  \item \textbf{La excepción del nodo \net{SUM}:} el enlace \net{C56.1} $\to$ \net{R18.1} no puede entrar por el eje de
+  los dos pads con los quiebres fuera de ellos: los pads están a \SI{1.52}{\milli\meter} en $x$ y
+  \SI{1.76}{\milli\meter} en $y$, con el otro pad de \net{C56} al lado. Se aceptó el enlace más corto
+  (\SI{2.2}{\milli\meter}) con el quiebre a \ang{45} dentro del cobre de los pads. Igual en el canal 2
+  (\net{C57.1}--\net{R41.1}).
+  \item \textbf{\net{REST_OUT}} sale de \net{U3.1}, sube a \net{R8} y pasa por encima de \net{C7} hasta el punto de
+  prueba \net{TP2}. No cabía entre \net{U3.8} y \net{C7} sin cortar el desacoplo; para abrir el paso \net{C7} bajó
+  \SI{0.35}{\milli\meter} (queda a \SI{0.975}{\milli\meter} de \net{U3.8}).
+  \item \textbf{Canal 2 igual al canal 1:} con la colocación original el canal 2 no salía limpio (el nodo
+  \net{R39}--\net{R40} rodeaba el DAC \net{U10}). Se movieron \net{R38}/\net{R39}/\net{R40} a una columna, y \net{C57},
+  \net{R43}, \net{TP4}, \net{C54}, \net{R44}, \net{R45} y \net{C55} a las posiciones equivalentes del canal 1. Ahora el
+  canal 2 es el canal 1 desplazado \SI{22.5}{\milli\meter}.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\input{figuras/c09_afe_ch1}
+\caption{AFE del canal 1 dibujado desde la placa (ventana de \qtyproduct{20 x 23}{\milli\meter}). Azul: señales en
+\capa{F.Cu}; gris oscuro: GND; verde: \net{3V3} y \net{5V_A} en \capa{F.Cu}; violeta a rayas: alimentación en \capa{In2.Cu}; verde azulado a
+rayas: \net{DC_MON} e I2C en \capa{B.Cu}. Fíjate en la cadena \net{R13}--\net{R14}--\net{R16} en columna a la
+izquierda, el nodo \net{SUM} reunido en \net{R18}, el enlace \net{C56}--\net{R18}, y en que ninguna pista de otra
+capa pasa por debajo de la cadena ni del nodo \net{SUM}.}
+\label{fig:c09-afe}
+\end{figure}
+
+\subsection{Bloque 6: las rutas analógicas largas}
+
+Todo en \capa{F.Cu} sin vías, sobre el plano entero de \capa{In1.Cu}:
+\begin{itemize}
+  \item \textbf{\net{IEPE} (canal 1):} sale de \net{JP1.2}, sube por $x = \num{124.0}$ y entra a \net{R13.2} por la
+  izquierda. Mide unos \SI{33}{\milli\meter}, pero es la salida del micrófono, de baja impedancia, así que la longitud
+  no es un problema grave.
+  \item \textbf{\net{IEPE_SV} (canal 2):} va recta de \net{J8.1} a \net{R38.2} por debajo del bloque de plástico de
+  \net{J8}, el mismo caso que la pista de \SI{24}{\volt} bajo \net{J2}. Queda a \SI{1.45}{\milli\meter} del pad GND
+  \net{J8.2} y a \SI{0.91}{\milli\meter} del anclaje \net{J8.3}.
+  \item \textbf{\net{REST_OUT} y \net{REST_SV}} van de sus puntos de prueba a los condensadores de acople del ADC
+  (\net{C9}, \net{C14}), cruzándose sin tocarse: \net{REST_SV} entra a \net{C14} por debajo de \net{REST_OUT}, con
+  \SI{0.40}{\milli\meter} entre las dos diagonales.
+\end{itemize}
+
+\subsection{Bloque 7: lo digital}
+
+\begin{itemize}
+  \item \textbf{SAI (I2S) en \capa{F.Cu}}, clase Reloj. Las tres líneas llegan en orden distinto a cada punta (del lado
+  de las resistencias SD, SCK, FS; en la NUCLEO FS en el pin 1, SD en el 2 y SCK en el 12). Se resolvió sin vías:
+  \net{SAI_FS} sube por un carril entre los pads de \net{R22} y de \net{R24} (\SI{0.325}{\milli\meter} a cada lado).
+  \item \textbf{I2C del canal 1 en \capa{B.Cu}:} baja por el corredor entre los dos AFE, da la vuelta por
+  $x \approx \num{158}$, pasa por debajo de \net{TP7} y sube a los pines 7 y 8 de \net{A1}.
+  \item \textbf{I2C del canal 2 en \capa{In2.Cu}:} en \capa{B.Cu} habría tenido que cruzar \net{DC_MON} y
+  \net{DC_MON2}.
+  \item \textbf{\net{DC_MON} en \capa{B.Cu}} y \textbf{\net{DC_MON2} en \capa{B.Cu} con un tramo en \capa{In2.Cu}}:
+  las dos llegan a \net{A1} en orden invertido, y el cruce se hace con ese tramo en \capa{In2.Cu}, debajo del cuerpo de
+  la NUCLEO.
+  \item \net{DC_MON} y \net{DC_MON2} quedan a \SI{1}{\milli\meter} o más de las líneas I2C en todo el recorrido.
+  \item \archivo{cruces_capas.py} (nuevo en este bloque) comprueba que ninguna pista de \capa{In2.Cu} o \capa{B.Cu}
+  pase debajo de un nodo protegido: 0 cruces.
+\end{itemize}
+
+\subsection{Bloque 8: alimentación por \capa{In2.Cu}}
+
+\net{3V3} y \net{5V_A} se reparten por \capa{In2.Cu} con pistas de \SI{0.4}{\milli\meter} (corrientes de 5 a
+\SI{20}{\milli\ampere}). Las cargas de \net{3V3} quedan a los dos lados de las de \net{5V_A}, así que \net{3V3} rodea a
+\net{5V_A} por arriba:
+\begin{itemize}
+  \item \textbf{\net{5V_A}:} de \net{R33} y \net{C47} baja a una vía y se reparte en árbol por \capa{In2.Cu} hacia
+  \net{C7} (canal 1), \net{U4.3} (ADC), \net{C18} y \net{C54} (canal 2). Las ramas salen solo de vías.
+  \item \textbf{\net{3V3} izquierda:} pull-ups I2C y filtros de los DAC. Llega a \net{R9.2}, que tiene las dos vías de la
+  sección~\ref{sec:c09-reglas}.
+  \item \textbf{\net{3V3} derecha:} va por arriba del bus de \SI{24}{\volt} y baja al grupo del ADC (\net{R49},
+  \net{C20}, \net{C13}).
+\end{itemize}
+Caídas por el cobre \medido: \SI{4.47}{\milli\volt} en \net{3V3} y \SI{1.75}{\milli\volt} en \net{5V_A}, despreciables
+frente a la tolerancia del buck (capítulo~\ref{cap:calculos}).
+
+\subsection{Bloque 9: relleno GND y cosido}
+
+\begin{itemize}
+  \item Relleno GND en \capa{F.Cu} sobre toda la placa, prioridad 0, conexión sólida a los pads SMD, alivio térmico solo
+  en THT, islas eliminadas, ancho mínimo \SI{0.25}{\milli\meter}. Este relleno es el que une \net{C19.2}, que no tenía
+  lugar para su vía.
+  \item Vías de cosido de \archivo{cosido.py} (sección~\ref{sec:c09-reglas}).
+  \item Con este bloque quedaron \textbf{0 conexiones sin rutear}.
+\end{itemize}
+
+\subsection{Bloque 10: teardrops, chequeos completos y serigrafía}
+
+\begin{itemize}
+  \item \textbf{Teardrops} en todos los pads y vías (440).
+  \item \textbf{Ningún chequeo del DRC en ``ignorar''}: los cinco que KiCad trae ignorados de fábrica se pasaron a
+  advertencia. Aparecieron 7 avisos de paridad por filtros de footprint de los símbolos genéricos y se corrigieron de
+  fondo (capítulo~\ref{cap:verif}).
+  \item \textbf{Serigrafía} a \SI{1.0}{\milli\meter} de alto y \SI{0.15}{\milli\meter} de trazo: 21 designadores no
+  caben limpios y van al PDF de montaje.
+  \item \textbf{Chequeo M nuevo:} serigrafía sobre una vía. Como las vías van tapadas, el DRC no lo ve. Encontró, entre
+  otros, el punto de pin 1 del buck sobre una vía PGND (se corrió el punto), las vías GND laterales de \net{D2} bajo
+  su contorno (bajaron \SI{0.55}{\milli\meter}) y dos vías de \net{3V3} bajo el contorno de \net{U4} (se corrieron).
+\end{itemize}
+
+% =====================================================================================================
+\section{El orden final importa}\label{sec:c09-orden}
+
+Los pasos finales dependen unos de otros, así que se corren siempre en este orden:
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm and 3mm,
+    paso/.style={draw=verdeplaca,fill=verdeplaca!6,rounded corners=2pt,font=\footnotesize,align=center,minimum height=10mm,text width=21mm}]
+  \node[paso] (a) {bloques\\1--8};
+  \node[paso,right=of a] (b) {\archivo{serigrafia.py}\\\texttt{-{}-aplicar}};
+  \node[paso,right=of b] (c) {\archivo{cosido.py}};
+  \node[paso,right=of c] (d) {bloque 9\\(relleno GND)};
+  \node[paso,right=of d] (e) {\archivo{teardrops.py}};
+  \node[paso,below=of e,text width=32mm] (f) {\archivo{verificar_bloque.py}};
+  \draw[-{Latex}] (a) -- (b); \draw[-{Latex}] (b) -- (c); \draw[-{Latex}] (c) -- (d); \draw[-{Latex}] (d) -- (e);
+  \draw[-{Latex}] (e) -- (f);
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Serigrafía antes que cosido.} El cosido evita toda la serigrafía (incluidos los designadores). Si se
+  cosía primero, las vías ocupaban los lugares de los textos y el número de designadores omitidos subía de 21 a 31.
+  \item \textbf{Cosido antes del relleno GND}, para que el relleno se arme alrededor de las vías ya puestas.
+  \item \textbf{Teardrops al final}, cuando ya no se mueve ninguna pista ni vía.
+  \item \textbf{Verificar al final}: rellena todas las zonas (y genera los teardrops) antes de correr el DRC.
+\end{itemize}
+
+\section*{Resumen}
+\begin{itemize}
+  \item La placa se ruteó a mano, pero escribiendo cada pista como una lista de puntos en archivos por bloque. Un
+  autorouter solo se usó como oráculo en copias.
+  \item Reglas de trazado: \ang{45}, entrada al pad por el centro y por el eje, sin stubs, ramificaciones solo en pads o
+  zonas, teardrops, desacoplo a \SI{1}{\milli\meter} del pin con vía GND al lado, vías a \SI{0.35}{\milli\meter} de los
+  pads porque JLCPCB las tapona.
+  \item El ancho de las pistas lo fija la regla de clase (\SIrange{0.2}{0.25}{\milli\meter} mínimo), no la corriente:
+  la corriente más alta de la placa necesitaría \SI{0.05}{\milli\meter}.
+  \item Lo ruidoso se aleja de lo sensible con reglas propias: \SI{1}{\milli\meter} de \net{SW} a lo analógico y
+  \SI{0.5}{\milli\meter} de los relojes a lo analógico.
+  \item El lazo caliente de cada buck mide \SI{7.25}{\milli\meter} de perímetro; el nodo \net{SUM} se dejó lo más corto
+  posible; las redes lentas bajan a \capa{In2.Cu} y \capa{B.Cu} sin pasar bajo nodos protegidos.
+  \item Resultado: 329 vías (235 de cosido), 440 teardrops, 0 conexiones sin rutear, y todos los chequeos en cero
+  (capítulo~\ref{cap:verif}).
+\end{itemize}

@@ -1,0 +1,81 @@
+% Preámbulo común del informe de diseño de la PCB (Sonómetro IEPE Rev B).
+% Lo usan informe_diseno.tex y los archivos de prueba de cada capítulo.
+\usepackage{fontspec}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage[a4paper,margin=24mm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{icomma}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,},group-minimum-digits=5,per-mode=symbol,range-phrase={--},list-final-separator={ y },
+  range-units=single,product-units=single}
+\DeclareSIUnit\ppm{ppm}
+\DeclareSIUnit\oz{oz}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+\usepackage[american]{circuitikz}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing,shapes.geometric}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[most]{tcolorbox}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage[titles]{tocloft}
+\setlength{\cftchapnumwidth}{2.0em}
+\setlength{\cftsecnumwidth}{2.9em}
+\setlength{\cftsubsecindent}{4.4em}
+\setlength{\cftsubsecnumwidth}{3.7em}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=verdeplaca,urlcolor=cobre,citecolor=verdeplaca]{hyperref}
+
+% ---------------------------------------------------------------- colores
+\definecolor{verdeplaca}{HTML}{1E5B3D}   % máscara de soldadura
+\definecolor{cobre}{HTML}{A1561F}
+\definecolor{azulidea}{HTML}{1F4E79}
+\definecolor{rojoojo}{HTML}{A6382D}
+\definecolor{grisnota}{HTML}{56635B}
+
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{grisnota}\nouppercase{\leftmark}}
+\fancyfoot[L]{\small\color{grisnota}Sonómetro IEPE Rev B · Criterios de diseño de la PCB}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ---------------------------------------------------------------- cajas para el estudiante
+% La idea: un concepto explicado con palabras sencillas.
+\newtcolorbox{idea}[1][]{enhanced,breakable,colback=azulidea!5,colframe=azulidea,fonttitle=\bfseries,
+  title={La idea\ifx&#1&\else: #1\fi},left=6pt,right=6pt,top=4pt,bottom=4pt,arc=1pt}
+% Decisión de diseño: qué se decidió, qué otras opciones había y por qué.
+\newtcolorbox{decision}[1][]{enhanced,breakable,colback=verdeplaca!5,colframe=verdeplaca,fonttitle=\bfseries,
+  title={Decisión de diseño\ifx&#1&\else: #1\fi},left=6pt,right=6pt,top=4pt,bottom=4pt,arc=1pt}
+% Cálculo paso a paso.
+\newtcolorbox{calculo}[1][]{enhanced,breakable,colback=cobre!5,colframe=cobre,fonttitle=\bfseries,
+  title={Cálculo\ifx&#1&\else: #1\fi},left=6pt,right=6pt,top=4pt,bottom=4pt,arc=1pt}
+% Ojo: error típico o advertencia.
+\newtcolorbox{ojo}[1][]{enhanced,breakable,colback=rojoojo!5,colframe=rojoojo,fonttitle=\bfseries,
+  title={Ojo\ifx&#1&\else: #1\fi},left=6pt,right=6pt,top=4pt,bottom=4pt,arc=1pt}
+
+% ---------------------------------------------------------------- etiquetas de origen del dato
+\newcommand{\etq}[2]{{\footnotesize\colorbox{#1!12}{\textcolor{#1!80!black}{\textsf{#2}}}}}
+\newcommand{\doc}[1]{\etq{verdeplaca}{doc #1}}       % leído del datasheet o página del fabricante
+\newcommand{\copia}[1][]{\etq{orange}{copia\ifx&#1&\else{} #1\fi}}  % fuente secundaria, sin verificar contra el original
+\newcommand{\estimado}{\etq{cobre}{estimado}}         % supuesto de diseño
+\newcommand{\medir}{\etq{grisnota}{medir en banco}}  % se confirma en el banco
+\newcommand{\medido}{\etq{azulidea}{medido en la placa}} % medido sobre el archivo de KiCad
+
+% ---------------------------------------------------------------- nombres
+\DeclareRobustCommand{\net}[1]{\texttt{\detokenize{#1}}}       % red, pieza, pin o archivo: \net{IEPE_SV}, \net{U3.8}
+\DeclareRobustCommand{\archivo}[1]{\texttt{\detokenize{#1}}}
+\DeclareRobustCommand{\capa}[1]{\textsf{\detokenize{#1}}}       % capa de KiCad: \capa{F.Cu}

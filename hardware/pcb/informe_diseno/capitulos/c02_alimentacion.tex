@@ -1,0 +1,515 @@
+\chapter[Alimentación]{Alimentación: de \SI{24}{\volt} a \SI{3.3}{\volt}, \SI{5}{\volt} y 5V\_A}\label{cap:alim}
+
+\textbf{En este capítulo vas a ver:}
+\begin{itemize}
+  \item Cuánta energía necesita cada parte de la placa (el presupuesto de consumo).
+  \item Cómo se protege la entrada de \SI{24}{\volt}: diodo en serie contra polaridad invertida y TVS contra picos.
+  \item Qué es un convertidor \emph{buck}, explicado desde cero, y por qué se usa en lugar de un regulador lineal.
+  \item Por qué se eligió el LMR36015 en su variante FPWM de \SI{1}{\mega\hertz}, y cuánto cuesta esa decisión.
+  \item El cálculo de cada pieza externa de los bucks: divisor de realimentación, bobina, condensadores.
+  \item La comprobación de los tiempos mínimos de encendido y apagado en el peor caso.
+  \item El filtro RC que produce el riel analógico \net{5V_A} y por qué existe.
+  \item Cómo se alimenta la NUCLEO y en qué orden se enciende todo.
+\end{itemize}
+
+\section{Qué hay que alimentar: el presupuesto de consumo}\label{sec:c02-presupuesto}
+
+Antes de elegir una sola pieza de la fuente hay que saber cuánta corriente pide cada riel. La placa tiene cuatro redes de alimentación:
+
+\begin{itemize}
+  \item \net{24V_PROT}: los \SI{24}{\volt} de la fuente de laboratorio, ya protegidos. Alimenta los dos bucks y las dos fuentes de corriente IEPE.
+  \item \net{3V3}: \SI{3.3}{\volt} para lo digital y los convertidores: la parte digital del ADC (VDD del PCM1808), los dos DAC MCP4725, el oscilador y las resistencias de pull-up del bus I$^2$C.
+  \item \net{5V}: la salida del buck de \SI{5}{\volt}. Solo alimenta el filtro RC que produce \net{5V_A}.
+  \item \net{5V_A}: \SI{5}{\volt} ``analógicos'' y filtrados: los dos op-amps TLV9152 y la parte analógica del ADC (VCC del PCM1808).
+\end{itemize}
+
+La tabla~\ref{tab:c02-presupuesto} sale de la sección~1 de \archivo{CALCULOS.md}. Son \textbf{cotas superiores}: se toma el máximo del datasheet, no el típico, para que la fuente nunca quede corta.
+
+\begin{table}[htbp]
+\centering
+\caption{Corrientes de diseño por riel (cotas superiores).}
+\label{tab:c02-presupuesto}
+\begin{tabularx}{\linewidth}{@{}L{0.13\linewidth}Y L{0.14\linewidth}@{}}
+\toprule
+\textbf{Riel} & \textbf{De dónde sale la corriente} & \textbf{Total}\\
+\midrule
+\net{5V_A} & PCM1808 ICC máx. \SI{11}{\milli\ampere} \doc{SLES177B p.6} + 2 TLV9152, cada uno con 2 amplificadores a \SI{750}{\micro\ampere} máx. \doc{SBOS986E p.12} & \SI{14.0}{\milli\ampere}\\
+\net{5V} & Solo alimenta a \net{5V_A} a través de \net{R33} & \SI{14.0}{\milli\ampere}\\
+\net{3V3} & PCM1808 IDD \SI{10.2}{\milli\ampere} (a \SI{96}{\kilo\hertz}, el caso más alto) \doc{SLES177B p.6} + 2 MCP4725 a \SI{400}{\micro\ampere} máx. \doc{DS22039D p.3} + pull-ups I$^2$C + oscilador $\leq$\,\SI{10}{\milli\ampere} \estimado & \SI{22.4}{\milli\ampere}\\
+\net{24V_PROT} & Se diseña con el límite de la fuente de banco (\SIrange{30}{50}{\milli\ampere}, \archivo{AGENTS.md} §5). Solo las fuentes IEPE piden como máximo \SI{3.98}{} + \SI{2.51}{\milli\ampere} & \SI{50}{\milli\ampere}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Fíjate en el orden de magnitud: \textbf{decenas de miliamperios}. Esta placa consume muy poco. Eso va a pesar en varias decisiones: los anchos de pista no los fija la corriente sino la fabricación (capítulo~\ref{cap:calculos}), y la eficiencia del buck en vacío importa más que su eficiencia a plena carga.
+
+\begin{calculo}[cuánto le pide la placa a la fuente de \SI{24}{\volt}]
+Sumemos la potencia de cada consumo, con las cotas de la tabla:
+\begin{align*}
+P_{3V3} &= \SI{3.3}{\volt}\cdot\SI{22.4}{\milli\ampere} \approx \SI{74}{\milli\watt}\\
+P_{5V} &= \SI{5}{\volt}\cdot\SI{14.0}{\milli\ampere} = \SI{70}{\milli\watt}\\
+P_{\text{bucks}} &\leq 2\cdot\SI{0.15}{\watt} = \SI{0.30}{\watt} \quad\text{(pérdidas en vacío, sección~\ref{sec:c02-fpwm})}\\
+P_{\text{IEPE}} &\approx (\SI{3.98}{} + \SI{2.51}{\milli\ampere})\cdot\SI{23.5}{\volt} \approx \SI{0.15}{\watt}
+\end{align*}
+Total: unos \SI{0.6}{\watt}, que a \SI{23.5}{\volt} son unos \SI{25}{\milli\ampere} \estimado. Está por debajo de los \SIrange{30}{50}{\milli\ampere} a los que se limita la fuente de banco. Este número se confirma en el banco con el amperímetro \medir.
+\end{calculo}
+
+\section{La entrada: J5, D1 y D2}\label{sec:c02-entrada}
+
+La figura~\ref{fig:c02-entrada} muestra la entrada. Los \SI{24}{\volt} llegan por la bornera \net{J5} (red \net{24V_IN}), pasan por el diodo \net{D1} y desde ahí la red se llama \net{24V_PROT}. Entre \net{24V_PROT} y tierra está el TVS \net{D2}. Este bloque no existía en el Altium del equipo: es el cambio C4 (capítulo~\ref{cap:piezas}).
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  \draw (0,2) node[left]{\net{J5.1}} to[short,o-] (0.6,2) node[above]{\net{24V_IN}} -- (1.2,2)
+        to[sD, l=\net{D1} SS34] (3.6,2) coordinate (p);
+  \draw (p) to[short,*-] (6.0,2) coordinate (q) to[short,*-] (8.4,2) node[right]{\net{24V_PROT} $\to$ bucks \net{U6}, \net{U7}};
+  \node[above] at (4.8,2) {\net{24V_PROT}};
+  \draw (p) to[zDo, l_=\net{D2} SMBJ26A, invert] (3.6,0) node[ground]{};
+  \draw (q) -- (6.0,1.2) to[short,-o] (6.0,1.0) node[left]{\net{J1.1}};
+  \node[font=\footnotesize, align=left, anchor=west] at (6.2,0.7) {bornera \net{J1} (y \net{J7})\\$\to$ \net{IEPE_FEED} $\to$ fuente IEPE};
+  \draw (0,0) node[left]{\net{J5.2}} to[short,o-] (0.8,0) node[ground]{};
+\end{circuitikz}
+\caption{Entrada de alimentación. \net{D1} en serie bloquea la polaridad invertida; \net{D2} (TVS) recorta los picos sobre \net{24V_PROT}. \net{J1} y \net{J7} son borneras en serie con la alimentación de cada fuente IEPE.}
+\label{fig:c02-entrada}
+\end{figure}
+
+\subsection{D1: protección contra polaridad invertida}
+
+Si alguien conecta la fuente al revés, todos los integrados recibirían \SI{-24}{\volt}, y eso los mata. \net{D1} está \textbf{en serie}: con la polaridad correcta conduce; con la polaridad invertida queda en inversa y no deja pasar corriente.
+
+Es un SS34, un diodo Schottky de \SI{40}{\volt} y \SI{3}{\ampere} \copia[(design.py)]. Se usa un Schottky porque cae menos tensión en directa que un diodo de silicio normal, unos \SI{0.4}{\volt} \estimado. Con la corriente de la placa, eso es nada:
+
+\begin{calculo}[pérdida en D1]
+$P_{D1} = I\cdot V_F = \SI{50}{\milli\ampere}\cdot\SI{0.4}{\volt} = \SI{20}{\milli\watt}$, menos de \SI{1}{\degreeCelsius} de calentamiento (\archivo{CALCULOS.md} §6). La consecuencia práctica es que a los bucks no les llegan \SI{24}{\volt} sino unos \SI{23.5}{\volt}. Por eso ese valor aparece en los cálculos de este capítulo.
+\end{calculo}
+
+\begin{decision}[diodo Schottky en serie]
+\textbf{Qué se decidió:} un Schottky SS34 en serie con la entrada.\\
+\textbf{Alternativas:} un MOSFET de canal P como ``diodo ideal'' (casi sin caída) o un diodo en paralelo con fusible (cortocircuita la fuente al invertirla).\\
+\textbf{Por qué:} con \SI{50}{\milli\ampere} la caída del Schottky solo cuesta \SI{20}{\milli\watt}, y es una sola pieza \emph{basic} de JLCPCB (C8678). El MOSFET agrega piezas sin una ventaja que se note a este consumo.\\
+\textbf{Fuente:} cambio C4 de \archivo{tools/design.py}; cálculo en \archivo{CALCULOS.md} §6.
+\end{decision}
+
+\subsection{D2: el TVS contra picos}
+
+\begin{idea}[qué es un TVS]
+Un TVS (\emph{Transient Voltage Suppressor}) es un diodo hecho para absorber picos de tensión. Mientras la tensión está por debajo de su \textbf{tensión de trabajo} $V_{RWM}$ casi no conduce (solo una corriente de fuga pequeña). Si un pico supera su \textbf{tensión de ruptura} $V_{BR}$, conduce mucho y ``se come'' la energía del pico, con la tensión sujeta cerca de su \textbf{tensión de recorte} (\emph{clamping}). Va en paralelo con la línea que protege, de la red a tierra. Es como una válvula de alivio en una tubería: cerrada en condiciones normales, se abre si la presión se dispara.
+\end{idea}
+
+El SMBJ26A tiene $V_{RWM}=\SI{26}{\volt}$ y $V_{BR}\geq\SI{28.9}{\volt}$ \copia. ¿Por qué 26?
+\begin{itemize}
+  \item Tiene que quedar \textbf{por encima} de los \SI{24}{\volt} normales con margen. Si su $V_{RWM}$ fuera menor que la tensión de trabajo, conduciría todo el tiempo y se calentaría.
+  \item Tiene que quedar \textbf{por debajo} de lo que aguantan las piezas que protege. Los LMR36015 aceptan hasta \SI{60}{\volt} de entrada \doc{SNVSB49D p.1}, así que el recorte transitorio del TVS (unos \SI{42}{\volt} \copia[(REGLAS.md §5)]) no los pone en riesgo.
+\end{itemize}
+
+Como \net{D2} va después de \net{D1}, con la polaridad invertida el TVS no ve nada: \net{D1} ya bloqueó.
+
+\begin{ojo}[valores del TVS sin datasheet a mano]
+Los valores del SMBJ26A son los típicos de la serie SMBJ y vienen de una copia, no del datasheet del fabricante exacto (\archivo{CALCULOS.md} §1). En la práctica: no alimentes la placa con más de \SI{26}{\volt} continuos. El TVS también fija una tensión máxima de la que se parte para calcular separaciones entre pistas y tiempos del buck (sección~\ref{sec:c02-tiempos} y capítulo~\ref{cap:calculos}).
+\end{ojo}
+
+\subsection{J1 y J7: la habilitación de cada canal}
+
+Cada fuente IEPE toma \net{24V_PROT} a través de una bornera de dos pines, \net{J1} (CH1) o \net{J7} (CH2). El pin~1 es \net{24V_PROT} y el pin~2 es \net{IEPE_FEED} (o \net{IEPE_FEED_SV}), que va a la fuente de corriente. Sirven para dos cosas (cambio C5):
+\begin{enumerate}
+  \item \textbf{Encender o apagar cada canal}: un cable puente entre los dos tornillos lo habilita.
+  \item \textbf{Medir la corriente de la fuente IEPE}: en lugar del puente pones el amperímetro en serie y lees directamente la corriente que va al micrófono (capítulo~\ref{cap:banco}).
+\end{enumerate}
+El Altium original tenía una bornera aparte (\net{J6}) para alimentar el canal~2 con otra fuente. Se eliminó: los dos canales usan los mismos \SI{24}{\volt}.
+
+\section{Qué es un convertidor buck}\label{sec:c02-buck}
+
+Necesitamos bajar de \SI{23.5}{\volt} a \SI{3.3}{\volt} y a \SI{5}{\volt}. Hay dos formas de hacerlo.
+
+\subsection{Opción 1: un regulador lineal}
+Un regulador lineal (el clásico LM317 o un LDO) funciona como una resistencia variable: deja caer la tensión que sobra y la convierte en calor. Toda la corriente de la carga pasa por él con la caída completa.
+
+\begin{calculo}[un regulador lineal de \SI{23.5}{\volt} a \SI{3.3}{\volt}]
+$P = (V_{IN}-V_{OUT})\cdot I = (\SI{23.5}{\volt}-\SI{3.3}{\volt})\cdot\SI{22.4}{\milli\ampere} \approx \SI{0.45}{\watt}$.
+La eficiencia sería $\eta = V_{OUT}/V_{IN} = 3{,}3/23{,}5 \approx \SI{14}{\percent}$: el 86\,\% de la energía se iría en calor.
+\end{calculo}
+
+Medio vatio en un encapsulado pequeño ya es un problema térmico, y la eficiencia es pésima.
+
+\subsection{Opción 2: un convertidor conmutado reductor (buck)}
+
+\begin{idea}[el buck en tres pasos]
+Un buck no ``quema'' la tensión que sobra. La \textbf{trocea}:
+\begin{enumerate}
+  \item Un interruptor (un MOSFET) conecta la entrada a una bobina durante un tiempo $t_{ON}$. La corriente por la bobina sube.
+  \item Luego el interruptor se abre y un segundo interruptor (o un diodo) conecta la bobina a tierra durante $t_{OFF}$. La bobina, que no deja cambiar su corriente de golpe, la sigue empujando hacia la carga, y esa corriente baja.
+  \item Esto se repite a una frecuencia fija $f_{SW}$ (aquí \SI{1}{\mega\hertz}, un millón de veces por segundo). La bobina y el condensador de salida promedian los pulsos y queda una tensión continua con un pequeño rizado.
+\end{enumerate}
+La fracción del tiempo que el interruptor de arriba está cerrado se llama \textbf{ciclo de trabajo} $D$. En un buck ideal:
+\begin{equation}
+V_{OUT} = D\cdot V_{IN} \qquad\Rightarrow\qquad D = \frac{V_{OUT}}{V_{IN}}
+\label{eq:c02-duty}
+\end{equation}
+Como idealmente nada disipa (un interruptor cerrado no tiene caída, uno abierto no tiene corriente), la potencia de entrada es igual a la de salida. Por eso la corriente de entrada es \emph{menor} que la de salida: $I_{IN}\approx D\cdot I_{OUT}$.
+\end{idea}
+
+La figura~\ref{fig:c02-buck} muestra el circuito básico y la figura~\ref{fig:c02-il} la corriente de la bobina.
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  \draw (0,0) to[V, l=$V_{IN}$, invert] (0,3) -- (1,3) to[nos, l=$S_1$ (alto)] (3,3) coordinate (sw);
+  \draw (sw) to[nos, l_=$S_2$ (bajo)] (3,0);
+  \draw (sw) to[L, l=$L$, i>^=$i_L$] (6,3) coordinate (o) to[short,*-] (8,3) to[R, l=carga] (8,0);
+  \draw (o) to[C, l=$C_{OUT}$, *-*] (6,0);
+  \draw (0,0) -- (8,0);
+  \node[anchor=west, font=\footnotesize] at (3.15,2.55) {nodo SW};
+  \draw (6,3) ++(0,0.7) node[font=\footnotesize]{$V_{OUT}$};
+\end{circuitikz}
+\caption{Buck síncrono simplificado. $S_1$ y $S_2$ se cierran alternadamente. En el LMR36015 los dos interruptores son MOSFET integrados (``síncrono''); en un buck clásico, $S_2$ es un diodo.}
+\label{fig:c02-buck}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.85\linewidth, height=4.4cm, xlabel={tiempo ($\mu$s)}, ylabel={$i_L$ (mA)},
+  xmin=0, xmax=3, ymin=-260, ymax=300, grid=both, grid style={gray!20},
+  xticklabel style={/pgf/number format/use comma},
+  legend style={font=\footnotesize, at={(0.5,-0.42)}, anchor=north, legend columns=2, draw=none}]
+  % D = 0.14 a 1 MHz: sube 0.14 us, baja 0.86 us; dIL = 0.42 A (3.3 V, 24 V, 6.8 uH)
+  \addplot[thick, cobre] coordinates {(0,-210) (0.14,210) (1,-210) (1.14,210) (2,-210) (2.14,210) (3,-210)};
+  \addlegendentry{FPWM sin carga (promedio 0)\quad}
+  \addplot[thick, dashed, verdeplaca] coordinates {(0,-188) (0.14,232) (1,-188) (1.14,232) (2,-188) (2.14,232) (3,-188)};
+  \addlegendentry{con \SI{22}{\milli\ampere} de carga}
+  \addplot[gray, dotted] coordinates {(0,0) (3,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Forma de la corriente de la bobina de \SI{3.3}{\volt} con \SI{24}{\volt} de entrada a \SI{1}{\mega\hertz} (rizado $\Delta I_L\approx\SI{0.42}{\ampere}$, sección~\ref{sec:c02-bobina}). Sube durante $t_{ON}\approx\SI{0.14}{\micro\second}$ y baja el resto del período. Como la carga es tan pequeña, el triángulo queda casi centrado en cero: en modo FPWM la corriente se hace negativa en parte del ciclo.}
+\label{fig:c02-il}
+\end{figure}
+
+\begin{calculo}[ciclo de trabajo de los dos bucks]
+Con $V_{IN}=\SI{23.5}{\volt}$ (24 V menos \net{D1}):
+\[
+D_{3V3} = \frac{3{,}3}{23{,}5}\approx 0{,}14 \qquad D_{5V} = \frac{5}{23{,}5}\approx 0{,}21
+\]
+A \SI{1}{\mega\hertz} el período es \SI{1}{\micro\second}, así que el interruptor de arriba solo está cerrado \SI{140}{\nano\second} (3V3) o \SI{213}{\nano\second} (5V) en cada ciclo. Son pulsos muy cortos; la sección~\ref{sec:c02-tiempos} comprueba que el integrado los puede hacer.
+\end{calculo}
+
+\section{El LMR36015 y el modo FPWM}\label{sec:c02-fpwm}
+
+Los dos bucks usan el mismo integrado, \textbf{LMR36015FBRNXR} de Texas Instruments: \net{U6} produce \net{3V3} y \net{U7} produce \net{5V}. Es un buck síncrono de \SIrange{4.2}{60}{\volt} de entrada y hasta \SI{1.5}{\ampere} de salida \doc{SNVSB49D p.1}, en un encapsulado VQFN de \SI{2}{\milli\meter} $\times$ \SI{3}{\milli\meter} (``HotRod'', RNX).
+
+El sufijo importa. TI vende varias variantes del LMR36015 y esta es la \textbf{FB}: salida ajustable, \SI{1}{\mega\hertz} y \textbf{FPWM} \doc{SNVSB49D p.3}.
+
+\begin{idea}[PFM contra FPWM]
+Cuando un buck tiene muy poca carga, como el nuestro, puede funcionar de dos maneras \doc{SNVSB49D p.16}:
+\begin{itemize}
+  \item \textbf{PFM} (\emph{pulse frequency modulation}): manda ráfagas de pulsos solo cuando la salida baja. Gasta muy poco (el LMR36015 en PFM pide unos \SI{26}{\micro\ampere} sin carga \doc{SNVSB49D p.8}), pero \textbf{la frecuencia de conmutación cambia con la carga} y el rizado de salida es mayor.
+  \item \textbf{FPWM} (\emph{forced PWM}): conmuta siempre a la frecuencia fija, aunque no haya carga. La corriente de la bobina sigue siendo un triángulo completo, que en vacío baja por debajo de cero (figura~\ref{fig:c02-il}). La frecuencia es fija, pero se pierde energía moviendo esa corriente de un lado a otro.
+\end{itemize}
+\end{idea}
+
+¿Por qué importa la frecuencia? Porque esta es una placa de \textbf{audio}. Si un buck en PFM hace ráfagas a unos pocos kilohercios, ese ruido cae justo en la banda que queremos medir (\SI{20}{\hertz} a \SI{20}{\kilo\hertz}), y ningún filtro lo separa de la señal. Con FPWM a \SI{1}{\mega\hertz} el ruido de conmutación queda 50 veces por encima de \SI{20}{\kilo\hertz}, donde los filtros RC lo atenúan fácilmente.
+
+\begin{decision}[LMR36015 en variante FPWM de \SI{1}{\mega\hertz}]
+\textbf{Qué se decidió:} mantener el LMR36015\textbf{FB}RNXR (FPWM, \SI{1}{\mega\hertz}) para los dos rieles.\\
+\textbf{Alternativas:} la variante PFM (más eficiente en vacío pero con frecuencia variable) o un regulador lineal (sin ruido de conmutación pero con unos \SI{0.45}{\watt} de pérdida, sección~\ref{sec:c02-buck}).\\
+\textbf{Por qué:} con frecuencia fija el ruido de la fuente nunca cae en la banda de audio. Además, el integrado sigue en conducción continua (CCM) a frecuencia fija aun sin carga \doc{SNVSB49D p.16, tabla 9-1}, así que no hay modos raros a baja carga. El costo es el consumo en vacío.\\
+\textbf{Fuente:} \archivo{REGLAS.md} §3 (LMR36015); plan de ruteo aprobado (decisión~10, ``no propongo cambiarlo''); \archivo{CALCULOS.md} §2.
+\end{decision}
+
+\subsection*{El costo del FPWM: pérdidas sin carga}
+
+El datasheet no publica la corriente de entrada en FPWM sin carga. \archivo{CALCULOS.md} §2 la acota así \estimado:
+\begin{itemize}
+  \item conducción con las resistencias máximas de los MOSFET ($R_{DS(on)}$ de \SI{435}{\milli\ohm} el de arriba y \SI{280}{\milli\ohm} el de abajo \doc{SNVSB49D p.7}): unos \SI{6.5}{\milli\watt};
+  \item conmutación con flancos de \SI{10}{\nano\second} (supuesto): unos \SI{42}{\milli\watt};
+  \item más el regulador interno y la carga de las compuertas, que no están publicados.
+\end{itemize}
+La resistencia térmica JEDEC del encapsulado es de \SI{72.5}{\degreeCelsius\per\watt} \doc{SNVSB49D p.6}. Con una cota de \SI{0.15}{\watt} por integrado, se calentaría como mucho
+\[
+\Delta T = P\cdot R_{\theta JA} = \SI{0.15}{\watt}\cdot\SI{72.5}{\degreeCelsius\per\watt}\approx\SI{11}{\degreeCelsius}
+\]
+por encima del ambiente. En una placa de 4 capas con plano de tierra debería quedar por debajo de eso. Es una de las primeras cosas que hay que medir en el banco: \medir.
+
+\section{El circuito de cada buck}\label{sec:c02-circuito}
+
+La figura~\ref{fig:c02-u6} muestra \net{U6} con todas sus piezas. \net{U7} es idéntico con sus propios designadores (tabla~\ref{tab:c02-piezas}).
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.84, transform shape]
+  % integrado
+  \draw[thick, fill=cobre!5] (0,-0.2) rectangle (3,5.6);
+  \node[font=\bfseries] at (1.5,5.2) {\net{U6}};
+  \node[font=\footnotesize] at (1.5,4.75) {LMR36015};
+  \node[font=\scriptsize, anchor=west] at (0.05,3.3) {VIN 2,10};
+  \node[font=\scriptsize, anchor=west] at (0.05,2.3) {EN 9};
+  \node[font=\scriptsize, anchor=west] at (0.05,1.3) {VCC 5};
+  \node[font=\scriptsize, anchor=west] at (0.05,0.55) {PGND 1,11};
+  \node[font=\scriptsize, anchor=west] at (0.05,0.15) {AGND 6};
+  \node[font=\scriptsize, anchor=east] at (2.95,3.8) {BOOT 4};
+  \node[font=\scriptsize, anchor=east] at (2.95,3.0) {SW 12, NC 3};
+  \node[font=\scriptsize, anchor=east] at (2.95,1.3) {FB 7};
+  % entrada
+  \draw (0,3.3) -- (-1.2,3.3) coordinate (vin) -- (-4.6,3.3) node[left]{\net{24V_PROT}};
+  \draw (0,2.3) -- (-1.2,2.3) -- (vin); \fill (vin) circle (1.5pt);
+  \draw (-2.4,3.3) to[C, l_=\net{C29}, *-] (-2.4,1.5) node[ground]{};
+  \draw (-3.8,3.3) to[C, l_={\net{C27}, \net{C28}}, *-] (-3.8,1.5) node[ground]{};
+  \node[font=\scriptsize, align=center] at (-3.8,0.65) {2$\times$\SI{4.7}{\micro\farad}};
+  \node[font=\scriptsize, align=center] at (-2.4,0.45) {\SI{220}{\nano\farad}\\(y \net{C30})};
+  \draw (0,1.3) -- (-0.7,1.3) to[C, l_=\net{C36}] (-0.7,-0.4) node[ground]{};
+  \draw (0,0.35) -- (0.0,0.35);
+  \draw (1.5,-0.2) -- (1.5,-0.6) node[ground]{};
+  % BOOT y SW
+  \draw (3,3.8) -- (4.4,3.8) to[C] (4.4,3.0);
+  \node[font=\footnotesize, above] at (4.4,3.85) {\net{C35}};
+  \draw (3,3.0) -- (4.4,3.0) to[short, *-] (4.8,3.0) to[L, l=\net{L1} \SI{6.8}{\micro\henry}] (6.6,3.0) coordinate (out);
+  % realimentación
+  \draw (out) to[short, *-] (7.6,3.0) coordinate (rt);
+  \draw (rt) to[R, l=\net{R29} \SI{100}{\kilo\ohm}, *-] (7.6,1.3) coordinate (fb) to[R, l=\net{R30} \SI{43.2}{\kilo\ohm}] (7.6,-0.4) node[ground]{};
+  \draw (fb) to[short, *-] (3,1.3);
+  \node[font=\scriptsize, above] at (5.2,1.3) {\net{FB_3}};
+  % salida
+  \draw (rt) -- (10.2,3.0) coordinate (co) to[short, *-o] (11.2,3.0) node[right]{\net{3V3}};
+  \draw (co) to[C, l=\net{C31}--\net{C34}] (10.2,0.6) node[ground]{};
+  \node[font=\scriptsize, anchor=west] at (10.6,1.25) {4$\times$\SI{15}{\micro\farad}};
+\end{circuitikz}
+\caption{Buck de \SI{3.3}{\volt} (\net{U6}) con sus piezas, según \archivo{tools/target.json}. EN (pin~9) va a \net{24V_PROT}: el buck está siempre encendido. El pin NC~3 se une a SW (pin~12) en la placa, como pide el datasheet \doc{SNVSB49D p.4}. PG (pin~8) no se usa.}
+\label{fig:c02-u6}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Piezas de los dos bucks. Los valores de la columna ``TI'' son los de la tabla de componentes típicos para \SI{1}{\mega\hertz} \doc{SNVSB49D p.19, tabla 10-1}.}
+\label{tab:c02-piezas}
+\begin{tabularx}{\linewidth}{@{}L{0.19\linewidth}L{0.15\linewidth}L{0.15\linewidth}Y@{}}
+\toprule
+\textbf{Función} & \textbf{3V3 (\net{U6})} & \textbf{5V (\net{U7})} & \textbf{Valor y comparación con TI}\\
+\midrule
+CIN (entrada) & \net{C27}, \net{C28} & \net{C37}, \net{C38} & \SI{4.7}{\micro\farad} \SI{100}{\volt} X7R 2220 cada uno. TI: \SI{4.7}{\micro\farad} + 2$\times$\SI{220}{\nano\farad}\\
+CHF (alta frec.) & \net{C29}, \net{C30} & \net{C39}, \net{C40} & \SI{220}{\nano\farad} \SI{100}{\volt} X7R 0805, uno por cada par VIN/PGND\\
+COUT (salida) & \net{C31}--\net{C34} & \net{C41}--\net{C44} & 4$\times$\SI{15}{\micro\farad} \SI{16}{\volt} X7R 1210. TI: 3$\times$\SI{15}{\micro\farad} (optimizado para transitorios) o 2$\times$ mínimo\\
+Bobina & \net{L1} \SI{6.8}{\micro\henry} XAL4030 & \net{L2} \SI{10}{\micro\henry} XAL4040 & TI: \SI{6.8}{\micro\henry} (3,3 V) y \SI{10}{\micro\henry} (5 V)\\
+CBOOT & \net{C35} & \net{C45} & \SI{100}{\nano\farad} X7R \SI{50}{\volt}\\
+CVCC & \net{C36} & \net{C46} & \SI{2.2}{\micro\farad} X7R 0805\\
+RFBT / RFBB & \net{R29} / \net{R30} & \net{R31} / \net{R32} & \SI{100}{\kilo\ohm} / \SI{43.2}{\kilo\ohm} y \SI{100}{\kilo\ohm} / \SI{24.9}{\kilo\ohm}, iguales a los de TI\\
+CFF & --- & --- & TI lista \SI{20}{\pico\farad}; esta placa no lo lleva (ver el recuadro ``Ojo'' de la sección~\ref{sec:c02-cond})\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Fíjate en que el diseño sigue casi pieza por pieza la tabla de TI para \SI{1}{\mega\hertz}. Eso es deliberado: la tabla del fabricante ya viene con la estabilidad del lazo de control comprobada. En las secciones siguientes se verifica cada valor.
+
+\subsection{El divisor de realimentación: de dónde salen los \SI{3.3}{\volt}}
+
+El buck ajusta su ciclo de trabajo hasta que el pin FB vale exactamente su tensión de referencia interna. Esa referencia está entre \SIrange{0.985}{1.015}{\volt}, con \SI{1}{\volt} típico \doc{SNVSB49D p.6}. Si pones un divisor resistivo entre la salida y tierra con el punto medio en FB, la salida se acomoda para que el punto medio valga \SI{1}{\volt}:
+
+\begin{equation}
+V_{OUT} = V_{REF}\left(1 + \frac{R_{FBT}}{R_{FBB}}\right)
+\qquad\Longleftrightarrow\qquad
+R_{FBB} = \frac{R_{FBT}}{V_{OUT}/V_{REF} - 1}
+\label{eq:c02-divisor}
+\end{equation}
+
+TI recomienda $R_{FBT}=\SI{100}{\kilo\ohm}$, con un máximo de \SI{1}{\mega\ohm} \doc{SNVSB49D p.20}. Valores más bajos captan menos ruido pero cargan más la salida; más altos ahorran corriente pero hacen el nodo FB más sensible.
+
+\begin{calculo}[divisores de \net{U6} y \net{U7}]
+\textbf{3V3:} $R_{FBB}$ ideal $=\dfrac{\SI{100}{\kilo\ohm}}{3{,}3/1-1}=\SI{43.48}{\kilo\ohm}$. El valor comercial E96 más cercano es \SI{43.2}{\kilo\ohm} (\net{R30}). Con él:
+\[
+V_{OUT} = \SI{1}{\volt}\cdot\left(1+\frac{100}{43{,}2}\right) = \SI{3.315}{\volt}
+\]
+Con la referencia en sus extremos (\SIrange{0.985}{1.015}{\volt}) la salida queda entre \SIrange{3.265}{3.365}{\volt}, sin contar la tolerancia del \SI{1}{\percent} de las resistencias.
+
+\textbf{5V:} $R_{FBB}$ ideal $=\dfrac{\SI{100}{\kilo\ohm}}{5/1-1}=\SI{25}{\kilo\ohm}$. El E96 más cercano es \SI{24.9}{\kilo\ohm} (\net{R32}), el mismo del ejemplo de \SI{5}{\volt} del datasheet \doc{SNVSB49D p.21}:
+\[
+V_{OUT} = \SI{1}{\volt}\cdot\left(1+\frac{100}{24{,}9}\right) = \SI{5.016}{\volt}
+\]
+Entre \SIrange{4.941}{5.091}{\volt} por la tolerancia de la referencia.
+
+\textbf{Corriente del divisor:} $3{,}3/(100+43{,}2)\,\si{\kilo\ohm}\approx\SI{23}{\micro\ampere}$ y $5/(100+24{,}9)\,\si{\kilo\ohm}\approx\SI{40}{\micro\ampere}$. Despreciable frente a los miliamperios de carga.
+\end{calculo}
+
+El datasheet garantiza la regulación de la salida en FPWM dentro de $\pm\SI{1.5}{\percent}$ \doc{SNVSB49D p.8}. Ese es el número que se usa en el resto del documento (por ejemplo, para el rango de \net{5V_A} en el capítulo~\ref{cap:analog}).
+
+\subsection{La bobina}\label{sec:c02-bobina}
+
+La bobina se elige por su rizado de corriente $\Delta I_L$, la diferencia entre el pico y el valle del triángulo de la figura~\ref{fig:c02-il}. Durante $t_{ON}$ la bobina tiene $V_{IN}-V_{OUT}$ encima, y como $v=L\,di/dt$:
+\begin{equation}
+\Delta I_L = \frac{(V_{IN}-V_{OUT})\cdot t_{ON}}{L} = \frac{(V_{IN}-V_{OUT})\cdot V_{OUT}}{V_{IN}\cdot L\cdot f_{SW}}
+\label{eq:c02-rizado}
+\end{equation}
+
+TI recomienda que el rizado esté entre el 20 y el 40\,\% de la corriente máxima, y aclara que cuando la carga real es mucho menor que la del integrado se use \textbf{la corriente máxima del integrado} (\SI{1.5}{\ampere}) en ese cálculo \doc{SNVSB49D p.21}. Es nuestro caso.
+
+\begin{calculo}[rizado con las bobinas elegidas, a \SI{24}{\volt} y \SI{1}{\mega\hertz}]
+\textbf{3V3, \net{L1} = \SI{6.8}{\micro\henry}:}
+$\Delta I_L = \dfrac{(24-3{,}3)\cdot 3{,}3}{24\cdot\SI{6.8}{\micro\henry}\cdot\SI{1}{\mega\hertz}} = \SI{0.42}{\ampere}$
+$\Rightarrow$ $0{,}42/1{,}5\approx 0{,}28$, el \SI{28}{\percent} de \SI{1.5}{\ampere}.
+
+\textbf{5V, \net{L2} = \SI{10}{\micro\henry}:}
+$\Delta I_L = \dfrac{(24-5)\cdot 5}{24\cdot\SI{10}{\micro\henry}\cdot\SI{1}{\mega\hertz}} = \SI{0.40}{\ampere}$
+$\Rightarrow$ $0{,}40/1{,}5\approx 0{,}26$, el \SI{26}{\percent}.
+
+Los dos quedan dentro del rango de 20--40\,\% que pide TI.
+\end{calculo}
+
+El peor caso es el oscilador en su frecuencia más baja (\SI{0.85}{\mega\hertz}, \doc{SNVSB49D p.7}) con la entrada más alta. Ahí \archivo{CALCULOS.md} §2 da $\Delta I_L=\SI{0.506}{\ampere}$ para 3V3 con \SI{28.9}{\volt}, y la corriente de pico en la bobina llega a unos \SI{0.28}{\ampere}. Con ese pico, y no con los \SI{22}{\milli\ampere} de la carga, se dimensionan las pistas de SW, bobina y COUT (capítulo~\ref{cap:calculos}).
+
+\begin{ojo}[corriente de saturación]
+Una bobina se elige también por su corriente de saturación: por encima de ella la inductancia cae y la corriente se dispara. El repositorio no tiene el dato de saturación de la XAL4030-682 ni de la XAL4040-103 leído de su datasheet. El pico calculado es de unos \SI{0.28}{\ampere}; queda pendiente comparar ese pico con el dato de Coilcraft.
+\end{ojo}
+
+\subsection{Los condensadores}\label{sec:c02-cond}
+
+\paragraph{CIN y CHF (entrada).} Cuando el interruptor de arriba se cierra, la corriente de entrada salta de cero a la corriente de la bobina en nanosegundos. Esa corriente no puede venir de la fuente de banco (el cable tiene inductancia): sale de los condensadores de entrada. TI pide \doc{SNVSB49D p.23}:
+\begin{itemize}
+  \item un mínimo de \SI{4.7}{\micro\farad} cerámicos, de tensión nominal al menos igual a la máxima de entrada y preferiblemente el doble. Aquí: 2$\times$\SI{4.7}{\micro\farad} de \SI{100}{\volt} por buck, más de cuatro veces los \SI{24}{\volt};
+  \item además, un \SI{220}{\nano\farad} pequeño \textbf{lo más cerca posible de cada par VIN/PGND}, también de \SI{100}{\volt} y X7R. El integrado tiene VIN y PGND en los dos lados (pines 2/1 y 10/11), así que lleva dos: \net{C29} y \net{C30}.
+\end{itemize}
+
+\begin{decision}[los \SI{220}{\nano\farad} se quedan en \SI{100}{\volt}]
+\textbf{Qué se decidió:} conservar el condensador original de \SI{100}{\volt} (C0805C224K1RACTU, LCSC C2167405) en \net{C29}, \net{C30}, \net{C39} y \net{C40}.\\
+\textbf{Alternativas:} la auditoría de piezas propuso uno \emph{basic} de \SI{50}{\volt} (C5378), más barato en JLCPCB.\\
+\textbf{Por qué:} el datasheet dice que ``the \SI{220}{\nano\farad} must also be rated at \SI{100}{\volt} with an X7R dielectric''. Con \SI{50}{\volt} se cumpliría el ``doble de la entrada'', pero no lo que pide TI para esta pieza.\\
+\textbf{Fuente:} \doc{SNVSB49D p.23}; \archivo{PLAN_RUTEO.md} §6; \archivo{tools/design.py} (cambio C17).
+\end{decision}
+
+\paragraph{COUT (salida).} Los condensadores de salida filtran el rizado de la bobina y sostienen la tensión cuando la carga cambia de golpe. TI lista 3$\times$\SI{15}{\micro\farad} como opción optimizada para transitorios y 2$\times$\SI{15}{\micro\farad} como mínimo a \SI{1}{\mega\hertz} \doc{SNVSB49D p.19}. Esta placa usa 4$\times$\SI{15}{\micro\farad} de \SI{16}{\volt}, X7R, 1210 (TDK C3225X7R1C156MT000N) por buck: uno más que la opción recomendada.
+
+\begin{idea}[la capacidad ``efectiva'' de un cerámico]
+Un condensador cerámico X7R o X5R \textbf{pierde capacidad cuando tiene tensión DC encima}. Un \SI{10}{\micro\farad} de \SI{10}{\volt} en 0603 con \SI{5}{\volt} aplicados puede quedar en una fracción de su valor nominal. TI lo advierte: todos los valores de su guía son \emph{efectivos}, es decir, ya con la tensión aplicada; los encapsulados grandes y las tensiones nominales altas pierden menos \doc{SNVSB49D p.18}. Por eso en esta placa los condensadores de potencia son grandes (2220, 1210) y de tensión nominal holgada.
+\end{idea}
+
+\begin{ojo}[capacidad efectiva y CFF no cuantificados]
+\begin{itemize}
+  \item El cambio C17 de \archivo{tools/design.py} dice que la capacitancia efectiva de los nuevos CIN y COUT se verificó, pero el repositorio no guarda los números de las curvas de DC bias. No hay un valor efectivo citado aquí.
+  \item La tabla de TI pone un condensador de \emph{feedforward} (CFF) de \SI{20}{\pico\farad} en paralelo con $R_{FBT}$. El diseño del equipo no lo tiene. El datasheet lo exige solo cuando $R_{FBT}=\SI{1}{\mega\ohm}$ \doc{SNVSB49D p.20--21} y dice que con otros valores puede mejorar el transitorio o el margen de fase ``en algunos casos'' \doc{SNVSB49D p.23}. Con \SI{100}{\kilo\ohm} y la carga casi constante de esta placa no es obligatorio, pero la respuesta a un escalón de carga no se ha medido \medir.
+\end{itemize}
+\end{ojo}
+
+\paragraph{CBOOT y CVCC.} El MOSFET de arriba necesita una tensión de compuerta por encima de VIN. La saca de \textbf{CBOOT}, un condensador entre BOOT y SW que se recarga en cada ciclo: TI pide \SI{100}{\nano\farad} de al menos \SI{16}{\volt} \doc{SNVSB49D p.23}, y aquí se usa \SI{100}{\nano\farad} X7R de \SI{50}{\volt} (\net{C35}, \net{C45}). \textbf{VCC} es la salida del regulador interno de \SI{5}{\volt} del integrado, que alimenta su lógica: pide \SI{1}{\micro\farad} de \SI{16}{\volt} a tierra y ninguna carga externa \doc{SNVSB49D p.4 y p.23}. Aquí lleva \SI{2.2}{\micro\farad} X7R 0805 (\net{C36}, \net{C46}): el valor nominal mayor deja margen para la pérdida por DC bias con \SI{5}{\volt} encima.
+
+\section{Tiempos mínimos de encendido y apagado}\label{sec:c02-tiempos}
+
+\begin{idea}[por qué hay un pulso mínimo]
+Un MOSFET integrado no puede encenderse y apagarse en un tiempo arbitrariamente corto: el driver tarda, y el integrado necesita un tiempo mínimo para medir la corriente. El datasheet da un \textbf{tiempo mínimo de encendido} $t_{ON,min}$ y un \textbf{tiempo mínimo de apagado} $t_{OFF,min}$. Si el ciclo de trabajo pide un pulso más corto que $t_{ON,min}$, el integrado no lo puede generar tal cual. Por eso hay que comprobarlo con la entrada más alta (que da el $D$ más chico) y la frecuencia más alta (que da el período más corto).
+\end{idea}
+
+Para el LMR36015: $t_{ON,min}$ de \SI{55}{\nano\second} típico y \SI{83}{\nano\second} máximo; $t_{OFF,min}$ de \SI{53}{\nano\second} típico y \SI{73}{\nano\second} máximo. La frecuencia de la variante de \SI{1}{\mega\hertz} puede estar entre \SIrange{0.85}{1.15}{\mega\hertz} \doc{SNVSB49D p.7}. Se compara contra los máximos.
+
+\begin{calculo}[el peor caso]
+$t_{ON} = \dfrac{D}{f_{SW}} = \dfrac{V_{OUT}}{V_{IN}\cdot f_{SW}}$. El peor caso es la salida de \SI{3.3}{\volt}, con \SI{28.9}{\volt} de entrada (la ruptura mínima del TVS) y el oscilador en \SI{1.15}{\mega\hertz}:
+\[
+t_{ON} = \frac{3{,}3}{28{,}9\cdot\SI{1.15}{\mega\hertz}} = \SI{99}{\nano\second} > \SI{83}{\nano\second}
+\]
+Margen: \SI{16}{\nano\second}. El apagado nunca es problema, porque con $D$ pequeño $t_{OFF}$ es largo (más de \SI{600}{\nano\second} en todos los casos).
+\end{calculo}
+
+\begin{table}[htbp]
+\centering
+\caption{Tiempos de encendido en los casos extremos (extracto de \archivo{CALCULOS.md} §2). Todos superan los \SI{83}{\nano\second} máximos.}
+\label{tab:c02-ton}
+\begin{tabular}{@{}lccrr@{}}
+\toprule
+\textbf{Salida} & $V_{IN}$ & $f_{SW}$ & $t_{ON}$ & \textbf{Margen}\\
+\midrule
+\SI{3.3}{\volt} & \SI{23.5}{\volt} (normal) & \SI{1.15}{\mega\hertz} & \SI{122}{\nano\second} & \SI{39}{\nano\second}\\
+\SI{3.3}{\volt} & \SI{26.0}{\volt} ($V_{RWM}$ del TVS) & \SI{1.15}{\mega\hertz} & \SI{110}{\nano\second} & \SI{27}{\nano\second}\\
+\SI{3.3}{\volt} & \SI{28.9}{\volt} ($V_{BR}$ mín.\ del TVS) & \SI{1.15}{\mega\hertz} & \SI{99}{\nano\second} & \SI{16}{\nano\second}\\
+\SI{5.0}{\volt} & \SI{28.9}{\volt} & \SI{1.15}{\mega\hertz} & \SI{150}{\nano\second} & \SI{67}{\nano\second}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Conclusión: en ningún caso de entrada (de \SI{18}{\volt} a \SI{28.9}{\volt}) y de frecuencia el integrado tiene que hacer un pulso más corto que su mínimo, así que \textbf{no hay repliegue de frecuencia} ni saltos de pulsos. Eso mantiene la conmutación en \SI{1}{\mega\hertz}, lejos del audio.
+
+\section{El riel analógico 5V\_A}\label{sec:c02-5va}
+
+El buck de \SI{5}{\volt} tiene un rizado a \SI{1}{\mega\hertz} y armónicos. Los op-amps y la parte analógica del ADC lo ``escuchan'' a través de su alimentación. Para limpiarlo, entre \net{5V} y \net{5V_A} hay un filtro pasa-bajos RC: \net{R33} de \SI{10}{\ohm} en serie y \net{C47} de \SI{10}{\micro\farad} a tierra (figura~\ref{fig:c02-rc}).
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}
+  \draw (0,2) node[left]{\net{5V} (de \net{U7})} to[short,o-] (0.4,2) to[R, l=\net{R33} \SI{10}{\ohm}] (2.8,2) to[short,-*] (3.6,2)
+        to[short,-o] (5.4,2) node[right]{\net{5V_A} $\to$ \net{U3.8}, \net{U9.8}, \net{U4.3}};
+  \draw (3.6,2) to[C, l=\net{C47} \SI{10}{\micro\farad}] (3.6,0) node[ground]{};
+\end{circuitikz}
+\caption{Filtro RC del riel analógico. Además de \net{C47}, cada carga tiene su propio desacoplo pegado al pin (\net{C7}, \net{C54}, \net{C17}, \net{C18}).}
+\label{fig:c02-rc}
+\end{figure}
+
+\begin{calculo}[frecuencia de corte y atenuación]
+\[
+f_c = \frac{1}{2\pi R C} = \frac{1}{2\pi\cdot\SI{10}{\ohm}\cdot\SI{10}{\micro\farad}} \approx \SI{1.59}{\kilo\hertz}
+\]
+Un filtro RC de primer orden cae \SI{20}{\decibel} por década por encima de $f_c$. A \SI{1}{\mega\hertz}:
+\[
+A \approx 20\log_{10}\frac{\SI{1}{\mega\hertz}}{\SI{1.59}{\kilo\hertz}} = 20\log_{10}(629) \approx \SI{56}{\decibel}
+\]
+Es decir, el rizado de conmutación llega a \net{5V_A} unas 630 veces más pequeño.
+\end{calculo}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.85\linewidth, height=5cm, xmode=log, xmin=10, xmax=1e7, ymin=-75, ymax=5,
+  xlabel={frecuencia (Hz)}, ylabel={$|H|$ (dB)}, grid=both, grid style={gray!20},
+  ytick={-70,-60,-50,-40,-30,-20,-10,0}]
+  \addplot[thick, verdeplaca, domain=1:7, samples=200] ({10^x}, {-10*log10(1+(10^x/1591.5)^2)});
+  \draw[dashed, cobre] (axis cs:1591.5,-75) -- (axis cs:1591.5,5);
+  \node[cobre, font=\footnotesize, anchor=west, fill=white, inner sep=1pt] at (axis cs:1750,-45) {$f_c\approx\SI{1.6}{\kilo\hertz}$};
+  \draw[dashed, azulidea] (axis cs:1e6,-75) -- (axis cs:1e6,5);
+  \node[azulidea, font=\footnotesize, anchor=north east, fill=white, inner sep=1pt] at (axis cs:9e5,-2) {\SI{1}{\mega\hertz}: $-56$\,dB};
+  \fill[azulidea!12] (axis cs:20,-75) rectangle (axis cs:20000,-68);
+  \node[font=\scriptsize, azulidea] at (axis cs:650,-71.5) {banda de audio};
+\end{axis}
+\end{tikzpicture}
+\caption{Respuesta ideal del filtro \net{R33}/\net{C47}. Atenúa fuerte la conmutación de \SI{1}{\mega\hertz}. En la banda de audio filtra poco: ahí el rechazo a la alimentación lo dan los propios op-amps y el ADC.}
+\label{fig:c02-bode}
+\end{figure}
+
+\begin{ojo}[el filtro real es algo peor]
+\net{C47} es un \SI{10}{\micro\farad} X5R de \SI{10}{\volt} en 0603. Con \SI{5}{\volt} encima pierde capacidad (DC bias), así que la frecuencia de corte real queda algo más arriba que \SI{1.6}{\kilo\hertz}. A \SI{1}{\mega\hertz} también pesa la inductancia parásita del condensador. La atenuación real se confirma con el osciloscopio midiendo el rizado en \net{5V_A} \medir.
+\end{ojo}
+
+\subsection*{El precio del filtro: la caída en R33}
+
+Toda la corriente de \net{5V_A} pasa por \net{R33}:
+
+\begin{calculo}[caída y potencia en \net{R33}]
+Con la cota de \SI{14.0}{\milli\ampere}: $\Delta V = \SI{10}{\ohm}\cdot\SI{14}{\milli\ampere} = \SI{140}{\milli\volt}$ y $P = I^2R = \SI{2.0}{\milli\watt}$, muy por debajo de los \SI{100}{\milli\watt} de una resistencia 0603 (\archivo{CALCULOS.md} §4 y §6).
+
+Si a eso le sumas la tolerancia de $\pm\SI{1.5}{\percent}$ del buck, \net{5V_A} queda entre unos \SI{4.79}{\volt} (\SI{5}{\volt} menos el \SI{1.5}{\percent}, con \SI{14}{\milli\ampere}) y \SI{4.97}{\volt} (\SI{5}{\volt} más el \SI{1.5}{\percent}, con la corriente típica de unos \SI{10.8}{\milli\ampere}). Ese rango se usa en el capítulo~\ref{cap:analog} para la región de transición del TLV9152.
+\end{calculo}
+
+\begin{decision}[un riel analógico separado]
+\textbf{Qué se decidió:} alimentar los op-amps y el VCC del ADC desde \net{5V_A}, filtrado con RC, y lo digital desde \net{3V3}, con otro buck.\\
+\textbf{Alternativas:} un solo riel para todo, o un regulador lineal (LDO) después del buck en lugar del RC.\\
+\textbf{Por qué:} separar lo analógico de lo digital evita que las corrientes de conmutación de la lógica (relojes, I$^2$S) pasen por la alimentación de los nodos sensibles. El RC es la forma más simple de quitar el rizado de \SI{1}{\mega\hertz}: dos piezas \emph{basic} y \SI{2}{\milli\watt} de pérdida. Un LDO filtraría también parte de la banda de audio, pero agrega un integrado y su propia caída.\\
+\textbf{Fuente:} \archivo{hardware/docs/connection_matrix.md} (el filtro R501/C501 del diseño original); \archivo{tools/design.py}.
+\end{decision}
+
+\section{La NUCLEO y el orden de encendido}\label{sec:c02-nucleo}
+
+La NUCLEO-L432KC trae su propio regulador y \textbf{se alimenta por su cable USB}, el mismo que la conecta al PC. Con la placa solo comparte tierra y señales: sus pines \net{+3V3}, \net{+5V} y \net{VIN} \textbf{no se conectan} al zócalo (cambio C12). Así no hay dos fuentes de \SI{3.3}{\volt} en paralelo peleándose (la de la NUCLEO y el buck \net{U6}).
+
+El orden recomendado es: \textbf{primero el USB, después los \SI{24}{\volt}}.
+
+\begin{idea}[por qué importa el orden]
+La razón probable es la siguiente (es un razonamiento, no está escrito en el repositorio). Las resistencias de pull-up del I$^2$C (\net{R10}, \net{R11}) van al \net{3V3} de la placa. Si la placa se enciende con la NUCLEO apagada, esas resistencias ponen \SI{3.3}{\volt} en pines de un microcontrolador sin alimentación. La corriente entra por los diodos de protección internos del pin y puede alimentar parcialmente el micro ``por la puerta de atrás''. Encender primero la NUCLEO lo evita.
+\end{idea}
+
+\section{Lo que importa para el layout de esta etapa}
+
+Un buck tiene un \textbf{lazo caliente}: el camino CIN/CHF $\to$ VIN $\to$ MOSFET $\to$ PGND $\to$ CIN, por donde la corriente cambia en nanosegundos. Cuanto más área encierra ese lazo, más inductancia tiene y más ruido irradia. Por eso los \SI{220}{\nano\farad} van pegados a cada par VIN/PGND y todo el lazo de potencia queda en la capa superior. El capítulo~\ref{cap:ruteo} trata este layout a fondo, con las mediciones de los lazos.
+
+\section*{Resumen}
+\begin{itemize}
+  \item La placa consume poco: \SI{22.4}{\milli\ampere} en \net{3V3}, \SI{14.0}{\milli\ampere} en \net{5V_A} y unos \SI{25}{\milli\ampere} de la fuente de \SI{24}{\volt} \estimado.
+  \item \net{D1} (Schottky en serie) protege contra la polaridad invertida y cuesta \SI{0.5}{\volt} y \SI{20}{\milli\watt}. \net{D2} (TVS de \SI{26}{\volt}) recorta los picos.
+  \item Un buck trocea la tensión con un ciclo de trabajo $D=V_{OUT}/V_{IN}$. Es mucho más eficiente que un lineal, que aquí perdería unos \SI{0.45}{\watt} solo en el riel de \SI{3.3}{\volt}.
+  \item El LMR36015FB conmuta siempre a \SI{1}{\mega\hertz} (FPWM): el ruido nunca cae en la banda de audio, a cambio de hasta unos \SI{0.15}{\watt} de pérdida en vacío por integrado \estimado.
+  \item Los divisores \SI{100}{\kilo\ohm}/\SI{43.2}{\kilo\ohm} y \SI{100}{\kilo\ohm}/\SI{24.9}{\kilo\ohm} dan \SI{3.315}{\volt} y \SI{5.016}{\volt}. Las bobinas dan un rizado del 26--28\,\% de \SI{1.5}{\ampere}, como recomienda TI.
+  \item El pulso más corto (\SI{99}{\nano\second}) supera el mínimo de \SI{83}{\nano\second}: no hay repliegue de frecuencia.
+  \item \net{R33}/\net{C47} filtran \net{5V} con $f_c\approx\SI{1.6}{\kilo\hertz}$: unos \SI{56}{\decibel} a \SI{1}{\mega\hertz}, a cambio de \SI{140}{\milli\volt} de caída.
+  \item La NUCLEO se alimenta por su USB; se enciende antes que los \SI{24}{\volt}.
+\end{itemize}

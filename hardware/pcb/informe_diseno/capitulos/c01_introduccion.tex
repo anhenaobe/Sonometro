@@ -1,0 +1,330 @@
+\chapter[Introducción]{Introducción: qué es esta placa y cómo se diseñó}\label{cap:intro}
+
+\textbf{En este capítulo vas a ver:}
+\begin{itemize}
+  \item Qué es un sonómetro y qué parte de él resuelve esta placa.
+  \item Qué es un micrófono IEPE, explicado desde cero, y por qué hay que alimentarlo con corriente constante.
+  \item El diagrama de bloques de toda la placa, con los nombres de red que vas a encontrar en KiCad.
+  \item De dónde salió el diseño (Altium del equipo $\rightarrow$ KiCad Rev~B) y el flujo de trabajo completo hasta los archivos de JLCPCB.
+  \item Cómo leer el resto del documento: las cajas de colores y las etiquetas que dicen de dónde sale cada dato.
+\end{itemize}
+
+\section{El problema: medir sonido con un micrófono de medición}
+
+Un \textbf{sonómetro} es un instrumento que mide la presión sonora: cuánto varía la presión del aire alrededor de la presión atmosférica cuando pasa una onda de sonido. Esa variación se mide en pascales (\si{\pascal}) y normalmente se expresa en decibeles de nivel de presión sonora (\si{\decibel} SPL). Un sonómetro completo tiene tres partes:
+\begin{enumerate}
+  \item Un \textbf{micrófono de medición}, que convierte presión en voltaje con una sensibilidad conocida. Por ejemplo, \SI{50}{\milli\volt\per\pascal} quiere decir que \SI{1}{\pascal} de presión da \SI{50}{\milli\volt} de señal.
+  \item Una \textbf{etapa analógica} (el \emph{front end}), que alimenta el micrófono, extrae la señal y la acomoda al rango del convertidor.
+  \item Un \textbf{convertidor analógico--digital} y un procesador, que digitalizan la señal y calculan lo que haga falta (forma de onda, nivel en dB, ponderación A, etc.).
+\end{enumerate}
+
+Esta placa resuelve las partes~2 y~3 para \textbf{dos micrófonos distintos}, uno por canal:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}L{0.17\linewidth}L{0.33\linewidth}Y@{}}
+\toprule
+\textbf{Canal} & \textbf{Micrófono} & \textbf{Datos que importan para la placa}\\
+\midrule
+CH1 (\net{J2}) & ROGA Instruments RG-50 (¼'', electret prepolarizado con IEPE integrado) & Corriente de \SIrange{2}{20}{\milli\ampere}, alimentación de \SIrange{18}{30}{\volt}, polarización de salida de \SI{12.5}{\volt}, sensibilidad nominal de \SI{50}{\milli\volt\per\pascal}, máximo \SI{130}{\decibel} pico ($\approx$\,\SI{3.2}{\volt} pico) \doc{ROGA RG-50}\\
+CH2 (\net{J8}) & Svantek SV~12 (preamplificador IEPE de ½'', con cápsula aparte) & Alimentación ``IEPE type -- \SI{1.5}{\milli\ampere} @ \SI{30}{\volt}'', excursión de salida $\geq$\,\SI{10.8}{\volt} pico. La polarización de DC no está publicada \doc{Svantek SVAN 977W App.~C}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+La identificación exacta de los dos micrófonos todavía no está confirmada con el objeto en la mano (conector TNC del SV~12, modelo exacto del ROGA). El capítulo~\ref{cap:banco} lo deja en la lista de cosas por verificar.
+
+\section{Qué es un micrófono IEPE}\label{sec:c01-iepe}
+
+IEPE significa \emph{Integrated Electronics Piezo-Electric}. Es un estándar de la industria de sensores (acelerómetros y micrófonos de medición) en el que el sensor trae adentro un pequeño amplificador. Lo interesante es que \textbf{la alimentación y la señal viajan por el mismo cable coaxial de dos conductores}: el centro y la malla.
+
+\begin{idea}[cómo funciona IEPE]
+\begin{enumerate}
+  \item Desde afuera se le inyecta al sensor una \textbf{corriente constante} $I_0$, típicamente de \SIrange{2}{20}{\milli\ampere}, tomada de una fuente de \SIrange{18}{30}{\volt}.
+  \item El amplificador interno del sensor ``se acomoda'' y fija en su salida un voltaje de DC llamado \textbf{polarización} $V_B$ (en inglés \emph{bias}), que suele estar entre \SIrange{8}{14}{\volt}.
+  \item Cuando llega sonido, el amplificador mueve ese voltaje hacia arriba y hacia abajo. La señal acústica es una \textbf{tensión AC montada encima de la polarización de DC}:
+  \begin{equation}
+    v(t) = V_B + S\cdot p(t)
+    \label{eq:c01-iepe}
+  \end{equation}
+  donde $S$ es la sensibilidad (\si{\volt\per\pascal}) y $p(t)$ la presión acústica (\si{\pascal}).
+\end{enumerate}
+Como la corriente es constante, el cable no ``ve'' cambios de corriente: toda la información está en el voltaje del nodo. Por eso basta un coaxial con un conector BNC.
+\end{idea}
+
+La figura~\ref{fig:c01-iepe} muestra el modelo eléctrico. Del lado de la placa hay una fuente de corriente; del lado del micrófono, el amplificador interno se puede ver como una fuente de DC $V_B$ en serie con la señal $S\,p(t)$ y con una resistencia de salida pequeña $R_o$ (en el RG-50, menos de \SI{50}{\ohm} \doc{ROGA RG-50}).
+
+\begin{figure}[htbp]
+\centering
+\begin{circuitikz}[scale=0.95, transform shape]
+  % fuente de corriente de la placa
+  \draw (0,5.2) node[above]{$+\SI{24}{\volt}$} to[short,o-] (0,4.6)
+        to[american current source, l_=$I_0$] (0,2.4) coordinate (n);
+  \draw (n) to[short,*-o] (2.4,2.4) node[above]{BNC};
+  \draw (2.4,2.4) -- (4.6,2.4);
+  % modelo del sensor
+  \draw (4.6,2.4) to[R, l=$R_o$] (4.6,0.8)
+        to[sinusoidal voltage source, l=$S\,p(t)$] (4.6,-0.8)
+        to[battery1, l=$V_B$, invert] (4.6,-2.4) -- (4.6,-2.8) node[ground]{};
+  \draw[dashed, rounded corners, verdeplaca] (3.3,2.9) rectangle (6.4,-2.6);
+  \node[verdeplaca, align=center, font=\footnotesize] at (4.85,3.35) {micrófono IEPE\\(amplificador interno)};
+  % voltaje del nodo
+  \draw (n) -- (-1.6,2.4);
+  \draw (-1.6,2.4) to[open, v^>=$v(t)$] (-1.6,-2.4);
+  \draw (-1.6,-2.4) -- (-1.6,-2.8) node[ground]{};
+  \node[draw=cobre, fill=cobre!6, align=left, font=\footnotesize, anchor=west] at (0.4,0.2)
+       {$v(t)=V_B+S\,p(t)$\\[2pt]DC de \SIrange{8}{14}{\volt}\\+ AC de mV a V};
+  \node[font=\footnotesize, align=right, anchor=east] at (-0.7,3.5) {fuente de corriente\\de la placa (LT3092)};
+\end{circuitikz}
+\caption{Modelo de un canal IEPE. La placa inyecta una corriente constante $I_0$; el amplificador del micrófono fija la polarización $V_B$ y le suma la señal. Todo lo que hay que medir está en el voltaje $v(t)$ del nodo, que en la placa se llama \net{IEPE} (CH1) o \net{IEPE_SV} (CH2).}
+\label{fig:c01-iepe}
+\end{figure}
+
+Para que veas los órdenes de magnitud: con el RG-50 ($S=\SI{50}{\milli\volt\per\pascal}$, $V_B=\SI{12.5}{\volt}$), un tono de \SI{94}{\decibel} SPL, que equivale a \SI{1}{\pascal} eficaz, da una señal de \SI{50}{\milli\volt} eficaces ($\approx$\,\SI{71}{\milli\volt} pico) encima de \SI{12.5}{\volt} de DC. La figura~\ref{fig:c01-onda} lo dibuja con la señal exagerada para que se vea.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\linewidth, height=4.6cm, xlabel={tiempo (ms)}, ylabel={$v(t)$ (V)},
+  ymin=0, ymax=16.5, xmin=0, xmax=3, grid=both, grid style={gray!20},
+  ytick={0,5,10,12.5,15}, yticklabels={0,5,10,{12,5},15},
+  xticklabel style={/pgf/number format/use comma}]
+  \addplot[domain=0:3, samples=200, thick, verdeplaca] {12.5 + 1.2*sin(deg(2*pi*x))};
+  \addplot[domain=0:3, dashed, cobre, thick] {12.5};
+  \node[cobre, font=\footnotesize, anchor=south west] at (axis cs:0.05,14.1) {polarización $V_B$ (DC)};
+  \node[verdeplaca, font=\footnotesize, anchor=north west] at (axis cs:0.05,10.6) {señal $S\,p(t)$ (AC), aquí exagerada};
+\end{axis}
+\end{tikzpicture}
+\caption{Lo que hay en el nodo IEPE: una tensión de DC grande con la señal acústica montada encima. El trabajo de la etapa analógica es quitar la DC y quedarse con la AC, sin perder información.}
+\label{fig:c01-onda}
+\end{figure}
+
+\begin{ojo}[reglas de seguridad de IEPE]
+Las guías de PCB Piezotronics resumidas en \archivo{AGENTS.md} §4 dan reglas que la placa respeta:
+\begin{itemize}
+  \item nunca más de \SI{30}{\volt} ni más de \SI{20}{\milli\ampere} sobre el sensor;
+  \item nunca aplicar tensión sin limitar la corriente;
+  \item nunca \SI{48}{\volt} de alimentación \emph{phantom} ni \SI{200}{\volt} de polarización de cápsula;
+  \item cada sensor con su propia fuente de corriente: \textbf{nunca dos sensores IEPE en paralelo}.
+\end{itemize}
+Por eso la placa tiene dos fuentes de corriente independientes (\net{U1} y \net{U8}) y la entrada de \SI{24}{\volt} pasa por un TVS que recorta los picos (capítulo~\ref{cap:alim}).
+\end{ojo}
+
+Un dato útil para depurar: la polarización $V_B$ te dice el estado del sensor. Cerca de \SI{0}{\volt} indica un cortocircuito; cerca de la tensión máxima de la fuente indica un circuito abierto o un sensor muerto; entre \SIrange{7}{14}{\volt} el sensor está bien \copia[(PCB G0001E, vía AGENTS.md §4)].
+
+\section{La placa completa en un diagrama de bloques}\label{sec:c01-bloques}
+
+La placa tiene dos partes que conviene mirar por separado: el árbol de alimentación (figura~\ref{fig:c01-potencia}) y la cadena de señal de un canal (figura~\ref{fig:c01-bloques}). Los dos canales son iguales; cambian los designadores y el sufijo \net{_SV} de las redes del canal~2.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  blq/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=11mm, minimum width=26mm, fill=white},
+  pot/.style={blq, fill=cobre!8, draw=cobre},
+  carga/.style={align=left, font=\scriptsize, anchor=west},
+  red/.style={font=\scriptsize\ttfamily, inner sep=1.5pt},
+  flecha/.style={-{Stealth[length=2mm]}, thick}]
+  \node[pot] (j5) at (0,0) {Entrada \SI{24}{\volt}\\\net{J5}};
+  \node[pot] (prot) at (3.5,0) {Protección\\\net{D1} SS34\\\net{D2} SMBJ26A};
+  \node[pot] (b3) at (7.5,1.9) {Buck \SI{3.3}{\volt}\\\net{U6} LMR36015};
+  \node[pot] (b5) at (7.5,0) {Buck \SI{5}{\volt}\\\net{U7} LMR36015};
+  \node[pot] (en) at (7.5,-1.9) {Habilitación\\\net{J1} / \net{J7}};
+  \node[pot, minimum width=17mm] (rc) at (10.4,0) {RC\\\net{R33}+\net{C47}};
+  \draw[flecha] (j5) -- node[red,above]{24V\_IN} (prot);
+  \draw[thick] (prot.east) -- node[red,above,pos=0.45]{24V\_PROT} (5.6,0);
+  \draw[thick] (5.6,1.9) -- (5.6,-1.9);
+  \fill (5.6,0) circle (1.4pt);
+  \draw[flecha] (5.6,1.9) -- (b3.west);
+  \draw[flecha] (5.6,0) -- (b5.west);
+  \draw[flecha] (5.6,-1.9) -- (en.west);
+  \draw[flecha] (b5) -- node[red,above]{5V} (rc);
+  \draw[flecha] (b3.east) -- node[red,above]{3V3} (11.4,1.9);
+  \draw[flecha] (rc.east) -- node[red,above]{5V\_A} (12.2,0);
+  \draw[flecha] (en.east) -- node[red,above]{IEPE\_FEED} (11.4,-1.9);
+  \node[carga] at (11.5,1.9) {ADC (VDD), DAC $\times2$,\\oscilador, pull-ups I$^2$C};
+  \node[carga] at (12.3,0) {op-amps $\times2$,\\ADC (VCC)};
+  \node[carga] at (11.5,-1.9) {fuentes IEPE\\\net{U1} / \net{U8}};
+\end{tikzpicture}
+\caption{Árbol de alimentación. Todo sale de los \SI{24}{\volt} protegidos (\net{24V_PROT}). La NUCLEO no se alimenta de esta placa: usa su propio USB (capítulo~\ref{cap:alim}).}
+\label{fig:c01-potencia}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  blq/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=12mm, text width=25mm, fill=white},
+  ana/.style={blq, fill=azulidea!7, draw=azulidea},
+  dig/.style={blq, fill=verdeplaca!8, draw=verdeplaca},
+  red/.style={font=\scriptsize\ttfamily, inner sep=1.5pt},
+  flecha/.style={-{Stealth[length=2mm]}, thick}]
+  \node[ana] (src) at (0,0) {Fuente IEPE\\\net{U1} LT3092};
+  \node[ana] (bnc) at (0,-2.6) {Micrófono\\BNC \net{J2}};
+  \node[ana] (sum) at (4.4,0) {Sumador inversor\\\net{U3A} TLV9152};
+  \node[ana] (seg) at (4.4,-2.6) {Filtro \net{R12}/\net{C4}\\+ seguidor \net{U3B}};
+  \node[ana] (adc) at (8.8,0) {ADC 24 bits\\\net{U4} PCM1808};
+  \node[dig] (dac) at (8.8,-2.6) {DAC 12 bits\\\net{U2} MCP4725};
+  \node[dig] (y1) at (8.8,2.3) {Oscilador \net{Y1}\\\SI{24.576}{\mega\hertz}};
+  \node[dig] (nuc) at (13.2,0) {NUCLEO-L432KC\\\net{A1}};
+  \node[dig] (pc) at (13.2,2.3) {PC (Python)};
+  \draw[flecha] (0,1.75) node[red,above]{IEPE\_FEED (de J1)} -- (src.north);
+  \draw[thick, {Stealth[length=2mm]}-{Stealth[length=2mm]}] (src) -- node[red,right]{IEPE} (bnc);
+  \draw[flecha] (src) -- node[red,above]{IEPE} (sum);
+  \draw[flecha] (sum) -- node[red,above]{REST\_OUT} (adc);
+  \draw[flecha] (y1) -- node[red,right]{MCLK} (adc);
+  \draw[flecha] (adc) -- node[red,above]{SAI} (nuc);
+  \draw[flecha] (nuc) -- node[red,right]{USB} (pc);
+  \draw[flecha] (nuc.south) |- node[red,pos=0.75,above]{I2C} (dac.east);
+  \draw[flecha] (dac) -- node[red,above]{DAC\_RAW} (seg);
+  \draw[flecha] (seg) -- node[red,right]{VSHIFT} (sum);
+  \draw[flecha] (6.6,0) -- (6.6,-1.25) -- node[red,below,pos=0.45]{DC\_MON (divisor R15/R17)} (12.4,-1.25) -- (12.4,-0.62);
+  \fill (6.6,0) circle (1.4pt);
+\end{tikzpicture}
+\caption{Cadena de señal de un canal con los nombres de red de KiCad (canal~1). En el canal~2 las piezas son \net{U8}, \net{J8}, \net{U9}, \net{U10} y las redes llevan el sufijo \net{_SV} (\net{IEPE_SV}, \net{REST_SV}, \net{DC_MON2}\ldots). Los dos canales comparten el ADC estéreo \net{U4}, el oscilador y la NUCLEO. La flecha de abajo es el lazo de DC: la NUCLEO mide la DC de la salida y corrige \net{VSHIFT} con el DAC.}
+\label{fig:c01-bloques}
+\end{figure}
+
+Recorramos las dos figuras siguiendo la energía y la señal:
+
+\begin{enumerate}
+  \item \textbf{Alimentación} (capítulo~\ref{cap:alim}). Entran \SI{24}{\volt} de la fuente de laboratorio por la bornera \net{J5}. Un diodo en serie protege contra la polaridad invertida y un TVS recorta los picos; desde ahí la red se llama \net{24V_PROT}. Dos convertidores conmutados (\emph{bucks}) sacan \SI{3.3}{\volt} y \SI{5}{\volt}, y un filtro RC limpia los \SI{5}{\volt} para la parte analógica (\net{5V_A}).
+  \item \textbf{Fuente IEPE} (capítulo~\ref{cap:analog}). Cada canal toma \net{24V_PROT} a través de un puente (\net{J1} o \net{J7}), y un regulador LT3092 configurado como fuente de corriente alimenta al micrófono por el BNC.
+  \item \textbf{Sumador inversor}. El nodo IEPE (DC + AC) entra por una cadena de resistencias de \SI{1}{\mega\ohm} a un amplificador inversor que le resta un voltaje de referencia ajustable (\net{VSHIFT}). La salida, \net{REST_OUT}, queda con la DC llevada a un nivel conocido y la AC atenuada unas 10 veces.
+  \item \textbf{Lazo de DC}. La NUCLEO mide la DC de la salida (\net{DC_MON}) y corrige \net{VSHIFT} con un DAC MCP4725 por I$^2$C. Así la salida se mantiene centrada aunque cambie la polarización del micrófono.
+  \item \textbf{ADC} (capítulo~\ref{cap:digital}). Un PCM1808 de 24 bits digitaliza los dos canales a \SI{48}{\kilo\hertz}, con su reloj de \SI{24.576}{\mega\hertz}, y los manda a la NUCLEO por I$^2$S (periférico SAI del STM32).
+  \item \textbf{NUCLEO-L432KC y PC}. La tarjeta NUCLEO va enchufada en un zócalo (\net{A1}). Recibe el audio, corre el lazo de DC y manda los datos al PC por su USB.
+\end{enumerate}
+
+\begin{idea}[por qué no se usa un simple condensador de acople]
+La forma clásica de quitar la DC de un IEPE es un condensador en serie y una resistencia a tierra (un filtro pasa-altos). El profesor objetó la versión~1 de la propuesta precisamente por la fase que mete ese condensador y por el offset ``sin referencia definida'' (\archivo{AGENTS.md} §10). El circuito del equipo, que es el que se usa en esta placa, es \textbf{acoplado en DC}: resta una referencia conocida (\net{VSHIFT}) que un lazo digital ajusta. El capítulo~\ref{cap:analog} lo explica con las ecuaciones.
+\end{idea}
+
+\section{De dónde viene el diseño}\label{sec:c01-origen}
+
+El diseño no se hizo desde cero en KiCad. Tiene una historia que conviene conocer, porque explica por qué algunas piezas están como están:
+
+\begin{enumerate}
+  \item \textbf{Rev~A, el circuito del equipo en Altium} (\archivo{hardware/Sonometro_2CH/*.SchDoc}). Tenía el canal~1 completo (fuente IEPE, AFE, DAC, ADC y un STM32 soldado), pero le faltaban la alimentación de \SI{24}{\volt}, los bucks y el canal~2.
+  \item \textbf{Lo que faltaba} salió de \archivo{hardware/docs/connection_matrix.md}: la entrada de \SI{24}{\volt}, los dos LMR36015, el filtro de \net{5V_A} y el canal~2 como espejo pieza por pieza del canal~1.
+  \item \textbf{Rev~B, la reconstrucción en KiCad.} Un script lee los \archivo{.SchDoc} binarios de Altium, saca la conectividad real y arma una netlist objetivo en \archivo{tools/design.py}. Ese archivo es la \textbf{fuente única de verdad}: cada pieza tiene su valor, su footprint, su código de fabricante (MPN), su código LCSC y el motivo de cada cambio. De ahí se generan el esquemático (\archivo{tools/gen_sch_wired.py}) y la lista \archivo{tools/target.json}, contra la que se verifica todo.
+  \item \textbf{Cambios C1--C17.} Sobre el circuito del equipo se hicieron 17 cambios, cada uno con su justificación y su fuente: la NUCLEO enchufada en lugar del STM32 soldado (C1--C2), el oscilador de \SI{24.576}{\mega\hertz} (C3), la protección de entrada (C4), los BNC (C8), el condensador de realimentación de \SI{10}{\pico\farad} (C16), el cambio de piezas por stock de JLCPCB (C17), entre otros. El capítulo~\ref{cap:piezas} los explica uno por uno.
+\end{enumerate}
+
+El resultado es una placa de \SI{90}{\milli\meter} $\times$ \SI{64}{\milli\meter} con \textbf{127 piezas y 68 redes con nombre}, de 4 capas, para fabricar y ensamblar en JLCPCB.
+
+\section{El flujo de trabajo, paso a paso}\label{sec:c01-flujo}
+
+Diseñar una PCB no es ``dibujar pistas''. Es una cadena de pasos donde cada uno se verifica antes del siguiente. La figura~\ref{fig:c01-flujo} muestra el que se siguió.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  paso/.style={draw=verdeplaca, fill=verdeplaca!6, rounded corners=2pt, align=left, font=\footnotesize,
+    text width=0.78\linewidth, inner sep=5pt},
+  num/.style={circle, fill=cobre, text=white, font=\footnotesize\bfseries, minimum size=6mm, inner sep=0pt},
+  node distance=2.5mm]
+  \node[paso] (p1) {\textbf{Esquemático y netlist.} \archivo{design.py} $\to$ \archivo{target.json} $\to$ \archivo{pcb.kicad_sch}. Verificación: ERC 0 y comparación pin a pin contra \archivo{target.json} (\archivo{verify.py}).};
+  \node[paso, below=of p1] (p2) {\textbf{Reglas.} Capacidades de JLCPCB leídas de sus páginas, reglas de los datasheets y notas de aplicación, todo con fuente en \archivo{REGLAS.md}. Se cargan en KiCad: restricciones de placa, clases de red y reglas propias en \archivo{pcb.kicad_dru}.};
+  \node[paso, below=of p2] (p3) {\textbf{Selección y auditoría de piezas.} Stock en JLCPCB, piezas \emph{basic} o \emph{extended}, footprint comparado con el de la pieza exacta (\archivo{fabricacion/auditoria_piezas.md}).};
+  \node[paso, below=of p3] (p4) {\textbf{Placement.} Ubicación por bloques, zona analógica y zona digital; cambios solo con aprobación.};
+  \node[paso, below=of p4] (p5) {\textbf{Decisión de capas.} Prueba de factibilidad (el ``oráculo'' con Freerouting en copias): con 2 capas no había solución limpia $\to$ 4 capas.};
+  \node[paso, below=of p5] (p6) {\textbf{Ruteo por bloques} (bucks, entrada, fuentes IEPE, ADC, AFE, analógicas largas, digital, alimentación, tierra, teardrops y serigrafía). Al final de \emph{cada} bloque: DRC con paridad, ERC, chequeo propio (\archivo{revisar_pistas.py}), imágenes de las capas y commit.};
+  \node[paso, below=of p6] (p7) {\textbf{Cálculos sobre la placa ruteada.} Anchos de pista, caídas de tensión, vías, temperaturas y tiempos del buck, medidos sobre el archivo real (\archivo{CALCULOS.md}).};
+  \node[paso, below=of p7] (p8) {\textbf{Fabricación.} Gerber, taladros, BOM y CPL con las rotaciones corregidas; revisión de los Gerber con una biblioteca externa (gerbonara) y consulta del stock del día (\archivo{fabricacion/}).};
+  \foreach \i in {1,...,8} { \node[num, left=3mm of p\i] {\i}; }
+  \foreach \i/\j in {1/2,2/3,3/4,4/5,5/6,6/7,7/8} { \draw[-{Stealth[length=2mm]}, cobre, thick] (p\i.south) -- (p\j.north); }
+\end{tikzpicture}
+\caption{Flujo de trabajo seguido para la placa. Ningún paso se dio por bueno sin una verificación con herramienta.}
+\label{fig:c01-flujo}
+\end{figure}
+
+\begin{idea}[por qué rutear ``por bloques'' y verificar cada vez]
+Si ruteas toda la placa de una y al final el DRC te da 300 errores, no sabes cuál de tus decisiones los causó. Si ruteas un bloque (por ejemplo, solo las fuentes conmutadas), lo verificas y haces commit, cualquier error nuevo en el bloque siguiente es culpa del bloque siguiente. Además, cada commit es un punto al que puedes volver. Es lo mismo que probar un programa función por función en lugar de escribirlo entero y compilar al final.
+\end{idea}
+
+\begin{decision}[definición de ``terminado'']
+\textbf{Qué se decidió:} la placa solo se considera terminada con DRC en 0 errores, 0 conexiones sin rutear, 0 hallazgos del chequeo propio y cada advertencia explicada.\\
+\textbf{Alternativas:} excluir violaciones o bajar severidades en KiCad para que el DRC ``pase''.\\
+\textbf{Por qué:} una violación excluida sigue estando en la placa. La regla del proyecto fue explícita: prohibido excluir violaciones o bajar severidades. Lo que no cumple una regla y se acepta queda escrito como excepción, con su motivo (capítulo~\ref{cap:banco}).\\
+\textbf{Fuente:} especificación del ruteo dada por el dueño del proyecto; estado final en \archivo{PLAN_RUTEO.md} §17.
+\end{decision}
+
+\section{Mapa de archivos del repositorio}\label{sec:c01-archivos}
+
+Todo vive en la rama \archivo{workspace/voxter}, carpeta \archivo{hardware/pcb/}. Estos son los archivos que vas a necesitar:
+
+\begin{longtable}{@{}L{0.37\linewidth}L{0.59\linewidth}@{}}
+\toprule
+\textbf{Archivo o carpeta} & \textbf{Para qué sirve}\\
+\midrule\endhead
+\archivo{pcb.kicad_sch}, \archivo{pcb.kicad_pcb}, \archivo{pcb.kicad_pro} & El esquemático, la placa y el proyecto de KiCad~10.\\
+\archivo{pcb.kicad_dru} & Reglas de diseño propias (separaciones especiales, vías tapadas lejos de los pads, etc.).\\
+\archivo{lib/} & Biblioteca local: símbolos y footprints que no están en KiCad o que se corrigieron (RNX del LMR36015, TSOT-23-8 de ADI, BNC, NUCLEO).\\
+\archivo{REGLAS.md} & Todas las reglas de diseño con su fuente: capacidades de JLCPCB, reglas de cada integrado, tierra, IPC.\\
+\archivo{CALCULOS.md} & Cálculos generados desde la placa ruteada (\archivo{tools/calculos.py}).\\
+\archivo{PLAN_RUTEO.md} & La bitácora: decisiones y verificaciones de cada bloque, en orden.\\
+\archivo{tools/design.py}, \archivo{tools/target.json}, \archivo{tools/changes.json} & Netlist objetivo, la lista de piezas que sale de ella y los cambios C1--C17.\\
+\archivo{tools/gen_sch_wired.py}, \archivo{tools/buildlib.py}, \archivo{tools/eco.py} & Generan el esquemático y la biblioteca, y aplican cambios a la placa sin borrar el ruteo.\\
+\archivo{tools/verify.py}, \archivo{tools/config_reglas.py} & Verificación de la netlist y configuración de reglas y severidades.\\
+\archivo{tools/ruteo/bloques/b1_bucks.py} \ldots{} \archivo{b9_gnd.py} & Un script por bloque de ruteo: puntos de paso de cada pista y cada vía.\\
+\archivo{tools/ruteo/polilineas.py} & Convierte esos puntos de paso en pistas y vías reales de KiCad.\\
+\archivo{tools/ruteo/revisar_pistas.py} & El chequeo propio (A--M): entrada a pads, desacoplos, vías GND, serigrafía sobre vías, etc.\\
+\archivo{tools/ruteo/verificar_bloque.py} & Corre todo después de un bloque: zonas, DRC, ERC, paridad, chequeo propio, imágenes.\\
+\archivo{tools/ruteo/cosido.py}, \archivo{teardrops.py}, \archivo{serigrafia.py} & Vías de cosido de tierra, teardrops y ubicación de designadores.\\
+\archivo{tools/ruteo/oraculo/} & Las pruebas de factibilidad con Freerouting, hechas sobre copias.\\
+\archivo{tools/analisis_opamp.py} & Estabilidad del sumador y región de transición del TLV9152.\\
+\archivo{fabricacion/} & Gerber, taladros, BOM, CPL, rotaciones, piezas a mano, PDF de montaje, auditoría de piezas, stock y revisión de Gerber.\\
+\bottomrule
+\end{longtable}
+
+\section{Cómo leer este documento}\label{sec:c01-leer}
+
+\subsection*{Las cajas}
+A lo largo del documento vas a encontrar cuatro tipos de caja:
+
+\begin{idea}[ejemplo]
+Un concepto explicado con palabras sencillas, antes de usarlo. Si ya lo conoces, te la puedes saltar.
+\end{idea}
+
+\begin{decision}[ejemplo]
+\textbf{Qué se decidió}, \textbf{qué alternativas había}, \textbf{por qué} se eligió esa y \textbf{de dónde} sale el dato. Son las cajas más importantes: si alguien (por ejemplo, el profesor) pregunta ``¿por qué hicieron esto?'', la respuesta está aquí.
+\end{decision}
+
+\begin{calculo}[ejemplo]
+Un cálculo paso a paso, con la ecuación, los números y el resultado. Por ejemplo, la frecuencia de corte del filtro de \net{5V_A}:
+$f_c = \dfrac{1}{2\pi R C} = \dfrac{1}{2\pi\cdot\SI{10}{\ohm}\cdot\SI{10}{\micro\farad}} \approx \SI{1.59}{\kilo\hertz}$.
+\end{calculo}
+
+\begin{ojo}[ejemplo]
+Un error típico, una advertencia o algo que quedó sin verificar.
+\end{ojo}
+
+\subsection*{Las etiquetas de origen}
+Cada dato numérico lleva al lado una etiqueta que dice de dónde salió. Esto es importante: un número sin origen no se puede defender.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}L{0.25\linewidth}Y@{}}
+\toprule
+\textbf{Etiqueta} & \textbf{Qué significa y ejemplo}\\
+\midrule
+\doc{SNVSB49D p.6} & Leído del datasheet o de la página del fabricante, con el documento y la página. Ejemplo: la tensión de realimentación del LMR36015 es \SIrange{0.985}{1.015}{\volt} \doc{SNVSB49D p.6}.\\
+\copia & Tomado de una fuente secundaria (una copia del datasheet, un resumen) y no contrastado con el original. Ejemplo: la tensión de ruptura mínima del SMBJ26A es \SI{28.9}{\volt} \copia.\\
+\estimado & Un supuesto de diseño. Ejemplo: el oscilador consume como mucho \SI{10}{\milli\ampere} \estimado.\\
+\medido & Medido por un script sobre el archivo de KiCad (no en el laboratorio). Ejemplo: la separación mínima de las redes de \SI{24}{\volt} es \SI{0.200}{\milli\meter} \medido.\\
+\medir & Algo que solo se confirma midiendo la placa real en el banco. Ejemplo: el consumo de cada buck sin carga \medir.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection*{Nombres}
+Las redes, las piezas y los pines se escriben en letra de máquina, igual que en KiCad: \net{IEPE_SV} es una red, \net{U3} una pieza y \net{U3.8} el pin~8 de \net{U3}. Las capas de la placa se escriben \capa{F.Cu} (cobre superior), \capa{In1.Cu} y \capa{In2.Cu} (internas) y \capa{B.Cu} (cobre inferior). Las coordenadas están en milímetros, en el sistema de KiCad (origen arriba a la izquierda de la hoja, Y hacia abajo).
+
+\subsection*{Orden recomendado de lectura}
+Si tienes poco tiempo: este capítulo, el~\ref{cap:capas} (por qué 4 capas) y el~\ref{cap:banco} (excepciones y pendientes). Si vas a defender el diseño frente al profesor, lee los capítulos~\ref{cap:alim} a~\ref{cap:digital}, que explican el circuito, y el~\ref{cap:calculos}, que tiene los números.
+
+\section*{Resumen}
+\begin{itemize}
+  \item La placa es el \emph{front end} y el digitalizador de un sonómetro de dos canales: CH1 para un ROGA RG-50 y CH2 para un Svantek SV~12, los dos IEPE.
+  \item Un sensor IEPE se alimenta con corriente constante por el mismo coaxial por el que sale la señal. En el nodo hay $v(t)=V_B+S\,p(t)$: una DC grande con la señal acústica encima.
+  \item La cadena es: \SI{24}{\volt} protegidos $\to$ bucks de \SI{3.3}{\volt} y \SI{5}{\volt} $\to$ fuente IEPE LT3092 $\to$ sumador inversor que resta \net{VSHIFT} $\to$ PCM1808 $\to$ NUCLEO $\to$ PC. Un lazo digital (DAC + \net{DC_MON}) mantiene la DC de la salida en su sitio.
+  \item El diseño parte del Altium del equipo, se reconstruyó en KiCad desde \archivo{tools/design.py} y tiene 17 cambios documentados.
+  \item El trabajo siguió un flujo con verificación en cada paso; ``terminado'' quiere decir DRC, ERC y paridad en 0 sin excluir nada.
+\end{itemize}

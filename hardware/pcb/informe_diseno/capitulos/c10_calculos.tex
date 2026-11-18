@@ -1,0 +1,513 @@
+\chapter{Los cálculos que respaldan la placa}\label{cap:calculos}
+\DeclareSIUnit\mil{mil}
+
+En los capítulos anteriores aparecieron frases como ``esa pista aguanta de sobra'' o ``la caída es despreciable''.
+Este capítulo muestra los números detrás de esas frases. Todo sale del archivo \path{hardware/pcb/CALCULOS.md}, que no se
+escribe a mano: lo genera el script \path{tools/calculos.py} leyendo directamente la placa, \path{pcb.kicad_pcb}. Por eso
+los largos, anchos, vías y separaciones que verás aquí son \emph{medidas de la placa real}, no suposiciones.
+
+En este capítulo vas a ver:
+\begin{itemize}
+  \item de dónde salen los datos de entrada y qué tan confiable es cada uno;
+  \item cuánta corriente lleva cada riel y por qué esos son los valores de peor caso;
+  \item los tiempos de encendido y apagado del buck LMR36015 y el rizado de su bobina;
+  \item cómo se calcula el ancho mínimo de una pista con IPC-2221, con un ejemplo completo;
+  \item la caída de tensión en las pistas, la corriente por vía y la temperatura de cada pieza;
+  \item la separación mínima entre pistas por tensión y la longitud crítica de los relojes;
+  \item un resumen del análisis del op-amp TLV9152, que se explica completo en el capítulo~\ref{cap:analog}.
+\end{itemize}
+
+\begin{idea}[por qué un script y no una hoja de cálculo]
+Si calculas a mano el largo de una pista y después mueves una vía, el cálculo queda viejo y nadie se entera.
+\archivo{calculos.py} recorre las pistas de la placa con la API de KiCad (\texttt{pcbnew}), arma un grafo con cada red
+y mide los caminos reales. Cada vez que la placa cambia, se vuelve a correr y \archivo{CALCULOS.md} queda al día. Los
+números de este capítulo corresponden a la placa final (la misma que se exportó a Gerber).
+\end{idea}
+
+\section{Datos de entrada y qué tan confiables son}\label{sec:c10-datos}
+
+Antes de calcular nada hay que saber con qué números se calcula. La tabla~\ref{tab:c10-datos} recoge los datos de
+entrada con su etiqueta de origen. Recuerda el significado de las etiquetas:
+\doc{} es un dato leído del datasheet (con la página), \copia{} viene de una fuente secundaria que no se contrastó
+con el original y \estimado{} es un supuesto de diseño.
+
+\begin{longtable}{@{}L{0.36\linewidth}L{0.32\linewidth}L{0.26\linewidth}@{}}
+\caption{Datos de entrada de los cálculos (de \archivo{CALCULOS.md} §1).}\label{tab:c10-datos}\\
+\toprule
+\textbf{Dato} & \textbf{Valor} & \textbf{Origen}\\\midrule\endfirsthead
+\toprule
+\textbf{Dato} & \textbf{Valor} & \textbf{Origen}\\\midrule\endhead
+Cobre externo (\capa{F.Cu}, \capa{B.Cu}) & \SI{35}{\micro\meter} (\SI{1}{\oz}) & apilado JLC04161H-7628\\
+Cobre interno (\capa{In1.Cu}, \capa{In2.Cu}) & \SI{15.2}{\micro\meter} (\SI{0.5}{\oz}) & apilado JLC04161H-7628\\
+Resistividad del cobre a \SI{20}{\degreeCelsius} & \SI{1.72e-8}{\ohm\meter} & \copia\\
+Cobre en el barril de la vía & \SI{18}{\micro\meter} & \estimado{} (capacidad de JLC, sin verificar)\\
+LMR36015, frecuencia (variante de \SI{1}{\mega\hertz}) & \num{0.85} / \num{1} / \SI{1.15}{\mega\hertz} (mín/típ/máx) & \doc{SNVSB49D p.7}\\
+LMR36015, $t_\text{ON-MIN}$ / $t_\text{OFF-MIN}$ & \SI{83}{\nano\second} / \SI{73}{\nano\second} máx & \doc{SNVSB49D p.7}\\
+LMR36015, $R_\text{DS-ON}$ alto / bajo & \SI{435}{\milli\ohm} / \SI{280}{\milli\ohm} máx & \doc{SNVSB49D p.7}\\
+LMR36015, $R_{\theta JA}$ & \SI{72.5}{\degreeCelsius\per\watt} (JEDEC) & \doc{SNVSB49D p.6}\\
+LMR36015 en FPWM & CCM sin carga, frecuencia fija & \doc{SNVSB49D p.16}\\
+L1 (3V3) / L2 (5V) & \SI{6.8}{\micro\henry} / \SI{10}{\micro\henry} & \archivo{design.py}\\
+PCM1808, $I_{CC}$ (VCC = \SI{5}{\volt}) & \SI{8.6}{\milli\ampere} típ, \SI{11}{\milli\ampere} máx & \doc{SLES177B p.6}\\
+PCM1808, $I_{DD}$ (VDD = \SI{3.3}{\volt}) & \SI{5.9}{\milli\ampere} típ a \SI{48}{\kilo\hertz}; \SI{10.2}{\milli\ampere} típ a \SI{96}{\kilo\hertz} & \doc{SLES177B p.6}\\
+TLV9152, $I_Q$ por amplificador & \SI{560}{\micro\ampere} típ; \SI{750}{\micro\ampere} máx (\SIrange{-40}{125}{\degreeCelsius}) & \doc{SBOS986E p.12}\\
+MCP4725, $I_{DD}$ & \SI{400}{\micro\ampere} máx & \doc{DS22039D p.3}\\
+Oscilador Y1 & $\le \SI{10}{\milli\ampere}$ & \estimado{} (sin datasheet a mano)\\
+LT3092, $\theta_{JA}$ (TS8) & \SI{57}{\degreeCelsius\per\watt} & \copia\\
+Corrientes IEPE & CH1 \SI{2.81}{} $\to$ \SI{3.98}{\milli\ampere}; CH2 \SI{1.51}{} $\to$ \SI{2.51}{\milli\ampere} (con JP) & \archivo{design.py}, cambio C9\\
+D2 SMBJ26A & $V_\text{RWM}$ = \SI{26}{\volt}; $V_\text{BR}$ mín = \SI{28.9}{\volt} & \copia\\
+IPC-2221 (ampacidad) & $I = k\,\Delta T^{0,44} A^{0,725}$; $k = \num{0.048}$ ext., \num{0.024} int. & \copia\\
+\bottomrule
+\end{longtable}
+
+\begin{ojo}[lo que no está verificado]
+Cuatro datos de la tabla no vienen del datasheet original: la resistividad del cobre (es un valor de manual), el
+cobre del barril de la vía, la $\theta_{JA}$ del LT3092 y los valores del SMBJ26A. A esto se suman las constantes de
+IPC-2221. Ninguno de ellos está cerca de un límite (verás márgenes de 10 veces o más), así que un error razonable en
+esos datos no cambia ninguna conclusión. Igual quedan marcados para que no se presenten como hechos.
+\end{ojo}
+
+\subsection{Corriente de diseño de cada riel}
+
+Para dimensionar pistas no sirve la corriente ``típica'': se usa una \textbf{cota superior}, es decir, un valor que
+sabemos que la corriente real no va a pasar. \archivo{calculos.py} las arma sumando los máximos de cada carga:
+
+\begin{calculo}[corrientes de peor caso]
+\textbf{5V\_A} (lo alimentan el PCM1808 en su pin VCC y los dos TLV9152):
+\begin{equation}
+I_\text{5V\_A} = \underbrace{\SI{11}{\milli\ampere}}_{\text{PCM1808 } I_{CC}\text{ máx}}
+ + \underbrace{2 \times 2 \times \SI{0.75}{\milli\ampere}}_{\text{2 chips} \times \text{2 amplificadores}}
+ = \SI{14.0}{\milli\ampere}
+\end{equation}
+El riel \net{5V} lleva lo mismo, porque R33 solo alimenta a \net{5V_A}.
+
+\textbf{3V3}:
+\begin{equation}
+I_\text{3V3} = \underbrace{\SI{10.2}{\milli\ampere}}_{\text{PCM1808 } I_{DD}\text{ a 96 kHz}}
+ + \underbrace{2\times\SI{0.4}{\milli\ampere}}_{\text{2 MCP4725}}
+ + \underbrace{2\times\frac{\SI{3.3}{\volt}}{\SI{4.7}{\kilo\ohm}}}_{\text{pull-ups I2C}}
+ + \underbrace{\SI{10}{\milli\ampere}}_{\text{Y1 (estimado)}}
+ = \SI{22.4}{\milli\ampere}
+\end{equation}
+Fíjate que se toma el PCM1808 a \SI{96}{\kilo\hertz} (\SI{10.2}{\milli\ampere}) aunque la placa muestrea a
+\SI{48}{\kilo\hertz} (\SI{5.9}{\milli\ampere}): es una cota holgada a propósito. Las pull-ups se cuentan como si las
+dos líneas I2C estuvieran en bajo todo el tiempo.
+
+\textbf{24V\_PROT}: se toma \SI{50}{\milli\ampere}, el límite al que se configura la fuente de banco. Las dos fuentes
+IEPE juntas piden como mucho $\SI{3.98}{} + \SI{2.51}{} = \SI{6.49}{\milli\ampere}$.
+\end{calculo}
+
+\section{El buck LMR36015: tiempos, rizado y disipación}\label{sec:c10-buck}
+
+Un convertidor buck enciende un transistor durante un tiempo $t_\text{ON}$ y lo apaga durante $t_\text{OFF}$, a una
+frecuencia fija $f_\text{SW}$. La fracción del periodo que pasa encendido es el \emph{ciclo útil} $D$. En un buck
+ideal la salida es $V_\text{OUT} = D\cdot V_\text{IN}$. El capítulo~\ref{cap:alim} explica el circuito; aquí solo nos
+interesa un límite del integrado.
+
+\begin{idea}[el tiempo mínimo de encendido]
+El LMR36015 no puede encender su transistor por menos de $t_\text{ON-MIN} = \SI{83}{\nano\second}$ (máximo, en el
+peor chip) ni apagarlo por menos de $t_\text{OFF-MIN} = \SI{73}{\nano\second}$ \doc{SNVSB49D p.7}. Si para regular
+necesitara un pulso más corto, el chip tendría que ``saltarse'' pulsos o bajar la frecuencia (en inglés,
+\emph{frequency foldback}). Eso metería una frecuencia variable, posiblemente dentro de la banda de audio. Por eso hay
+que comprobar que el pulso que se pide siempre es más largo que el mínimo.
+\end{idea}
+
+\begin{calculo}[$t_\text{ON}$ y $t_\text{OFF}$ en el peor caso]
+Las fórmulas son
+\begin{equation}\label{eq:c10-ton}
+D = \frac{V_\text{OUT}}{V_\text{IN}}, \qquad t_\text{ON} = \frac{D}{f_\text{SW}}, \qquad t_\text{OFF} = \frac{1-D}{f_\text{SW}}.
+\end{equation}
+El pulso más corto aparece con la salida más baja (\SI{3.3}{\volt}), la entrada más alta y el oscilador más rápido.
+La entrada más alta que puede llegar sin que conduzca el TVS es su ruptura mínima, \SI{28.9}{\volt} \copia, y el
+oscilador rápido es \SI{1.15}{\mega\hertz} \doc{SNVSB49D p.7}:
+\begin{align}
+D &= \frac{\num{3.3}}{\num{28.9}} = \num{0.1142}\\
+t_\text{ON} &= \frac{\num{0.1142}}{\SI{1.15e6}{\hertz}} = \SI{99}{\nano\second} \;>\; \SI{83}{\nano\second}\quad(\text{margen } \SI{16}{\nano\second})
+\end{align}
+Para $t_\text{OFF}$ el peor caso es al revés: salida alta, entrada baja. Con \SI{5}{\volt} y \SI{18}{\volt} a
+\SI{1.15}{\mega\hertz}: $t_\text{OFF} = (1 - \num{0.278})/\SI{1.15e6}{\hertz} = \SI{628}{\nano\second}$, muy por
+encima de \SI{73}{\nano\second}.
+\end{calculo}
+
+La tabla~\ref{tab:c10-ton} resume las esquinas. Las tensiones de entrada tienen un sentido: \SI{18}{\volt} es una
+entrada baja de prueba, \SI{23.5}{\volt} es \SI{24}{\volt} menos la caída de D1, \SI{26}{\volt} es la tensión de
+trabajo del TVS y \SI{28.9}{\volt} es su ruptura mínima.
+
+\begin{table}[htbp]
+\centering
+\caption{Tiempos de encendido y apagado del LMR36015 en las esquinas de tolerancia (de \archivo{CALCULOS.md} §2).}\label{tab:c10-ton}
+\small
+\begin{tabular}{@{}cccrrrr@{}}
+\toprule
+$V_\text{OUT}$ & $V_\text{IN}$ & $f_\text{SW}$ & $t_\text{ON}$ & margen sobre \SI{83}{\nano\second} & $t_\text{OFF}$ & margen sobre \SI{73}{\nano\second}\\\midrule
+\SI{3.3}{\volt} & \SI{18}{\volt} & \SI{1.15}{\mega\hertz} & \SI{159}{\nano\second} & $+\SI{76}{\nano\second}$ & \SI{710}{\nano\second} & $+\SI{637}{\nano\second}$\\
+\SI{3.3}{\volt} & \SI{23.5}{\volt} & \SI{1.15}{\mega\hertz} & \SI{122}{\nano\second} & $+\SI{39}{\nano\second}$ & \SI{747}{\nano\second} & $+\SI{674}{\nano\second}$\\
+\SI{3.3}{\volt} & \SI{26}{\volt} & \SI{1.15}{\mega\hertz} & \SI{110}{\nano\second} & $+\SI{27}{\nano\second}$ & \SI{759}{\nano\second} & $+\SI{686}{\nano\second}$\\
+\SI{3.3}{\volt} & \SI{28.9}{\volt} & \SI{0.85}{\mega\hertz} & \SI{134}{\nano\second} & $+\SI{51}{\nano\second}$ & \SI{1042}{\nano\second} & $+\SI{969}{\nano\second}$\\
+\textbf{\SI{3.3}{\volt}} & \textbf{\SI{28.9}{\volt}} & \textbf{\SI{1.15}{\mega\hertz}} & \textbf{\SI{99}{\nano\second}} & $\mathbf{+\SI{16}{\nano\second}}$ & \SI{770}{\nano\second} & $+\SI{697}{\nano\second}$\\
+\SI{5.0}{\volt} & \SI{18}{\volt} & \SI{1.15}{\mega\hertz} & \SI{242}{\nano\second} & $+\SI{159}{\nano\second}$ & \textbf{\SI{628}{\nano\second}} & $\mathbf{+\SI{555}{\nano\second}}$\\
+\SI{5.0}{\volt} & \SI{23.5}{\volt} & \SI{1.15}{\mega\hertz} & \SI{185}{\nano\second} & $+\SI{102}{\nano\second}$ & \SI{685}{\nano\second} & $+\SI{612}{\nano\second}$\\
+\SI{5.0}{\volt} & \SI{28.9}{\volt} & \SI{1.15}{\mega\hertz} & \SI{150}{\nano\second} & $+\SI{67}{\nano\second}$ & \SI{719}{\nano\second} & $+\SI{646}{\nano\second}$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{ojo}[el margen de 16 ns es real pero justo]
+Con \SI{24}{\volt} normales el margen es de \SIrange{39}{82}{\nano\second}. Los \SI{16}{\nano\second} solo aparecen si
+la entrada sube a \SI{28.9}{\volt}, algo que no pasa con la fuente de banco a \SI{24}{\volt}. Además, las fórmulas
+son ideales: con pérdidas, $D$ sube un poco y $t_\text{ON}$ también, lo que juega a favor.
+\end{ojo}
+
+\subsection{Rizado de la bobina en modo FPWM}
+
+La variante usada (LMR36015\textbf{F}) trabaja en \emph{FPWM}: conmuta siempre a frecuencia fija, aunque no haya
+carga \doc{SNVSB49D p.16}. La ventaja es que el ruido de conmutación queda en una frecuencia conocida, lejos del
+audio. El costo es que por la bobina circula una corriente triangular aunque la carga consuma casi nada. Ese
+triángulo tiene una amplitud pico a pico
+\begin{equation}\label{eq:c10-ripple}
+\Delta I_L = \frac{(V_\text{IN} - V_\text{OUT})\,V_\text{OUT}}{V_\text{IN}\, L\, f_\text{SW}}.
+\end{equation}
+El peor caso es con el oscilador lento (menos $f_\text{SW}$ en el denominador) y la entrada alta.
+
+\begin{calculo}[rizado de L1, salida de 3,3 V]
+Con $V_\text{IN} = \SI{28.9}{\volt}$, $L = \SI{6.8}{\micro\henry}$ y $f_\text{SW} = \SI{0.85}{\mega\hertz}$:
+\begin{equation}
+\Delta I_L = \frac{(\num{28.9} - \num{3.3})\times \num{3.3}}{\num{28.9}\times \SI{6.8e-6}{\henry}\times\SI{0.85e6}{\hertz}}
+ = \SI{0.506}{\ampere}\ \text{p-p}.
+\end{equation}
+El pico de corriente en la bobina es la carga más la mitad del triángulo:
+$I_\text{pico} = \SI{22.4}{\milli\ampere} + \SI{0.506}{\ampere}/2 = \SI{0.275}{\ampere}$.
+El valor eficaz (RMS) es $\sqrt{I^2 + \Delta I_L^2/12} = \SI{0.148}{\ampere}$.
+\end{calculo}
+
+\begin{table}[htbp]
+\centering
+\caption{Rizado de las bobinas en FPWM con el oscilador a \SI{0.85}{\mega\hertz}.}\label{tab:c10-ripple}
+\small
+\begin{tabular}{@{}cccrrr@{}}
+\toprule
+Salida & $L$ & $V_\text{IN}$ & $\Delta I_L$ p-p & Pico & RMS\\\midrule
+\SI{3.3}{\volt} & \SI{6.8}{\micro\henry} & \SI{23.5}{\volt} & \SI{0.491}{\ampere} & \SI{0.268}{\ampere} & \SI{0.143}{\ampere}\\
+\SI{3.3}{\volt} & \SI{6.8}{\micro\henry} & \SI{28.9}{\volt} & \SI{0.506}{\ampere} & \SI{0.275}{\ampere} & \SI{0.148}{\ampere}\\
+\SI{5.0}{\volt} & \SI{10}{\micro\henry} & \SI{23.5}{\volt} & \SI{0.463}{\ampere} & \SI{0.246}{\ampere} & \SI{0.134}{\ampere}\\
+\SI{5.0}{\volt} & \SI{10}{\micro\henry} & \SI{28.9}{\volt} & \SI{0.486}{\ampere} & \SI{0.257}{\ampere} & \SI{0.141}{\ampere}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{idea}[la sorpresa del buck sin carga]
+La carga de \net{3V3} es de unos \SI{22}{\milli\ampere}, pero el tramo SW--bobina--condensador de salida lleva picos
+de \SI{0.28}{\ampere}. Por eso esos tramos se dimensionan con \SI{0.28}{\ampere} y no con la corriente de la carga.
+Es un detalle que se pasa por alto fácil si solo miras el consumo.
+\end{idea}
+
+\subsection{Disipación del LMR36015}
+
+El datasheet no da la corriente de entrada en FPWM sin carga, así que la disipación se acota con partes conocidas y
+supuestos \estimado:
+\begin{itemize}
+  \item \textbf{Conducción}: $P = I_\text{RMS}^2\,[D\,R_\text{DS-ON,alto} + (1-D)\,R_\text{DS-ON,bajo}]$ con las
+  resistencias máximas: $\num{0.148}^2 \times [\num{0.114}\times\num{0.435} + \num{0.886}\times\num{0.280}] \approx \SI{6.5}{\milli\watt}$.
+  \item \textbf{Conmutación}, suponiendo flancos de \SI{10}{\nano\second}:
+  $P \approx \tfrac12 V_\text{IN}\,(\Delta I_L/2)\,t_\text{flanco}\,f_\text{SW} \approx \SI{42}{\milli\watt}$.
+  \item El regulador interno y la carga de las compuertas no están publicados.
+\end{itemize}
+Con una cota de \SI{0.15}{\watt} por integrado, la subida de temperatura con la $R_{\theta JA}$ JEDEC es
+$\Delta T = \SI{0.15}{\watt}\times\SI{72.5}{\degreeCelsius\per\watt} \approx \SI{11}{\degreeCelsius}$. La placa de 4
+capas con el plano de tierra entero disipa mejor que la placa de prueba JEDEC, así que el valor real debería quedar
+por debajo. \textbf{Esto se confirma en el banco} midiendo la corriente de entrada a \SI{24}{\volt} sin carga
+(capítulo~\ref{cap:banco}).
+
+\section{Ancho de pista por corriente (IPC-2221)}\label{sec:c10-ancho}
+
+Una pista es una resistencia: al pasarle corriente se calienta. La norma IPC-2221 da una fórmula empírica (sale de
+ajustar curvas medidas) que relaciona la corriente $I$ con la sección de cobre $A$ y el aumento de temperatura
+$\Delta T$ que aceptas:
+\begin{equation}\label{eq:c10-ipc}
+I = k\,\Delta T^{\,0,44}\,A^{0,725},\qquad k = \num{0.048}\ \text{(capa externa)},\quad k = \num{0.024}\ \text{(capa interna)},
+\end{equation}
+con $I$ en amperios, $\Delta T$ en \si{\degreeCelsius} y $A$ en \si{\mil\squared} (\SI{1}{\mil} = \SI{0.0254}{\milli\meter})
+\copia. Las capas internas tienen la mitad de $k$ porque están encerradas en el FR-4 y se enfrían peor. En este
+proyecto se aceptó $\Delta T = \SI{10}{\degreeCelsius}$.
+
+\begin{calculo}[ancho mínimo para el nodo SW (0,275 A, capa externa)]
+\textbf{Paso 1}, despejar el área:
+\begin{equation}
+A = \left(\frac{I}{k\,\Delta T^{0,44}}\right)^{1/0,725}.
+\end{equation}
+\textbf{Paso 2}, el factor de temperatura: $\Delta T^{0,44} = 10^{0,44} = \num{2.754}$, y
+$k\,\Delta T^{0,44} = \num{0.048}\times\num{2.754} = \num{0.1322}$.
+
+\textbf{Paso 3}, el área:
+\begin{equation}
+A = \left(\frac{\num{0.275}}{\num{0.1322}}\right)^{1/0,725} = \num{2.080}^{\,\num{1.379}} = \SI{2.75}{\mil\squared}.
+\end{equation}
+\textbf{Paso 4}, pasar a ancho dividiendo por el espesor. \SI{35}{\micro\meter} son \SI{1.378}{\mil}:
+\begin{equation}
+w = \frac{\SI{2.75}{\mil\squared}}{\SI{1.378}{\mil}} = \SI{1.99}{\mil} = \SI{0.051}{\milli\meter}.
+\end{equation}
+La pista más angosta del nodo SW mide \SI{0.25}{\milli\meter} \medido, casi cinco veces más.
+
+\textbf{Al revés}, ¿cuánto aguanta una pista de \SI{0.25}{\milli\meter} en capa externa?
+$A = \num{0.25}\times\SI{0.035}{\milli\meter\squared} = \SI{13.6}{\mil\squared}$ y
+$I = \num{0.1322}\times\num{13.6}^{0,725} \approx \SI{0.88}{\ampere}$.
+Una pista de \SI{0.4}{\milli\meter} en \capa{In2.Cu} (\SI{15.2}{\micro\meter}, $k=\num{0.024}$) aguanta
+unos \SI{0.34}{\ampere}.
+\end{calculo}
+
+\begin{longtable}{@{}L{0.30\linewidth}rcrL{0.28\linewidth}@{}}
+\caption{Ancho mínimo IPC-2221 frente al ancho usado en la placa (de \archivo{CALCULOS.md} §3).}\label{tab:c10-anchos}\\
+\toprule
+\textbf{Tramo} & \textbf{Corriente} & \textbf{Capa} & \textbf{Mínimo IPC} & \textbf{Ancho mínimo usado} \medido\\\midrule\endfirsthead
+\toprule
+\textbf{Tramo} & \textbf{Corriente} & \textbf{Capa} & \textbf{Mínimo IPC} & \textbf{Ancho mínimo usado} \medido\\\midrule\endhead
+\net{SW_3}/\net{SW_5}, bobina, COUT & \SI{275}{\milli\ampere} & \capa{F.Cu} & \SI{0.051}{\milli\meter} & \SI{0.25}{\milli\meter} (máx. \num{0.60}; \SI{12}{\milli\meter} de pista)\\
+\net{24V_PROT} (bus, VIN) & \SI{50}{\milli\ampere} & \capa{F.Cu} & \SI{0.005}{\milli\meter} & \SI{0.25}{\milli\meter} (máx. \num{1.00}; \SI{98}{\milli\meter})\\
+\net{3V3} & \SI{22}{\milli\ampere} & \capa{B.Cu} & \SI{0.002}{\milli\meter} & \SI{0.30}{\milli\meter} (\SI{4}{\milli\meter})\\
+\net{3V3} & \SI{22}{\milli\ampere} & \capa{F.Cu} & \SI{0.002}{\milli\meter} & \SI{0.25}{\milli\meter} (\SI{52}{\milli\meter})\\
+\net{3V3} & \SI{22}{\milli\ampere} & \capa{In2.Cu} & \SI{0.010}{\milli\meter} & \SI{0.40}{\milli\meter} (\SI{117}{\milli\meter})\\
+\net{5V} (salida a R33) & \SI{14}{\milli\ampere} & \capa{F.Cu} & \SI{0.001}{\milli\meter} & \SI{0.25}{\milli\meter} (\SI{29}{\milli\meter})\\
+\net{5V_A} & \SI{14}{\milli\ampere} & \capa{F.Cu} & \SI{0.001}{\milli\meter} & \SI{0.30}{\milli\meter} (\SI{26}{\milli\meter})\\
+\net{5V_A} & \SI{14}{\milli\ampere} & \capa{In2.Cu} & \SI{0.005}{\milli\meter} & \SI{0.40}{\milli\meter} (\SI{53}{\milli\meter})\\
+\net{IEPE_SUP}, \net{IEPE_SUP_SV} & \SI{4}{\milli\ampere} & \capa{F.Cu} & $\approx 0$ & \SI{0.30}{\milli\meter} (\SI{23}{\milli\meter})\\
+\net{GND} (pistas) & \SI{50}{\milli\ampere} & \capa{F.Cu} & \SI{0.005}{\milli\meter} & \SI{0.25}{\milli\meter} (\SI{110}{\milli\meter})\\
+\bottomrule
+\end{longtable}
+
+\begin{decision}[anchos de pista]
+\textbf{Qué se decidió:} las pistas de potencia van de \SIrange{0.25}{0.6}{\milli\meter} en capas externas y a
+\SI{0.4}{\milli\meter} en \capa{In2.Cu}.\par
+\textbf{Alternativas:} usar el ancho por defecto de la clase Potencia (\SI{0.5}{\milli\meter}) en todas partes, o
+pistas gruesas ``por si acaso''.\par
+\textbf{Por qué:} con corrientes de \SIrange{5}{20}{\milli\ampere} (y \SI{0.28}{\ampere} de pico en SW), el ancho lo
+fija lo que se puede fabricar y la regla mínima de la clase (\SI{0.25}{\milli\meter}), no la corriente. El margen es
+de diez veces o más. Pistas más anchas no mejoran nada y quitan espacio en una placa apretada. Las salidas de pin van a
+\SI{0.25}{\milli\meter} porque el pad del integrado tiene ese ancho.\par
+\textbf{Fuente:} \archivo{CALCULOS.md} §3; IPC-2221 \copia.
+\end{decision}
+
+\section{Caída de tensión en las pistas}\label{sec:c10-caida}
+
+Que una pista no se caliente no significa que no baje tensión. La resistencia de un tramo de cobre es
+\begin{equation}\label{eq:c10-r}
+R = \rho\,\frac{\ell}{w\,t},
+\end{equation}
+con $\rho$ la resistividad, $\ell$ el largo, $w$ el ancho y $t$ el espesor. Algunos valores por milímetro de largo:
+
+\begin{itemize}
+  \item pista de \SI{0.25}{\milli\meter} en capa externa (\SI{35}{\micro\meter}): \SI{1.97}{\milli\ohm} por milímetro;
+  \item pista de \SI{0.3}{\milli\meter} en capa externa: \SI{1.64}{\milli\ohm} por milímetro;
+  \item pista de \SI{0.4}{\milli\meter} en capa interna (\SI{15.2}{\micro\meter}): \SI{2.83}{\milli\ohm} por milímetro;
+  \item una vía (barril de \SI{0.3}{\milli\meter}, \SI{18}{\micro\meter}, \SI{1.6}{\milli\meter} de alto): \SI{1.6}{\milli\ohm}.
+\end{itemize}
+
+Fíjate en el detalle de la capa interna: aunque la pista es más ancha, el cobre es menos de la mitad de grueso, así que
+tiene más resistencia por milímetro.
+
+\archivo{calculos.py} arma un grafo con todas las pistas y vías de cada red y busca el camino de menor resistencia
+entre la fuente y la carga más lejana. Después multiplica por la corriente \emph{total} del riel, como si toda pasara
+por el camino más largo (otra cota de peor caso).
+
+\begin{table}[htbp]
+\centering
+\caption{Caída de tensión de la fuente a la carga más lejana \medido.}\label{tab:c10-caida}
+\small
+\begin{tabular}{@{}llllrrr@{}}
+\toprule
+Riel & Desde & Hasta & Largo & $R$ & $I$ & Caída\\\midrule
+\net{3V3} & zona VOUT del buck & \net{U4.4} & \SI{82.9}{\milli\meter} & \SI{199}{\milli\ohm} & \SI{22.4}{\milli\ampere} & \SI{4.47}{\milli\volt}\\
+\net{5V_A} & \net{R33.2} & \net{U9.8} & \SI{54.1}{\milli\meter} & \SI{125}{\milli\ohm} & \SI{14.0}{\milli\ampere} & \SI{1.75}{\milli\volt}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{calculo}[¿es mucho 4,47 mV?]
+La salida del buck tiene una tolerancia de $\pm\SI{1.5}{\percent}$ en FPWM \doc{SNVSB49D p.8}. En \SI{3.3}{\volt}
+eso es $\pm\SI{49.5}{\milli\volt}$. La caída en el cobre es menos de la décima parte de esa tolerancia. Comparado con
+las resistencias que están a propósito en el camino, es todavía menor:
+\begin{itemize}
+  \item R33 (\SI{10}{\ohm}) baja \net{5V_A} en $\SI{14}{\milli\ampere}\times\SI{10}{\ohm} = \SI{140}{\milli\volt}$ y
+  disipa $(\SI{14}{\milli\ampere})^2\times\SI{10}{\ohm} = \SI{2.0}{\milli\watt}$;
+  \item R9 y R46 (\SI{100}{\ohm}) bajan cada \net{3V3_DAC} en \SI{40}{\milli\volt} con el MCP4725 al máximo.
+\end{itemize}
+Conclusión: el ancho de las pistas de alimentación no afecta la tensión que llega a los integrados.
+\end{calculo}
+
+\section{Corriente por vía}\label{sec:c10-vias}
+
+Una vía es un tubito de cobre que atraviesa la placa. Su sección es la de un anillo delgado:
+$A = \pi\,d\,t = \pi\times\SI{0.3}{\milli\meter}\times\SI{0.018}{\milli\meter} = \SI{0.0170}{\milli\meter\squared}$
+(\SI{26.3}{\mil\squared}). Aplicando~\eqref{eq:c10-ipc} con $k=\num{0.048}$ (práctica común para el barril) da
+\SI{1.41}{\ampere} por vía; con $k=\num{0.024}$, \SI{0.71}{\ampere}. En los dos casos, una sola vía basta para
+cualquier riel de la placa.
+
+\begin{table}[htbp]
+\centering
+\caption{Vías por red frente a las necesarias por corriente.}\label{tab:c10-vias}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Red & Vías en la placa \medido & Corriente del riel & Vías necesarias\\\midrule
+\net{3V3} & 11 & \SI{22.4}{\milli\ampere} & 1\\
+\net{5V_A} & 5 & \SI{14.0}{\milli\ampere} & 1\\
+\net{5V} & 2 & \SI{14.0}{\milli\ampere} & 1\\
+\net{24V_PROT} & 0 & \SI{50}{\milli\ampere} & 1\\
+\net{GND} & 299 & \SI{50}{\milli\ampere} & 1\\
+\net{I2C_SCL} / \net{I2C_SDA} & 3 / 2 & \SI{1}{\milli\ampere} & 1\\
+\net{DC_MON} / \net{DC_MON2} & 1 / 2 & \SI{0.1}{\milli\ampere} & 1\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Entonces, ¿por qué hay 299 vías de tierra si una alcanza? Porque no están ahí por corriente: unen el relleno de
+tierra de \capa{F.Cu} con los planos de \capa{In1.Cu} y \capa{B.Cu} (cosido), dan a cada condensador de desacoplo un
+camino corto al plano y evitan islas de cobre. Eso se explica en los capítulos~\ref{cap:capas} y~\ref{cap:ruteo}.
+\net{24V_PROT} tiene 0 vías porque toda su distribución va en \capa{F.Cu}.
+
+\section{Disipación y temperatura de cada pieza}\label{sec:c10-termico}
+
+Para cada pieza que disipa algo se busca su peor caso, se calcula la potencia y se multiplica por su resistencia
+térmica $\theta_{JA}$ (cuántos grados sube por cada vatio):
+\begin{equation}
+\Delta T = P\,\theta_{JA}.
+\end{equation}
+
+\begin{calculo}[el LT3092 con el micrófono en cortocircuito]
+El peor caso de la fuente de corriente IEPE es que el micrófono o el cable estén en corto: la salida queda en
+\SI{0}{\volt} y toda la tensión de alimentación cae en el LT3092. Con la corriente mayor (CH1 con JP1,
+\SI{3.98}{\milli\ampere}) y \SI{23.3}{\volt} entre entrada y salida:
+\begin{equation}
+P = \SI{3.98}{\milli\ampere}\times\SI{23.3}{\volt} = \SI{93}{\milli\watt},\qquad
+\Delta T = \SI{0.093}{\watt}\times\SI{57}{\degreeCelsius\per\watt} = \SI{5.3}{\degreeCelsius}.
+\end{equation}
+Un corto en el micrófono no daña la placa.
+\end{calculo}
+
+\begin{table}[htbp]
+\centering
+\caption{Disipación y subida de temperatura en el peor caso (de \archivo{CALCULOS.md} §6).}\label{tab:c10-termico}
+\small
+\begin{tabular}{@{}lL{0.27\linewidth}rrL{0.22\linewidth}@{}}
+\toprule
+Pieza & Peor caso & Potencia & $\Delta T$ & Nota\\\midrule
+LT3092 (U1, U8) & IEPE en corto, \SI{3.98}{\milli\ampere} $\times$ \SI{23.3}{\volt} & \SI{93}{\milli\watt} & \SI{5.3}{\degreeCelsius} & $\theta_{JA}$ \copia\\
+LMR36015 (U6, U7) & FPWM sin carga, \SI{28.9}{\volt} & $\le\SI{150}{\milli\watt}$ & $\le\SI{11}{\degreeCelsius}$ & \estimado\newline \medir\\
+D1 SS34 & \SI{50}{\milli\ampere} $\times$ \SI{0.4}{\volt} & \SI{20}{\milli\watt} & $<\SI{1}{\degreeCelsius}$ & $V_F$ \estimado\\
+R33 \SI{10}{\ohm} & \SI{14}{\milli\ampere} & \SI{2}{\milli\watt} & despreciable & 0603 de \SI{100}{\milli\watt}\\
+D2 SMBJ26A & en reposo (solo fuga) & despreciable & --- & conduce solo en transitorios\\
+PCM1808 & \SI{48}{\kilo\hertz} & \SIrange{62}{81}{\milli\watt} & --- & \doc{SLES177B p.6}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ninguna pieza se acerca a una temperatura preocupante. La de mayor incertidumbre es el LMR36015, y por eso es la
+primera medición de la lista de banco.
+
+\section{Separación entre pistas por tensión}\label{sec:c10-separacion}
+
+Dos conductores con tensiones distintas necesitan aire (o FR-4) entre ellos para que no salte un arco ni haya fugas.
+IPC-2221B, tabla 6-1, da la separación mínima según la tensión y el tipo de conductor \copia:
+
+\begin{itemize}
+  \item hasta \SI{30}{\volt}, capa externa sin recubrimiento, hasta \SI{3050}{\meter} de altura (categoría B2):
+  \SI{0.1}{\milli\meter}. Manizales está a unos \SI{2150}{\meter}, dentro de esa categoría;
+  \item hasta \SI{30}{\volt}, capa interna (B1): \SI{0.05}{\milli\meter};
+  \item de \SIrange{31}{50}{\volt}, capa externa: \SI{0.6}{\milli\meter}.
+\end{itemize}
+
+¿En qué fila cae la placa? La tensión más alta es la de \SI{24}{\volt}, y el TVS D2 limita la tensión continua a su
+$V_\text{RWM}$ de \SI{26}{\volt}. Así que las redes de \SI{24}{\volt} van en la fila de hasta \SI{30}{\volt}.
+
+\begin{calculo}[separación mínima medida]
+\archivo{calculos.py} toma todas las redes que pueden llegar a \SIrange{24}{29}{\volt}: \net{24V_PROT},
+\net{IEPE_SUP}, \net{IEPE_SUP_SV}, \net{SW_3}, \net{SW_5}, \net{IEPE}, \net{IEPE_SV}, el ánodo de D1 y los pines 2 de
+J1 y J7. Mide la distancia de su cobre a cualquier otra red, en todas las capas, con la geometría real de pads,
+pistas y zonas. Resultado \medido:
+\[
+\text{separación mínima} = \SI{0.200}{\milli\meter}\ (\net{24V_PROT} \text{ contra } \net{GND}, \text{ en } \capa{F.Cu}),
+\]
+el doble de los \SI{0.1}{\milli\meter} que pide la norma para capa externa.
+\end{calculo}
+
+\section{Relojes: longitud crítica e impedancia}\label{sec:c10-relojes}
+
+Cuando una pista es larga comparada con lo rápido que cambia la señal, deja de comportarse como un cable ideal y se
+vuelve una \emph{línea de transmisión}: aparecen reflexiones y ``timbre'' (oscilaciones en los flancos). La regla
+práctica dice que eso importa cuando el viaje de ida y vuelta por la pista dura más que el flanco. De ahí sale la
+\emph{longitud crítica}
+\begin{equation}\label{eq:c10-lc}
+L_c = \frac{t_r}{2\,t_{pd}},
+\end{equation}
+con $t_r$ el tiempo de subida del flanco y $t_{pd}$ el retardo por milímetro de pista. En microstrip sobre FR-4
+($\varepsilon_r \approx \num{4.4}$), $t_{pd} \approx \SI{5.6}{\pico\second\per\milli\meter}$ \copia. Con un flanco de
+\SI{1}{\nano\second} (supuesto conservador, \estimado):
+\[
+L_c = \frac{\SI{1000}{\pico\second}}{2\times\SI{5.6}{\pico\second\per\milli\meter}} \approx \SI{89}{\milli\meter}.
+\]
+
+\begin{table}[htbp]
+\centering
+\caption{Largo de las líneas de reloj y datos frente a la longitud crítica \medido.}\label{tab:c10-relojes}
+\small
+\begin{tabular}{@{}lL{0.38\linewidth}rr@{}}
+\toprule
+Red & Qué es & Largo & \% de $L_c$\\\midrule
+\net{Net-(Y1-OUT)} & salida del oscilador & \SI{4.2}{\milli\meter} & \SI{5}{\percent}\\
+\net{Net-(U4-SCKI)} & reloj maestro al PCM1808 & \SI{5.4}{\milli\meter} & \SI{6}{\percent}\\
+\net{Net-(U4-BCK)} & reloj de bit (lado ADC) & \SI{1.9}{\milli\meter} & \SI{2}{\percent}\\
+\net{SAI_SCK} & reloj de bit (lado NUCLEO) & \SI{13.5}{\milli\meter} & \SI{15}{\percent}\\
+\net{Net-(U4-LRCK)} & reloj de trama (lado ADC) & \SI{6.1}{\milli\meter} & \SI{7}{\percent}\\
+\net{SAI_FS} & reloj de trama (lado NUCLEO) & \SI{25.7}{\milli\meter} & \SI{29}{\percent}\\
+\net{Net-(U4-DOUT)} & datos (lado ADC) & \SI{4.2}{\milli\meter} & \SI{5}{\percent}\\
+\net{SAI_SD} & datos (lado NUCLEO) & \SI{15.5}{\milli\meter} & \SI{17}{\percent}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La más larga (\net{SAI_FS}) es menos de un tercio de $L_c$. Además, cada línea tiene una resistencia en serie (R21--R24)
+junto a su fuente, que suaviza los flancos y amortigua cualquier rebote.
+
+\begin{calculo}[impedancia de una pista de 0,2 mm]
+Para un microstrip (pista sobre un plano de tierra) la aproximación de IPC-2141 \copia{} es
+\begin{equation}
+Z_0 = \frac{87}{\sqrt{\varepsilon_r + \num{1.41}}}\,\ln\!\left(\frac{\num{5.98}\,h}{\num{0.8}\,w + t}\right),
+\end{equation}
+con $h = \SI{0.2104}{\milli\meter}$ (prepreg 7628 entre \capa{F.Cu} e \capa{In1.Cu}), $w = \SI{0.2}{\milli\meter}$ y
+$t = \SI{0.035}{\milli\meter}$:
+\[
+Z_0 = \frac{87}{\sqrt{\num{5.81}}}\,\ln\!\left(\frac{\num{1.258}}{\num{0.195}}\right) = \num{36.1}\times\num{1.864} \approx \SI{67}{\ohm}.
+\]
+Como todas las líneas son mucho más cortas que $L_c$, este valor no hace falta controlarlo: por eso el pedido a JLC no
+lleva control de impedancia. En la placa no hay USB ni pares diferenciales.
+\end{calculo}
+
+\section{El op-amp TLV9152 (resumen)}\label{sec:c10-tlv}
+
+La sección 9 de \archivo{CALCULOS.md} trae la salida de \archivo{tools/analisis_opamp.py}. El análisis completo, con
+la explicación del circuito, está en el capítulo~\ref{cap:analog}. Los resultados clave son:
+
+\begin{itemize}
+  \item \textbf{Sumador U3A/U9A}: sin el condensador de realimentación el margen de fase sería de unos
+  \SI{8}{\degree} (casi oscilando, con \SI{17}{\decibel} de pico). Con CF = \SI{10}{\pico\farad} (C56, C57) queda en
+  unos \SI{70}{\degree}, sin pico, y la señal tiene su $-\SI{3}{\decibel}$ en \SI{166}{\kilo\hertz}, muy por encima
+  del audio.
+  \item \textbf{Seguidor U3B/U9B}: su carga son unos \SI{5}{\pico\farad} y el datasheet \doc{SBOS986E p.12}
+  admite \SI{1000}{\pico\farad}. Es estable.
+  \item \textbf{Región de transición de la entrada}: para quedar fuera de ella se recomienda (pendiente de aprobación)
+  que el firmware lleve \net{REST_OUT} a unos \SI{1.5}{\volt}. Así \net{VSHIFT} queda en \SIrange{2.1}{2.6}{\volt}.
+  \item \textbf{Sin verificar}: simulación con el modelo SPICE de TI y medición en banco.
+\end{itemize}
+
+\section*{Resumen}
+\begin{itemize}
+  \item Los cálculos salen de un script que mide la placa real; si la placa cambia, se regeneran.
+  \item Las corrientes son cotas de peor caso: \SI{14}{\milli\ampere} en \net{5V_A}, \SI{22.4}{\milli\ampere} en
+  \net{3V3} y \SI{50}{\milli\ampere} en \net{24V_PROT}.
+  \item El buck nunca pide un pulso más corto que su mínimo: el peor caso deja \SI{16}{\nano\second} de margen, y con
+  \SI{24}{\volt} normales hay \SIrange{39}{82}{\nano\second}.
+  \item En FPWM la bobina lleva \SI{0.28}{\ampere} de pico aunque la carga sea de miliamperios.
+  \item Todas las pistas tienen diez veces o más del ancho que pide IPC-2221; las caídas son de pocos milivoltios y una
+  vía aguanta más de un amperio.
+  \item Ninguna pieza sube más de unos \SI{11}{\degreeCelsius}; el LMR36015 es el dato a medir.
+  \item La separación mínima de \SI{24}{\volt} es \SI{0.200}{\milli\meter}, el doble de lo que pide IPC-2221B.
+  \item Los relojes son cortos frente a su longitud crítica, así que no hace falta controlar impedancia.
+\end{itemize}

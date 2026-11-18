@@ -1,0 +1,49 @@
+\documentclass[11pt,a4paper,oneside]{report}
+\input{preambulo}
+
+\title{Criterios de diseño de la PCB\\[4pt]\large Sonómetro IEPE de dos canales · Rev B}
+\author{Universidad Nacional de Colombia, sede Manizales}
+\date{Noviembre de 2026}
+
+\begin{document}
+\begin{titlepage}
+  \centering
+  \vspace*{30mm}
+  {\color{cobre}\sffamily\large INFORME DE DISEÑO\par}
+  \vspace{6mm}
+  {\Huge\bfseries Criterios de diseño de la PCB\par}
+  \vspace{4mm}
+  {\LARGE Sonómetro IEPE de dos canales · Rev B\par}
+  \vspace{14mm}
+  \includegraphics[width=0.78\linewidth]{figuras/placa_completa.pdf}\par
+  \vspace{14mm}
+  {\large Paso a paso: qué circuito es, qué piezas se usaron,\\ por qué la placa terminó en 4 capas y cómo se ruteó y se verificó.\par}
+  \vfill
+  {\large Universidad Nacional de Colombia, sede Manizales\par}
+  {\large Noviembre de 2026\par}
+  \vspace{4mm}
+  {\small\color{grisnota} Fuente: rama \texttt{workspace/voxter}, carpeta \texttt{hardware/pcb/}.\par}
+\end{titlepage}
+
+\tableofcontents
+
+\include{capitulos/c01_introduccion}
+\include{capitulos/c02_alimentacion}
+\include{capitulos/c03_canal_analogico}
+\include{capitulos/c04_adc_digital}
+\include{capitulos/c05_componentes}
+\include{capitulos/c06_reglas_jlc}
+\include{capitulos/c07_placement}
+\include{capitulos/c08_cuatro_capas}
+\include{capitulos/c09_ruteo}
+\include{capitulos/c10_calculos}
+\include{capitulos/c11_verificacion}
+\include{capitulos/c12_excepciones_banco}
+
+\appendix
+\include{capitulos/a1_glosario}
+\chapter{Esquemático completo}\label{app:esquematico}
+El esquemático de KiCad (\archivo{hardware/pcb/pcb.kicad_sch}) se incluye en la página siguiente tal como lo exporta \texttt{kicad-cli}, girada para aprovechar la hoja. Es un dibujo vectorial: en el PDF puedes hacer zoom sin perder detalle. El archivo suelto está en \archivo{informe_diseno/figuras/esquematico.pdf}.
+\includepdf[pages=-,landscape=true,scale=0.97]{figuras/esquematico.pdf}
+
+\end{document}
